@@ -26,6 +26,8 @@ endfm
 
 fmod PID is
  sort Pid .
+ op _=_ : Pid Pid -> Bool [comm] .
+ eq (P:Pid = P:Pid) = true .
 endfm
 
 fmod STATUS is
@@ -46,47 +48,40 @@ fmod TAS is
  --- any initial state
  op init : -> Sys [ctor] .
 
+ --- transitions
+ op enter : Sys Pid -> Sys [ctor] .
+ op leave : Sys Pid -> Sys [ctor] .
+
+ --- observations
+ op pc   : Sys Pid -> Label .
+ op lock : Sys -> Status .
+
+ vars I J : Pid .
+ var  S : Sys .
+
+ --- for any initial state
+ eq pc(init,I)  = rs [metadata("CA-1")] .
+ eq lock(init) = open [metadata("CA-A")] .
+
+ --- enter
+ op c-enter : Sys Pid -> Bool .
+ eq c-enter(S,I) = (pc(S,I) = rs and lock(S) = open) .
+ ceq pc(enter(S,I),J) = (if I = J then cs else pc(S,J) fi)
+  if c-enter(S,I) [metadata("CA-2")]  .
+ ceq lock(enter(S,I)) = close
+  if c-enter(S,I) [metadata("CA-B")] .
+ ceq enter(S,I)       = S
+  if not c-enter(S,I) .
+
+ --- leave
+ op c-leave : Sys Pid -> Bool .
+ eq c-leave(S,I) = (pc(S,I) = cs) .
+ ceq pc(leave(S,I),J) = (if I = J then rs else pc(S,J) fi)
+  if c-leave(S,I) [metadata("CA-3")]  .
+ ceq lock(leave(S,I)) = open
+  if c-leave(S,I) [metadata("CA-C")] .
+ ceq leave(S,I)       = S
+  if not c-leave(S,I) .
+
 endfm
 
-eof
-
-mod* TAS {
-  pr(LABEL + PID + STATUS)
-  [Sys]
--- any initial state
-  op init : -> Sys {constr}
--- transitions
-  op enter : Sys Pid -> Sys {constr}
-  op leave : Sys Pid -> Sys {constr}
--- observations
-  op pc   : Sys Pid -> Label
-  op lock : Sys -> Status
--- CafeOBJ variables
-  var S : Sys
-  vars I J : Pid
--- for any initial state
-  eq pc(init,I)  = rs .
-  eq lock(init) = open .
--- enter
-  op c-enter : Sys Pid -> Bool
-  eq c-enter(S,I) = (pc(S,I) = rs and lock(S) = open) .
-  --
-  ceq pc(enter(S,I),J) = (if I = J then cs else pc(S,J) fi) if c-enter(S,I) .
-  ceq lock(enter(S,I)) = close                              if c-enter(S,I) .
-  ceq enter(S,I)       = S                                  if not c-enter(S,I) .
--- leave
-  op c-leave : Sys Pid -> Bool
-  eq c-leave(S,I) = (pc(S,I) = cs) .
-  --
-  ceq pc(leave(S,I),J) = (if I = J then rs else pc(S,J) fi) if c-leave(S,I) .
-  ceq lock(leave(S,I)) = open                               if c-leave(S,I) .
-  ceq leave(S,I)       = S                                  if not c-leave(S,I) .
---
--- Properties to prove
---
-  op inv1 : Sys Pid Pid -> Bool
-  op inv2 : Sys Pid -> Bool
-   eq inv1(S:Sys,I:Pid,J:Pid)
-     = ((pc(S,I) = cs and pc(S,J) = cs) implies I = J) .
-  eq inv2(S:Sys,I:Pid) = (pc(S,I) = cs implies lock(S) = close) .
-}
