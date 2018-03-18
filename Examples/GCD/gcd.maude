@@ -30,11 +30,11 @@ fmod NAT-GCD is
 
     op gcd : Nat Nat -> Nat .
 
-    vars M N : Nat .
+    vars M N : NzNat .
     
     *** gcd : Nat Nat -> Nat
     eq gcd(0, 0) = 0 .
-    eq gcd(0, s N) = s N .
-    eq gcd(s M, 0) = s M .
-    eq gcd(s M, s N) = gcd(d(s M, s N), min(s M, s N)) .
+    eq gcd(0, N) = N .
+    eq gcd(M, 0) = M .
+    eq gcd(M, N) = gcd(d(M, N), min(M, N)) .
 endfm
