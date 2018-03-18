@@ -1,0 +1,52 @@
+in gcd
+
+fmod NAT-OPS-EXTRA is
+    protecting NAT-OPS .
+
+    op _+_ : Nat Nat -> Nat [ assoc comm ] .
+    op _*_ : Nat Nat -> Nat [ assoc comm ] .
+    
+    op max : Nat Nat -> Nat .
+    op _<=_ : Nat Nat -> Bool .
+
+    *** pseudo-subtraction
+    op psub : Nat Nat -> Nat .
+    *** pseudo-division
+    op pdiv : Nat Nat -> Nat .
+    
+    op _divides_ : Nat Nat -> Bool .
+
+    vars M N : Nat .
+
+    *** _+_ : Nat Nat -> Nat
+    eq M + 0 = M .
+    eq M + (s N) = s (M + N) .
+    
+    *** _*_ : Nat Nat -> Nat
+    eq M * 0 = 0 .
+    eq M * (s N) = (M * N) + M .
+        
+    *** max : Nat Nat -> Nat
+    eq max(0, N) = N .
+    eq max(M, 0) = M .
+    eq max(s M, s N) = s max(M, N) .
+    
+    *** _<=_ : Nat Nat
+    eq 0 <= N = true .
+    eq (s M) <= 0 = false .
+    eq (s M) <= (s N) = M <= N .
+    *** eq M <= N = (max(M, N) == N) .
+    
+    *** psub : Nat Nat -> Nat
+    eq psub(0, N) = 0 .
+    eq psub(M, 0) = M .
+    eq psub(s M, s N) = psub(M, N) .
+    
+    *** pdiv : Nat Nat -> Nat
+    eq pdiv(0, N) = 0 .
+    eq pdiv(M, 0) = 0 .
+    eq pdiv(s M, s N) = s pdiv(psub(s M, s N), s N) .
+    
+    *** _divides_ : Nat Nat
+    eq M divides N = (M * pdiv(N, M) == N) .
+endfm
