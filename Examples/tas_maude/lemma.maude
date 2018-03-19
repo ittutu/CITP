@@ -1,0 +1,40 @@
+in citp
+
+in tas
+
+select #CITP# .
+
+loop init .
+
+---> Lemma:
+*** 1 ***
+(goal TAS |-
+ceq lock(S:Sys)= close if pc(S:Sys,I:Pid)= cs[nonexec];
+ceq I:Pid = J:Pid if pc(S:Sys,I:Pid)= cs /\ pc(S:Sys,J:Pid)= cs[nonexec];)
+*** 2 ***
+(ind on S:Sys red)
+*** 3 ***
+(select 2)
+eof
+*** 4 ***
+(. tc red imp red cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 5 ***
+(tc red ca-1 red ca red imp red)
+*** 6 ***
+(init 2 by I:Pid <- I#3 red)
+*** 7 ***
+(init 1 by I:Pid <- I#3 ; J:Pid <- z#2 red)
+*** 8 ***
+(. cp-l 3 >< 7)
+*** 9 ***
+(. cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 10 ***
+(init 1 by I:Pid <- I#3 ; J:Pid <- J#4 red)
+*** 11 ***
+(. cp-l eq(open ~ close)= false ; >< eq open = close ;)
+*** 12 ***
+(. init 2 by I:Pid <- J#4)
+*** 13 ***
+(. cp-l eq(open ~ close)= false ; >< eq open = close ;)
+
+---> QED
