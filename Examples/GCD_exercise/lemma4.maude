@@ -1,0 +1,24 @@
+in ../../Tool/citp
+in gcd-assoc-prelude
+
+select #CITP# .
+loop init .
+
+(goal NAT-OPS-EXTRA |- eq M:Nat <= s M:Nat = true ;)
+(ind on M:Nat red)
+
+fmod PNAT is
+ protecting NAT-OPS-EXTRA .
+ vars M N P : Nat .
+ eq M <= M = true .
+ eq M <= s M = true .
+ ceq M <= N = true if M <= P = true /\ P <= N = true[metadata "lemma4" nonexec].
+endfm
+
+select #CITP# .
+loop init .
+
+---> Proof of Lemma4:
+ (goal PNAT |- eq max(M:Nat, N:Nat) <= M:Nat + N:Nat = true ;)
+ (ind on M:Nat N:Nat red)
+ (init lemma4 by M:Nat <- max(x#1,x#2) ; N:Nat <- s(x#1 + x#2) ; P:Nat <- x#1 + x#2 red)

@@ -24,11 +24,11 @@ fmod LABEL is
  eq (rs ~ cs) = false .
 endfm
 
-fmod PID is
+fth PID is inc BOOL .
  sort Pid .
  op _~_ : Pid Pid -> Bool [comm] .
  eq (P:Pid ~ P:Pid) = true .
-endfm
+endfth
 
 fmod STATUS is
  sort Status .
@@ -38,28 +38,24 @@ fmod STATUS is
  eq (open ~ close) = false .
 endfm
 
-fmod TAS is
- pr (LABEL + PID + STATUS) .
+fmod TAS{X :: PID} is
+ pr LABEL .
+ pr STATUS .
  sort Sys .
-
  --- any initial state
  op init : -> Sys [ctor] .
-
  --- transitions
- op enter : Sys Pid -> Sys [ctor] .
- op leave : Sys Pid -> Sys [ctor] .
-
+ op enter : Sys X$Pid -> Sys [ctor] .
+ op leave : Sys X$Pid -> Sys [ctor] .
  --- observations
- op pc   : Sys Pid -> Label .
+ op pc   : Sys X$Pid -> Label .
  op lock : Sys -> Status .
-
- vars I J : Pid .
+ ---
+ vars I J : X$Pid .
  var  S : Sys .
-
  --- init
  eq pc(init,I)  = rs  [metadata "CA-1"] .
  eq lock(init) = open [metadata "CA-A"] .
-
 --- enter
 --- -------------------------------------------------------
  ceq pc(enter(S,I),J) = cs      if J = I /\ pc(S,I) = rs /\ lock(S) = open [metadata "CA-PCE1"].
@@ -71,7 +67,6 @@ fmod TAS is
  ceq lock(enter(S,I)) = lock(S) if (pc(S,I) ~ rs) = false         [metadata "CA-LE2"].
  ceq lock(enter(S,I)) = lock(S) if (lock(S) ~ open) = false       [metadata "CA-LE3"].
 --- -------------------------------------------------------
-
 --- leave
 --- -------------------------------------------------------
  ceq pc(leave(S,I),J) = rs      if J = I /\ pc(S,I) = cs [metadata "CA-PCV1"].

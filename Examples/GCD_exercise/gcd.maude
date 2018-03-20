@@ -1,0 +1,40 @@
+fmod BASIC-NAT is
+    sorts Zero NzNat Nat .
+    subsorts Zero NzNat < Nat .
+    
+    op 0 : -> Zero [ ctor ] .
+    op s_ : Nat -> NzNat [ ctor ] .
+endfm
+
+fmod NAT-OPS is
+    protecting BASIC-NAT .
+
+    op d : Nat Nat -> Nat .
+    op min : Nat Nat -> Nat .
+
+    vars M N : Nat .
+    
+    *** d : Nat Nat -> Nat
+    eq d(0, N) = N .
+    eq d(M, 0) = M .
+    eq d(s M, s N) = d(M, N) .
+    
+    *** min : Nat Nat -> Nat
+    eq min(0, N) = 0 .
+    eq min(M, 0) = 0 .
+    eq min(s M, s N) = s min(M, N) .
+endfm
+
+fmod NAT-GCD is
+    protecting NAT-OPS .
+
+    op gcd : Nat Nat -> Nat .
+
+    vars M N : NzNat .
+    
+    *** gcd : Nat Nat -> Nat
+    eq gcd(0, 0) = 0 .
+    eq gcd(0, N) = N .
+    eq gcd(M, 0) = M .
+    eq gcd(M, N) = gcd(d(M, N), min(M, N)) .
+endfm
