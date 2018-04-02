@@ -3,6 +3,8 @@ in gcd
 fmod NAT-OPS-EXTRA is
     protecting NAT-OPS .
 
+    op _~_ : Nat Nat -> Bool .
+    
     op _+_ : Nat Nat -> Nat [ assoc comm ] .
     op _*_ : Nat Nat -> Nat [ assoc comm ] .
     
@@ -18,6 +20,10 @@ fmod NAT-OPS-EXTRA is
 
     vars M N : Nat .
 
+    *** _~_ : Nat Nat -> Bool
+    eq M ~ M = true .
+    ceq M = N if M ~ N = true [ nonexec ] .
+    
     *** _+_ : Nat Nat -> Nat
     eq M + 0 = M .
     eq M + (s N) = s (M + N) .
@@ -31,7 +37,7 @@ fmod NAT-OPS-EXTRA is
     eq max(M, 0) = M .
     eq max(s M, s N) = s max(M, N) .
     
-    *** _<=_ : Nat Nat
+    *** _<=_ : Nat Nat -> Bool
     eq 0 <= N = true .
     eq (s M) <= 0 = false .
     eq (s M) <= (s N) = M <= N .
@@ -47,6 +53,6 @@ fmod NAT-OPS-EXTRA is
     eq pdiv(M, 0) = 0 .
     eq pdiv(s M, s N) = s pdiv(psub(s M, s N), s N) .
     
-    *** _divides_ : Nat Nat
-    eq M divides N = (M * pdiv(N, M) == N) .
+    *** _divides_ : Nat Nat -> Bool
+    eq M divides N = (M * pdiv(N, M) ~ N) [ metadata "Divides" nonexec ].
 endfm

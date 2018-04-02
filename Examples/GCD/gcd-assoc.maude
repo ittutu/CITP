@@ -10,14 +10,15 @@ loop init .
 (red)
 ---> QED
 
----> Proof of Lemma 2: \forall M, N, P : Nat . (M <= N) if (M <= P) and (P <= N) .
-(goal NAT-OPS-EXTRA |- ceq (M:Nat <= N:Nat) = true if (M:Nat <= P:Nat) = true /\ (P:Nat <= N:Nat) = true ;)
+---> Proof of Lemma 2: \forall M, N, P : Nat . (M <= N) if (M <= P) /\ (P <= N) .
+(goal NAT-OPS-EXTRA |- ceq (M:Nat <= N:Nat) = true if (M:Nat <= P:Nat) = true /\ (P:Nat <= N:Nat) = true [nonexec] ;)
 *** Should be nonexec.
 (ind on M:Nat N:Nat P:Nat)
 (imp)
-*** Advisory: could not find an operator _<_ with appropriate domain in meta-module NAT+ when trying to interprete
+*** Advisory: could not find an operator _<_ with appropriate domain
+*** in meta-module NAT-OPS-EXTRA when trying to interprete
 ***     metaterm '_<_['x#2.Nat,'x#1.Nat].
-(red)
+(red init 1 red)
 ---> QED
 
 ---> Proof score of Lemma 3: \forall M : Nat . M <= s M .
@@ -41,11 +42,11 @@ endfm
 fmod LEMMA-3 is
     protecting NAT-OPS-EXTRA .
     var M : Nat .
-    eq M <= s M = true .
+    eq M <= s M = true [ metadata "Lemma-3" ] .
 endfm
 
 fmod LEMMA-4-PRE is
-    protecting NAT-OPS-EXTRA + LEMMA-1 + LEMMA-2 + LEMMA-3 [ metadata "Lemma-3" ].
+    protecting NAT-OPS-EXTRA + LEMMA-1 + LEMMA-2 + LEMMA-3 .
 endfm
 
 select #CITP# .
@@ -61,11 +62,14 @@ loop init .
 (red)
 ---> QED
 
+eof
+		
 *** Proof score of Lemma 5: \forall M, N : Nat . min(M, N) = M \/ min(M, N) = N .
+*** (goal NAT-OPS-EXTRA |- eq min(M:Nat, N:Nat) ~ M:Nat or min(M:Nat, N:Nat) ~ N:Nat = true ;)
 *** TODO
 
 ---> Proof score of Lemma 6: \forall M, N : Nat . max(M, N) = M if min(M, N) = N .
-(goal NAT-OPS-EXTRA |- ceq max(M:Nat, N:Nat) = M:Nat if min(M:Nat, N:Nat) = N:Nat ;)
-(ind on M:Nat N:Nat)
-(imp red)
+*** (goal NAT-OPS-EXTRA |- ceq max(M:Nat, N:Nat) = M:Nat if min(M:Nat, N:Nat) = N:Nat ;)
+*** (ind on M:Nat N:Nat)
+*** (imp red)
 *** TO DISCUSS
