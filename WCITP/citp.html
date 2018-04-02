@@ -1,0 +1,93 @@
+<!DOCTYPE html   SYSTEM "about:legacy-compat">
+<html>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script>
+            ws = new WebSocket("ws://127.0.0.1:5678/");
+            ws.onmessage = function (event) {
+                  var event_data = event.data;
+                  event_data = event_data.substring(0, event_data.length - 2);
+                  event_data = event_data.replace(/\n/g, "\\\\n").replace(/\r/g, "\\\\r");
+                  // alert(event_data);
+                  var obj = JSON.parse(event_data);
+                  // alert(obj);
+                  myGoal = obj.goal;
+                  myGoal = myGoal.replace(new RegExp("\\\\n", 'g'), "\n");
+                  document.getElementById('goal').innerHTML = myGoal;
+                  myProof = obj.proof;
+                  myProof = myProof.replace(new RegExp("\\\\n", 'g'), "\n");
+                  document.getElementById('proof').innerHTML = myProof;
+            };
+    </script>
+    <head>
+        <title>WebCITP</title>
+        <script type="text/javascript"t>
+            function sendModule() {
+                 var file = document.getElementById('fileInput').files[0];
+                 if (file) {
+                     var reader = new FileReader();
+                     reader.readAsText(file);
+                     reader.onload = function(e) {
+                          // browser completed reading file
+                          ws.send("Module " + e.target.result + "\r\n\r\n");
+                     };
+                 }
+            }
+            function command() {
+                  var comm = document.getElementById('command').value;
+                  var args = document.getElementById('commandArgs').value;
+                  // alert(comm + "," + args);
+                  document.getElementById('commandArgs').value = "";
+                  var completeComm = "(" + comm + " " + args + ")\r\n\r\n";
+                  ws.send(completeComm);
+            }
+            function tactic() {
+                  var tactic = document.getElementById('tactic').value;
+                  var to_all = document.getElementById('apply_to_all').checked;
+                  if (to_all){
+                      complete_tactic = "(. " + tactic + ")\r\n\r\n";
+                  }
+                  else {
+                      complete_tactic = "(" + tactic + ")\r\n\r\n";
+                  }
+                  ws.send(complete_tactic);
+            }
+        </script>
+    </head>
+    <body>
+        <div>
+             <textarea id="goal" rows="25" cols="100">
+                No current goal.
+             </textarea>
+             <textarea id="proof" rows="25" cols="100">
+                No current proof.
+             </textarea>
+        </div>
+        <div>
+            <form>
+                 <input type="file" id="fileInput" accept=".maude">
+                 <input onclick="sendModule()" type="submit">
+            </form>
+        </div>
+        <div>
+            <select id="command">
+                   <option value="goal">goal</option>
+                   <option value="ind on">ind on</option>
+                   <option value="ca">ca</option>
+                   <option value="tc">tc</option>
+                   <option value="imp">imp</option>
+                   <option value="red">red</option>
+                   <option value="init">init</option>
+                   <option value="cp-l">cp-l</option>
+                   <option value="cp-r">cp-r</option>
+                   <option value="rollback">rollback</option>
+            </select>
+            <input type="text" id="commandArgs">
+            <button onclick="command()">Introduce command</button>
+        </div>
+        <div>
+             <input type="text" id="tactic">
+             <button onclick="tactic()">Apply tactic</button>
+             <input  id="apply_to_all" type="checkbox" value="all">Apply to all subgoals
+        </div>
+    </body>
+</html>
