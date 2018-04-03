@@ -54,5 +54,5 @@ fmod NAT-OPS-EXTRA is
     eq pdiv(s M, s N) = s pdiv(psub(s M, s N), s N) .
     
     *** _divides_ : Nat Nat -> Bool
-    eq M divides N = (M * pdiv(N, M) ~ N) [ metadata "Divides" nonexec ].
+    eq M divides N = (M * pdiv(N, M) ~ N) [ metadata "Divides" nonexec ] .
 endfm

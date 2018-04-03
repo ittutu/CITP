@@ -1,75 +1,29 @@
 in ../../Tool/citp
 in gcd-assoc-prelude
-		
-select #CITP# .
-loop init .
 
----> Proof of Lemma 1: \forall M : Nat . M <= M .
-(goal NAT-OPS-EXTRA |- eq M:Nat <= M:Nat = true ;)
-(ind on M:Nat)
-(red)
----> QED
-
----> Proof of Lemma 2: \forall M, N, P : Nat . (M <= N) if (M <= P) /\ (P <= N) .
-(goal NAT-OPS-EXTRA |- ceq (M:Nat <= N:Nat) = true if (M:Nat <= P:Nat) = true /\ (P:Nat <= N:Nat) = true [nonexec] ;)
-*** Should be nonexec.
-(ind on M:Nat N:Nat P:Nat)
-(imp)
-*** Advisory: could not find an operator _<_ with appropriate domain
-*** in meta-module NAT-OPS-EXTRA when trying to interprete
-***     metaterm '_<_['x#2.Nat,'x#1.Nat].
-(red init 1 red)
----> QED
-
----> Proof score of Lemma 3: \forall M : Nat . M <= s M .
-(goal NAT-OPS-EXTRA |- eq M:Nat <= s M:Nat = true ;)
-(ind on M:Nat)
-(red)
----> QED
-
-fmod LEMMA-1 is
+fmod ASSOC-PRE is
+    protecting NAT-GCD .
     protecting NAT-OPS-EXTRA .
-    var M : Nat .
-    eq M <= M = true [ metadata "Lemma-1" ] .
-endfm
 
-fmod LEMMA-2 is
-    protecting NAT-OPS-EXTRA .
     vars M N P : Nat .
-    ceq (M:Nat <= N:Nat) = true if (M:Nat <= P:Nat) = true /\ (P:Nat <= N:Nat) = true [ metadata "Lemma-2" nonexec ] .
-endfm
-		
-fmod LEMMA-3 is
-    protecting NAT-OPS-EXTRA .
-    var M : Nat .
-    eq M <= s M = true [ metadata "Lemma-3" ] .
-endfm
 
-fmod LEMMA-4-PRE is
-    protecting NAT-OPS-EXTRA + LEMMA-1 + LEMMA-2 + LEMMA-3 .
+    ceq M divides N = true if (M divides P) = true /\ (P divides N) = true [ metadata "Lemma-18" nonexec ] .
+    ceq M = N if (M divides N) = true /\ (N divides M) = true [ metadata "Lemma-21" nonexec ] .
+    eq gcd(M, N) divides M = true [ metadata "Lemma-23l" ] .
+    eq gcd(M, N) divides N = true [ metadata "Lemma-23r" ] .
+    ceq M divides gcd(N, P) = true if (M divides N) = true /\ (M divides P) = true [ metadata "Lemma-25" ] .
 endfm
 
 select #CITP# .
 loop init .
 		
----> Proof score of Lemma 4: \forall M, N : Nat . max(M, N) <= M + N .
-*** (goal (NAT-OPS-EXTRA + LEMMA-1) |- eq max(M:Nat, N:Nat) <= M:Nat + N:Nat = true ;)
-*** ERROR: invalid command
-(goal LEMMA-4-PRE |- eq max(M:Nat, N:Nat) <= M:Nat + N:Nat = true ;)
-(ind on M:Nat N:Nat)
-(red)
-(init Lemma-2 by M:Nat <- max(x#1, x#2) ; N:Nat <- s(x#1 + x#2) ; P:Nat <- x#1 + x#2)
+---> Proof score of Assoc: \forall M, N, P : Nat . gcd(gcd(M, N), P) = gcd(M, gcd(N, P)) .
+(goal ASSOC-PRE |- eq gcd(gcd(M:Nat, N:Nat), P:Nat) = gcd(M:Nat, gcd(N:Nat, P:Nat)) ;)
+(tc)
+(init Lemma-18 by M:Nat <- gcd(gcd(M#1,N#2),P#3); N:Nat <- N#2 ; P:Nat <- gcd(M#1,N#2))
+(init Lemma-18 by M:Nat <- gcd(gcd(M#1,N#2),P#3); N:Nat <- M#1 ; P:Nat <- gcd(M#1,N#2))
+(init Lemma-18 by M:Nat <- gcd(M#1,gcd(N#2,P#3)); N:Nat <- N#2 ; P:Nat <- gcd(N#2,P#3))
+(init Lemma-18 by M:Nat <- gcd(M#1,gcd(N#2,P#3)); N:Nat <- P#3 ; P:Nat <- gcd(N#2,P#3))
+(init Lemma-21 by M:Nat <- gcd(gcd(M#1,N#2),P#3); N:Nat <- gcd(M#1,gcd(N#2,P#3)))
 (red)
 ---> QED
-
-eof
-		
-*** Proof score of Lemma 5: \forall M, N : Nat . min(M, N) = M \/ min(M, N) = N .
-*** (goal NAT-OPS-EXTRA |- eq min(M:Nat, N:Nat) ~ M:Nat or min(M:Nat, N:Nat) ~ N:Nat = true ;)
-*** TODO
-
----> Proof score of Lemma 6: \forall M, N : Nat . max(M, N) = M if min(M, N) = N .
-*** (goal NAT-OPS-EXTRA |- ceq max(M:Nat, N:Nat) = M:Nat if min(M:Nat, N:Nat) = N:Nat ;)
-*** (ind on M:Nat N:Nat)
-*** (imp red)
-*** TO DISCUSS

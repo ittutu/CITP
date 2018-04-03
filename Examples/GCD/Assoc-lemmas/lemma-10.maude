@@ -1,0 +1,11 @@
+in ../../../Tool/citp
+in ../gcd-assoc-prelude
+
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 10: \forall M, N : Nat . psub(M + N, N) = M .
+(goal NAT-OPS-EXTRA |- eq psub(M:Nat + N:Nat, N:Nat) = M:Nat ;)
+(ind on N:Nat)
+(tc red)
+---> QED
