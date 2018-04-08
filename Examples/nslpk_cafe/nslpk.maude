@@ -148,9 +148,9 @@ fmod NSLPK is               *** Should be a theory
   op fake3 : Sys Prin Nonce -> Sys [ctor] .
 
   --- observers
-  op rand   : Sys -> Rand .
-  op nw     : Sys -> Network .
-  op nonces : Sys -> NonceBag .
+  op rand   : Sys -> Rand .       *** Next random number available in the system.
+  op nw     : Sys -> Network .    *** Ciphers in the system.
+  op nonces : Sys -> NonceBag .   *** Nonces addressed to the intruder in the system.
 
   --- CafeOBJ variables
   var S : Sys .
