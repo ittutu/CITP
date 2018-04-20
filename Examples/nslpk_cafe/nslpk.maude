@@ -49,6 +49,15 @@ fmod NONCE is               *** Should be NONCE{P :: PRIN, R :: RAND} is
   eq p1(n(P1,P2,R1)) = P1 .
   eq p2(n(P1,P2,R1)) = P2 .
   eq r(n(P1,P2,R1))  = R1 .
+
+  ***(
+  op _\in_ : Prin Nonce -> Bool .
+  eq P1 \in n(P1, P2, R1) = true .
+  eq P2 \in n(P1, P2, R1) = true .
+  ceq P \in n(P1, P2, R1) = false
+   if (P ~ P1) = false /\
+      (P ~ P2) = false .
+  )
 endfm
 
 fmod CIPHER is             *** Should be CIPHER{P :: PRIN, R :: RAND} is
@@ -200,7 +209,7 @@ fmod NSLPK is               *** Should be a theory
   eq  nonces(fake1(S,P1,P2,N1)) = nonces(S) .
   ceq fake1(S,P1,P2,N1)         = S if not c-fake1(S,P1,P2,N1) .
 
-  --- fake2
+  --- fake2  P2 (intr) -> P1
   op c-fake2 : Sys Prin Prin Nonce Nonce -> Bool .
   eq c-fake2(S,P1,P2,N1,N2) = N1 \in nonces(S) and N2 \in nonces(S) .
   ---
@@ -210,6 +219,7 @@ fmod NSLPK is               *** Should be a theory
   ceq fake2(S,P1,P2,N1,N2)         = S if not c-fake2(S,P1,P2,N1,N2) .
 
   --- fake3
+  *** enc3 has an extra Prin
   op c-fake3 : Sys Prin Nonce -> Bool .
   eq c-fake3(S,P1,N1) = N1 \in nonces(S) .
   ---
