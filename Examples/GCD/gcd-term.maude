@@ -1,0 +1,19 @@
+in ../../Tool/citp
+in gcd-term-prelude
+
+mod TERM-LEMMAS is
+    protecting TERM-PRE .
+
+    vars K M N : Nat .
+
+    ceq max(M, N) < K = true if M < K /\ N < K [ metadata "Lemma-1" ] .
+    ceq d(M, N) < M = true if 0 < N /\ N < M [ metadata "Lemma-2" ] .
+endm
+
+select #CITP# .
+loop init .
+
+---> Proof score of Term: \forall M, N : Nat . weight(gcd'(M, N)) < weight(gcd(M, N)) .
+(goal TERM-LEMMAS |- eq weight(gcd'(M:Nat, N:Nat)) < weight(gcd(M:Nat, N:Nat)) = true ;)
+(tc ca red)
+---> QED

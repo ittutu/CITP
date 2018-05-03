@@ -1,0 +1,31 @@
+in ../../../Tool/citp
+in ../gcd-term-prelude
+
+mod LEMMA-2.1-PRE is
+    protecting TERM-PRE .
+
+    vars M N : Nat .
+    
+    eq M < s M = true [ metadata "Lemma-2.1.1" ] .
+    ceq M < s N = true if M < N [ metadata "Lemma-2.1.2" ] .
+endm
+
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 2.1: \forall M, N : Nat . d(M, N) < s M if N < M .
+(goal LEMMA-2.1-PRE |- ceq d(M:Nat, N:Nat) < s M:Nat = true if (N:Nat < M:Nat) = true ;)
+(ind on M:Nat N:Nat)
+(imp red)
+---> QED
+
+---> Proof score of Lemma 2.1.1: \forall M : Nat . M < s M .
+(goal TERM-PRE |- eq M:Nat < s M:Nat = true ;)
+(ind on M:Nat red)
+---> QED
+
+---> Proof score of Lemma 2.1.2: \forall M, N : Nat . M < s N if M < N .
+(goal TERM-PRE |- ceq M:Nat < s N:Nat = true if (M:Nat < N:Nat) = true ;)
+(ind on M:Nat N:Nat red)
+(imp red)
+---> QED

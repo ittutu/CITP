@@ -1,0 +1,11 @@
+in ../../../Tool/citp
+in ../gcd-term-prelude
+
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 1: \forall M, N, K : Nat . max(M, N) < K if M < K /\ N < K .
+(goal TERM-PRE |- ceq max(M:Nat, N:Nat) < K:Nat = true if (M:Nat < K:Nat) = true /\ (N:Nat < K:Nat) = true ;)
+(tc ca)
+(imp red)
+---> QED
