@@ -163,8 +163,8 @@ fmod NSLPK is               *** Should be a theory
 
   --- CafeOBJ variables
   var S : Sys .
-  vars P1 P2 P3 Q1 : Prin .
-  vars N1 N2 : Nonce .
+  vars P1 P2 P3 Q1 P Q : Prin .
+  vars N1 N2 Np Nq : Nonce .
 
   --- init
   eq rand(init)   = seed .
@@ -172,59 +172,59 @@ fmod NSLPK is               *** Should be a theory
   eq nonces(init) = empty .
 
   --- send1
-  eq rand(send1(S,P1,P2))   = next(rand(S)) .
-  eq nw(send1(S,P1,P2))     = (enc1(P2,n(P1,P2,rand(S)),P1) nw(S)) .
-  eq nonces(send1(S,P1,P2))
-     = (if P2 ~ intr then (n(P1,P2,rand(S)) nonces(S)) else nonces(S) fi) .
+  eq rand(send1(S,P,Q))   = next(rand(S)) .
+  eq nw(send1(S,P,Q))     = (enc1(Q,n(P,Q,rand(S)),P) nw(S)) .
+  eq nonces(send1(S,P,Q))
+     = (if Q ~ intr then (n(P,Q,rand(S)) nonces(S)) else nonces(S) fi) .
 
   --- send2
   op c-send2 : Sys Prin Prin Nonce -> Bool .
-  eq c-send2(S,P1,P2,N1) = enc1(P1,N1,P2) \in nw(S) .
+  eq c-send2(S,Q,P,Np) = enc1(Q,Np,P) \in nw(S) .
   ---
-  ceq rand(send2(S,P1,P2,N1))   = next(rand(S)) if c-send2(S,P1,P2,N1) .
-  ceq nw(send2(S,P1,P2,N1))
-      = (enc2(P2,N1,n(P1,P2,rand(S)),P1) nw(S)) if c-send2(S,P1,P2,N1) .
-  ceq nonces(send2(S,P1,P2,N1))
-      = (if P2 ~ intr then (N1 n(P1,P2,rand(S)) nonces(S)) else nonces(S) fi)
-      if c-send2(S,P1,P2,N1) .
-  ceq send2(S,P1,P2,N1)         = S if not c-send2(S,P1,P2,N1) .
+  ceq rand(send2(S,Q,P,Np))   = next(rand(S)) if c-send2(S,Q,P,Np) .
+  ceq nw(send2(S,Q,P,Np))
+      = (enc2(P,Np,n(Q,P,rand(S)),Q) nw(S)) if c-send2(S,Q,P,Np) .
+  ceq nonces(send2(S,Q,P,Np))
+      = (if P ~ intr then (Np n(Q,P,rand(S)) nonces(S)) else nonces(S) fi)
+      if c-send2(S,Q,P,Np) .
+  ceq send2(S,Q,P,Np)         = S if not c-send2(S,Q,P,Np) .
 
   --- send3
   op c-send3 : Sys Prin Prin Nonce Nonce -> Bool .
-  eq c-send3(S,P1,P2,N1,N2) = enc2(P1,N1,N2,P2) \in nw(S) and enc1(P2,N1,P1) \in nw(S) .
+  eq c-send3(S,P,Q,Np,Nq) = enc2(P,Np,Nq,Q) \in nw(S) and enc1(Q,Np,P) \in nw(S) .
   ---
-  eq  rand(send3(S,P1,P2,N1,N2))   = rand(S) .
-  ceq nw(send3(S,P1,P2,N1,N2))     = (enc3(P2,N2) nw(S)) if c-send3(S,P1,P2,N1,N2) .
-  ceq nonces(send3(S,P1,P2,N1,N2))
-      = (if P2 ~ intr then (N2 nonces(S)) else nonces(S) fi)
-      if c-send3(S,P1,P2,N1,N2) .
-  ceq send3(S,P1,P2,N1,N2)         = S if not c-send3(S,P1,P2,N1,N2) .
+  eq  rand(send3(S,P,Q,Np,Nq))   = rand(S) .
+  ceq nw(send3(S,P,Q,Np,Nq))     = (enc3(Q,Nq) nw(S)) if c-send3(S,P,Q,Np,Nq) .
+  ceq nonces(send3(S,P,Q,Np,Nq))
+      = (if Q ~ intr then (Nq nonces(S)) else nonces(S) fi)
+      if c-send3(S,P,Q,Np,Nq) .
+  ceq send3(S,P,Q,Np,Nq)         = S if not c-send3(S,P,Q,Np,Nq) .
 
   --- fake1
   op c-fake1 : Sys Prin Prin Nonce -> Bool .
-  eq c-fake1(S,P1,P2,N1) = N1 \in nonces(S) .
+  eq c-fake1(S,P1,P2,Np) = Np \in nonces(S) .
   ---
-  eq  rand(fake1(S,P1,P2,N1))   = rand(S) .
-  ceq nw(fake1(S,P1,P2,N1))     = (enc1(P2,N1,P1) nw(S)) if c-fake1(S,P1,P2,N1) .
-  eq  nonces(fake1(S,P1,P2,N1)) = nonces(S) .
-  ceq fake1(S,P1,P2,N1)         = S if not c-fake1(S,P1,P2,N1) .
+  eq  rand(fake1(S,P1,P2,Np))   = rand(S) .
+  ceq nw(fake1(S,P1,P2,Np))     = (enc1(P2,Np,P1) nw(S)) if c-fake1(S,P1,P2,Np) .
+  eq  nonces(fake1(S,P1,P2,Np)) = nonces(S) .
+  ceq fake1(S,P1,P2,Np)         = S if not c-fake1(S,P1,P2,Np) .
 
   --- fake2  P2 (intr) -> P1
   op c-fake2 : Sys Prin Prin Nonce Nonce -> Bool .
-  eq c-fake2(S,P1,P2,N1,N2) = N1 \in nonces(S) and N2 \in nonces(S) .
+  eq c-fake2(S,P1,P2,Np,Nq) = Np \in nonces(S) and Nq \in nonces(S) .
   ---
-  eq  rand(fake2(S,P1,P2,N1,N2))   = rand(S) .
-  ceq nw(fake2(S,P1,P2,N1,N2))     = (enc2(P1,N1,N2,P2) nw(S)) if c-fake2(S,P1,P2,N1,N2) .
-  eq  nonces(fake2(S,P1,P2,N1,N2)) = nonces(S) .
-  ceq fake2(S,P1,P2,N1,N2)         = S if not c-fake2(S,P1,P2,N1,N2) .
+  eq  rand(fake2(S,P1,P2,Np,Nq))   = rand(S) .
+  ceq nw(fake2(S,P1,P2,Np,Nq))     = (enc2(P1,Np,Nq,P2) nw(S)) if c-fake2(S,P1,P2,Np,Nq) .
+  eq  nonces(fake2(S,P1,P2,Np,Nq)) = nonces(S) .
+  ceq fake2(S,P1,P2,Np,Nq)         = S if not c-fake2(S,P1,P2,Np,Nq) .
 
   --- fake3
   *** enc3 has an extra Prin
   op c-fake3 : Sys Prin Nonce -> Bool .
-  eq c-fake3(S,P1,N1) = N1 \in nonces(S) .
+  eq c-fake3(S,P1,Nq) = Nq \in nonces(S) .
   ---
-  eq  rand(fake3(S,P1,N1))   = rand(S) .
-  ceq nw(fake3(S,P1,N1))     = (enc3(P1,N1) nw(S)) if c-fake3(S,P1,N1) .
+  eq  rand(fake3(S,P1,Nq))   = rand(S) .
+  ceq nw(fake3(S,P1,Nq))     = (enc3(P1,Nq) nw(S)) if c-fake3(S,P1,Nq) .
   eq  nonces(fake3(S,P1,N1)) = nonces(S) .
   ceq fake3(S,P1,N1)         = S if not c-fake3(S,P1,N1) .
 
