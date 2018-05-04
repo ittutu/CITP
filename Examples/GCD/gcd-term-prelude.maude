@@ -1,0 +1,67 @@
+fmod BASIC-NAT is
+    sorts Zero NzNat Nat .
+    subsorts Zero NzNat < Nat .
+    
+    op 0 : -> Zero [ ctor ] .
+    op s_ : Nat -> NzNat [ ctor ] .
+endfm
+
+fmod NAT-OPS is
+    protecting BASIC-NAT .
+
+    op d : Nat Nat -> Nat [ comm ] .
+    op _<_ : Nat Nat -> Bool .
+    op _<=_ : Nat Nat -> Bool .
+    op min : Nat Nat -> Nat .
+
+    vars M N : Nat .
+    
+    *** d : Nat Nat -> Nat
+    eq d(M, 0) = M .
+    eq d(s M, s N) = d(M, N) .
+
+    *** _<_ : Nat Nat -> Bool
+    eq 0 < (s N) = true .
+    eq M < 0 = false .
+    eq (s M) < (s N) = M < N .
+endfm
+
+mod NAT-GCD is
+    protecting NAT-OPS .
+
+    sort State .
+    subsort Nat < State .
+    
+    op gcd : Nat Nat -> State .
+    op gcd' : Nat Nat -> State .
+
+    vars M N : Nat .
+    
+    *** gcd : Nat Nat -> State
+    rl gcd(M, N) => gcd'(M, N) .
+
+    *** gcd' : Nat Nat -> State
+    ceq gcd'(M, N) = 0 if M = 0 /\ N = 0 [ metadata "CA-1" ] .
+    ceq gcd'(M, N) = N if M = 0 /\ 0 < N [ metadata "CA-2" ] .
+    ceq gcd'(M, N) = M if N = 0 /\ 0 < M [ metadata "CA-3" ] .
+    ceq gcd'(M, N) = gcd(d(M, N), N) if 0 < N /\ 0 < M /\ N < M [ metadata "CA-4" ] .
+    ceq gcd'(M, N) = gcd(M, d(M, N)) if 0 < N /\ 0 < M /\ M < N [ metadata "CA-5" ] .
+endm
+
+mod TERM-PRE is
+    protecting NAT-GCD .
+
+    op weight : State -> Nat .
+    op max : Nat Nat -> Nat [ comm ] .
+
+    vars K M N : Nat .
+
+    *** weight : State -> Nat
+    eq weight(M) = 0 .
+    eq weight(gcd(M, N)) = s max(M, N) .
+
+    *** max : Nat Nat -> Nat
+    ceq max(M, N) = M if N < M [ metadata "CA-1" ] .
+    ceq max(M, N) = N if M < N [ metadata "CA-2" ] .
+    ceq max(M, N) = M if M = N [ metadata "CA-3" ] .
+endm
