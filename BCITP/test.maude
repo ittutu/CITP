@@ -1,0 +1,71 @@
+in citp
+
+ fmod VENDING-MACHINE-SIGNATURE is
+    sorts Coin Item Marking PNzNat PNat .
+    subsorts Coin Item PNat < Marking .
+    subsorts PNzNat < PNat .
+    op __ : Marking Marking -> Marking [assoc comm id: null] .
+    op null : -> Marking .
+---
+    op 0 : -> PNat [ctor].
+    op s_ : PNat -> PNzNat [ctor].
+    op _+_ : PNat PNat -> PNat [assoc].
+    op d : PNat PNat -> PNat .
+    op min : PNat PNat -> PNat .
+    op gcd : PNat PNat -> PNat .    
+---    
+    op $ : -> Coin [format (r! o)] .
+    op q : -> Coin [format (r! o)] .
+    op a : -> Item [format (b! o)] .
+    op c : -> Item [format (b! o)] .
+endfm
+
+mod VENDING-MACHINE is
+    including VENDING-MACHINE-SIGNATURE .
+    var M : Marking .
+    vars A B : PNat .
+    vars A' B' : PNzNat .
+    rl [add-q] : M => M q .
+    rl [add-$] : M => M $ .
+    rl [buy-c] : $ => c .
+    rl [buy-a] : $ => a q .
+    rl [change]: q q q q => $ .
+    rl [nat-1]: s 0 => a .
+    rl [nat-4]: s s s s 0 => c .
+
+---
+ eq 0 + A = A .
+ eq s A + B = s(A + B).
+---
+ eq d(s A,s B) = d(A,B).
+ eq d(0,A) = A .
+ eq d(A,0) = A .
+---
+ eq min(s A,s B) = s min(A,B).
+ eq min(A,0) = 0 .
+ eq min(0,A) = 0 .
+---
+ eq gcd(s A,s B) = gcd(d(s A,s B),min(s A,s B)).
+ eq gcd(A,0) = A .
+ eq gcd(0,A) = A .
+endm
+
+***(
+reduce in #REDUCTION# :
+  #applyEquation#(upModule('VENDING-MACHINE,false),
+            eq 'gcd['A:PNat,'B:PNat] = 'gcd['d['A:PNat,'B:PNat],'min['A:PNat,'B:PNat]] [none].,
+	    'gcd['s_['s_['s_['s_['0.PNat]]]],'s_['s_['0.PNat]]],
+	    0,unbounded,0).
+
+reduce in #REDUCTION# :
+ #applyEqs#(upModule('VENDING-MACHINE,false),
+            getEqs(upModule('VENDING-MACHINE,false)),
+	    'gcd['s_['s_['s_['0.PNat]]],'s_['s_['0.PNat]]]).
+)
+
+reduce in  VENDING-MACHINE : gcd(s s s s s s s s s s s s 0, s s s s s s s s s s 0).
+
+reduce in #REDUCTION# :
+ #finiteRed#(upModule('VENDING-MACHINE,false),
+             'gcd['s_['s_['s_['s_['s_['s_['s_['s_['s_['s_['s_['s_['0.PNat]]]]]]]]]]]],'s_['s_['s_['s_['s_['s_['s_['s_['s_['s_['0.PNat]]]]]]]]]]],
+	     114).
