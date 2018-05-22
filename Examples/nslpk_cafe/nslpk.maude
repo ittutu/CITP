@@ -38,7 +38,7 @@ fmod NONCE is               *** Should be NONCE{P :: PRIN, R :: RAND} is
   op p2 : Nonce -> Prin .
   op r  : Nonce -> Rand .
 
-  vars P1 P2 P12 P22 : Prin .
+  vars P P1 P2 P12 P22 : Prin .
   vars R1 R2 : Rand .
   var  N : Nonce .
 
@@ -50,14 +50,12 @@ fmod NONCE is               *** Should be NONCE{P :: PRIN, R :: RAND} is
   eq p2(n(P1,P2,R1)) = P2 .
   eq r(n(P1,P2,R1))  = R1 .
 
-  ***(
   op _\in_ : Prin Nonce -> Bool .
   eq P1 \in n(P1, P2, R1) = true .
   eq P2 \in n(P1, P2, R1) = true .
   ceq P \in n(P1, P2, R1) = false
    if (P ~ P1) = false /\
       (P ~ P2) = false .
-  )
 endfm
 
 fmod CIPHER is             *** Should be CIPHER{P :: PRIN, R :: RAND} is
@@ -228,17 +226,31 @@ fmod NSLPK is               *** Should be a theory
   eq  nonces(fake3(S,P1,N1)) = nonces(S) .
   ceq fake3(S,P1,N1)         = S if not c-fake3(S,P1,N1) .
 
+  *** Added
+  var NB : NonceBag .
+  var N : Nonce .
+  op prop : Prin Nonce NonceBag -> Bool .
+  ceq prop(P, N, NB) = true
+   if P \in N .
+  ceq prop(P, N, NB) = true
+   if N \in NB .
+  ceq prop(P, N, NB) = false
+   if not (P \in N) /\
+      not (N \in NB) .
+
   ---
   --- properties to be verified
   ---
   op inv1 : Sys Nonce -> Bool .
-  eq inv1(S,N1) = ((N1 \in nonces(S)) implies (p1(N1) ~ intr or p2(N1) ~ intr)) .
+  eq inv1(S,N1) = ((N1 \in nonces(S)) implies (intr \in N1)) . *** (p1(N1) ~ intr or p2(N1) ~ intr)
   op inv2 : Sys Nonce Prin -> Bool .
   eq inv2(S,N1,Q1)
      = ((enc1(Q1,N1,intr) \in nw(S))
-        implies (p1(N1) ~ intr or p2(N1) ~ intr or N1 \in nonces(S))) .
+        implies prop(intr, N1, nonces(S))) .
+        *** p1(N1) ~ intr or p2(N1) ~ intr or N1 \in nonces(S)
   op inv3 : Sys Nonce Nonce Prin -> Bool .
   eq inv3(S,N1,N2,Q1)
      = ((enc2(Q1,N1,N2,intr) \in nw(S))
-        implies (p1(N2) ~ intr or p2(N2) ~ intr or N2 \in nonces(S))) .
+        implies prop(intr, N2, nonces(S))) .
+        *** (p1(N2) ~ intr or p2(N2) ~ intr or N2 \in nonces(S))
 endfm
