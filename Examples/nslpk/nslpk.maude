@@ -199,58 +199,51 @@ fmod NSLPK is               *** Should be a theory
   ceq send3(S,P,Q,Np,Nq)         = S if not c-send3(S,P,Q,Np,Nq) .
 
   --- fake1
-  op c-fake1 : Sys Prin Prin Nonce -> Bool .
-  eq c-fake1(S,P1,P2,Np) = Np \in nonces(S) .
-  ---
   eq  rand(fake1(S,P1,P2,Np))   = rand(S) .
-  ceq nw(fake1(S,P1,P2,Np))     = (enc1(P2,Np,P1) nw(S)) if c-fake1(S,P1,P2,Np) .
+  ceq nw(fake1(S,P1,P2,Np))     = (enc1(P2,Np,P1) nw(S)) if Np \in nonces(S) .
   eq  nonces(fake1(S,P1,P2,Np)) = nonces(S) .
-  ceq fake1(S,P1,P2,Np)         = S if not c-fake1(S,P1,P2,Np) .
+  ceq fake1(S,P1,P2,Np)         = S if not (Np \in nonces(S)) .
 
   --- fake2  P2 (intr) -> P1
-  op c-fake2 : Sys Prin Prin Nonce Nonce -> Bool .
-  eq c-fake2(S,P1,P2,Np,Nq) = Np \in nonces(S) and Nq \in nonces(S) .
-  ---
   eq  rand(fake2(S,P1,P2,Np,Nq))   = rand(S) .
-  ceq nw(fake2(S,P1,P2,Np,Nq))     = (enc2(P1,Np,Nq,P2) nw(S)) if c-fake2(S,P1,P2,Np,Nq) .
+  ceq nw(fake2(S,P1,P2,Np,Nq))     = (enc2(P1,Np,Nq,P2) nw(S))
+   if Np \in nonces(S) /\
+      Nq \in nonces(S) .
   eq  nonces(fake2(S,P1,P2,Np,Nq)) = nonces(S) .
-  ceq fake2(S,P1,P2,Np,Nq)         = S if not c-fake2(S,P1,P2,Np,Nq) .
+  ceq fake2(S,P1,P2,Np,Nq)         = S
+   if not Np \in nonces(S) .
+  ceq fake2(S,P1,P2,Np,Nq)         = S
+   if not Nq \in nonces(S) .
 
   --- fake3
-  *** enc3 has an extra Prin
-  op c-fake3 : Sys Prin Nonce -> Bool .
-  eq c-fake3(S,P1,Nq) = Nq \in nonces(S) .
-  ---
   eq  rand(fake3(S,P1,Nq))   = rand(S) .
-  ceq nw(fake3(S,P1,Nq))     = (enc3(P1,Nq) nw(S)) if c-fake3(S,P1,Nq) .
+  ceq nw(fake3(S,P1,Nq))     = (enc3(P1,Nq) nw(S)) if Nq \in nonces(S) .
   eq  nonces(fake3(S,P1,N1)) = nonces(S) .
-  ceq fake3(S,P1,N1)         = S if not c-fake3(S,P1,N1) .
+  ceq fake3(S,P1,N1)         = S if not (N1 \in nonces(S)) .
 
   *** Added
   var NB : NonceBag .
   var N : Nonce .
   op prop : Prin Nonce NonceBag -> Bool .
   ceq prop(P, N, NB) = true
-   if P \in N .
+   if P \in N [metadata "CAP-1" ] .
   ceq prop(P, N, NB) = true
-   if N \in NB .
+   if N \in NB [metadata "CAP-2" ] .
   ceq prop(P, N, NB) = false
    if not (P \in N) /\
-      not (N \in NB) .
+      not (N \in NB) [metadata "CAP-3" ] .
 
   ---
   --- properties to be verified
   ---
   op inv1 : Sys Nonce -> Bool .
-  eq inv1(S,N1) = ((N1 \in nonces(S)) implies (intr \in N1)) . *** (p1(N1) ~ intr or p2(N1) ~ intr)
+  eq inv1(S,N1) = ((N1 \in nonces(S)) implies (intr \in N1)) .
   op inv2 : Sys Nonce Prin -> Bool .
   eq inv2(S,N1,Q1)
      = ((enc1(Q1,N1,intr) \in nw(S))
         implies prop(intr, N1, nonces(S))) .
-        *** p1(N1) ~ intr or p2(N1) ~ intr or N1 \in nonces(S)
   op inv3 : Sys Nonce Nonce Prin -> Bool .
   eq inv3(S,N1,N2,Q1)
      = ((enc2(Q1,N1,N2,intr) \in nw(S))
         implies prop(intr, N2, nonces(S))) .
-        *** (p1(N2) ~ intr or p2(N2) ~ intr or N2 \in nonces(S))
 endfm
