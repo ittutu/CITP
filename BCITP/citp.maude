@@ -827,37 +827,72 @@ fmod #REDUCTION# is
  var G  : #Goal# .
  var M  : Module .
  var SS : SentenceSet .
- vars T T1 T2 : Term .
+ vars T T1 T2 S1 S2 : Term .
  vars AS : AttrSet .
- vars N NS : Nat .
+ vars N NS P R C : Nat .
  var B : Bound .
  var MP : MatchPair? .
  var E : Equation .
  var ES : EquationSet .
---- 
+ vars EC EC1 : EqCondition .
+---
+ ops ROWS COLUMNS : -> Nat .
+ eq ROWS = 100 .
+ eq COLUMNS = 1000 .
+---
 op red : #GoalList# -> #GoalList# .
  eq red(emptyGoalList) = emptyGoalList .
  eq red(< M,SS > GL) = < M,metaRed(M,SS) > red(GL).
 --- -------------------------------------------------------------------------
-op #applyEquation# : Module Equation Term Nat Bound Nat -> Term .
- ceq #applyEquation#(M,eq T1 = T2 [AS].,T,N,B,NS) = 
+op #applyEq# : Module Equation Term Nat Bound Nat -> Term .
+ ceq #applyEq#(M,eq T1 = T2 [AS].,T,N,B,NS) = 
      if   MP == noMatch then T
      else getContext(MP) << (T2 << getSubstitution(MP)) fi
   if MP := metaXmatch(M,T1,T,nil,N,B,NS)/\
      (eq T1 = T2[AS].) in getEqs(M).
- eq #applyEquation#(M,E,T,N,B,NS)= T [owise].  
+---     
+ ceq #applyEq#(M,ceq T1 = T2 if EC[AS].,T,N,B,NS) =
+     if   MP == noMatch then T
+     else if   #red*#(ROWS,COLUMNS,M,EC << getSubstitution(MP)) =/= (nil).EqCondition then T
+          else getContext(MP) << (T2 << getSubstitution(MP)) fi fi
+  if MP := metaXmatch(M,T1,T,nil,N,B,NS) /\
+     (ceq T1 = T2 if EC[AS].) in getEqs(M).
 ---
-op #applyEqs# : Module EquationSet Term -> Term .
-   eq #applyEqs#(M,(none).EquationSet,T) = T .
-  ceq #applyEqs#(M,eq T1 = T2[AS]. ES,T) =
-      if   MP == noMatch then #applyEqs#(M,ES,T)
+ eq #applyEq#(M,E,T,N,B,NS) = T [owise].
+--- -------------------------------------------------------------------------
+op #redStep# : Nat Nat Module EquationSet Term -> Term .
+   eq #redStep#(R,C,M,(none).EquationSet,T)= T .
+  ceq #redStep#(R,C,M,(ceq T1 = T2 if EC[AS].) ES,T)=
+      if   MP == noMatch then #redStep#(R,C,M,ES,T)
+      else if   #red*#(R,C,M,EC << getSubstitution(MP)) =/= (nil).EqCondition then #redStep#(R,C,M,ES,T)
+           else getContext(MP) << (T2 << getSubstitution(MP)) fi fi
+   if MP := metaXmatch(M,T1,T,nil,0,unbounded,0).
+---
+  ceq #redStep#(R,C,M,(eq T1 = T2[AS].)ES,T) =
+      if   MP == noMatch then #redStep#(R,C,M,ES,T)
       else getContext(MP) << (T2 << getSubstitution(MP)) fi
    if MP := metaXmatch(M,T1,T,nil,0,unbounded,0).
-   eq #applyEqs#(M,E ES,T) =  #applyEqs#(M,ES,T)[owise].
 ---
-op #finiteRed# : Module Term Nat -> Term .
-  eq #finiteRed#(M,T,0) = T .
-  eq #finiteRed#(M,T,s N) = #finiteRed#(M,#applyEqs#(M,getEqs(M),T),N).
+  eq #redStep#(R,C,M,E ES,T) = T [owise].
+--- -------------------------------------------------------------------------
+op #red*# : Nat Nat Nat Module Term -> Term .
+--- the first argument is fixed and it gives the number of rewriting steps to perform
+--- the second argument gives the number of conditions to be evaluated
+--- the third argument represents the number of rewriting steps left to perform
+   eq #red*#(P,0,C,M,T)= T .
+   eq #red*#(P,R,0,M,T)= T .
+  ceq #red*#(P,s R, s C,M,T)= 
+      if   T1 == T then T
+      else #red*#(P,s R,C,M,T1) fi
+   if T1 := #redStep#(R,P,M,getEqs(M),T).
+--- -------------------------------------------------------------------------
+op #red*# : Nat Nat Module EqCondition -> EqCondition .
+   eq #red*#(R,C,M,(nil).EqCondition) = (nil).EqCondition .
+  ceq #red*#(R,C,M, T1 = T2 /\ EC) =
+      if   S1 == S2 then #red*#(R,C,M,EC)
+      else S1 = S2 /\ #red*#(R,C,M,EC) fi
+   if S1 := #red*#(C,R,C,M,T1) /\
+      S2 := #red*#(C,R,C,M,T2).
 --- -------------------------------------------------------------------------
 endfm 
 --- -------------------------------------------------------------------------
