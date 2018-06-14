@@ -3224,7 +3224,6 @@ endfm
 fmod #COMPUTE# is
  inc #PARSER# .
  inc #GRAMMAR# .
- inc #PRINTER# .
 --- -------------------------------------------------------------------------
 vars QI QI1 QI2 QI3 : Qid .
 vars NQIL NQIL1 NQIL2 : NeQidList .
@@ -3236,14 +3235,14 @@ var Sn : Sentence .
 var M : Module .
 var NGL : NeGoalList .
 vars STR STR1 STR2 : String .
-var EGL : [GoalList] .
+vars EGL EGL1 : [GoalList] .
 var EM : [Module] .
 var ESS : [SentenceSet] .
 vars EN EN1 EN2 EN3 : [Nat] .
 var EB : [Bound] .
 vars ESN ESN1 ESN2 : [Sentence] .
 var ESUB : [Substitution] .
-var CM   : #Tactic# .
+var TC   : #Tactic# .
 var TCL  : #TacticList# .
 var NTCL : #NeTacticList# .
 var N : Nat .
@@ -3262,7 +3261,7 @@ sort #Result# .
  op compute : Nat #TacticList# GoalList -> #Result# .
 --- -------------------------------------------------------------------------
  eq compute(N,none,GL) = [GL,nil].
- eq compute(N,CM TCL,emptyGoalList)= compute(N + 1, TCL,emptyGoalList)[owise].
+ eq compute(N,TC TCL,emptyGoalList)= compute(N + 1, TCL,emptyGoalList)[owise].
 --- goal ---
 ceq compute(N,(goal bModule(QI) |- bSentenceSet(NQIL)) TCL,GL)=
     if   not(EM :: Module)
@@ -3471,37 +3470,40 @@ ceq conv(QI) = N if N := rat(string(QI),10).
 ceq compute(N,#applyEq#(bSentence(NQIL1),bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL < M,SS >)=
     if   not(ESN1 :: Sentence)
     then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'sentence '\o]
-    else if   not(ET :: Term)
-         then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
-         else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
-              then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
+    else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
+         then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
+         else if   not(ET :: Term)
+              then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
               else if   not(EN1 :: Nat)
                    then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
 	           else if   not(EB :: Bound)
 		        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
 	                else if   not(EN3 :: Nat)
-	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'number 'of 'solutions 'is 'invalid '\o]
-		             else [GL EGL, nil]  fi fi fi fi fi fi
+	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'no 'of 'solutions 'to 'skip 'is 'invalid '\o]
+		             else if   QIL1 :: NeQidList
+			          then [GL < M,SS >, QIL1]
+				  else [GL1 EGL,nil] fi fi fi fi fi fi fi
  if ESN1 := senParse(M,NQIL1) /\
     ET   := getTerm(metaParse(M,NQIL,anyType))/\
     EN1  := rat(string(QI1),10) /\
     EB   := conv(QI2) /\
     EN3  := rat(string(QI3),10) /\
-    EGL  := applyEq(< M,SS >,ESN1,ET,EN1,EB,EN3).
+    EGL  := applyEq(< M,SS >,ESN1,ET,EN1,EB,EN3) /\
+    [GL1,QIL1] := compute(N,#applyEq#(bSentence(NQIL1),bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL).
 ---
 ceq compute(N,#applyEq#(STR,bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL < M,SS >)=
     if   not(ESN1 :: Sentence)
     then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'sentence '\o]
-    else if   not(ET :: Term)
-         then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
-         else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
-              then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
+    else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
+         then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
+         else if   not(ET :: Term)
+              then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
               else if   not(EN1 :: Nat)
                    then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
 	           else if   not(EB :: Bound)
 		        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
 	                else if   not(EN3 :: Nat)
-	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'number 'of 'solutions 'is 'invalid '\o]
+	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'no 'of 'solutions 'to 'skip 'is 'invalid '\o]
 		             else if   QIL1 :: NeQidList
 		                  then [GL < M,SS >, QIL1]
 			          else [GL1 EGL,nil] fi fi fi fi fi fi fi
@@ -3540,7 +3542,7 @@ endfm
 
 --- -------------------------------------------------------------------------
 mod #CITP# is
---- inc #PRINTER# .
+ inc #PRINTER# .
  inc #COMMAND-PRINTER# .
  inc #COMMAND-PARSER#  .
  inc #COMPUTE# . 
