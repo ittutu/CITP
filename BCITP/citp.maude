@@ -368,6 +368,13 @@ op _inc_ : RuleSet RuleSet -> Bool .
  eq (none).RuleSet inc RSet = true .
  eq (R RS) inc RSet = (R in RSet) and (RS inc RSet).
 --- -------------------------------------------------------------------------
+op flip : Sentence -> Sentence .
+eq flip(eq T1 = T2[AS];) = (eq T2 = T1 [AS];).
+eq flip(ceq T1 = T2 if EC[AS];) = (ceq T2 = T1 if EC[AS];) .
+eq flip(rl T1 => T2[AS];) = (rl T2 => T1 [AS];).
+eq flip(crl T1 => T2 if Co[AS];) = (crl T2 => T1 if Co[AS];) .
+eq flip(Sen) = Sen [owise].
+--- -------------------------------------------------------------------------
 op _in_ : Equation EquationSet -> Bool .
  eq (eq T = T'[AS].) in (eq T = T'[ASet].) ES = true .
  eq (ceq T = T' if EC[AS].) in (ceq T = T' if EC[ASet].) ES = true .
@@ -380,6 +387,47 @@ op _in_ : Rule RuleSet -> Bool .
  eq (rl T => T'[AS].) in (rl T => T'[ASet].) RS = true .
  eq (crl T => T' if Co[AS].) in (crl T => T' if Co[ASet].) RS = true .
  eq R in RS = false [owise].
+--- -------------------------------------------------------------------------
+op _in_ : Term SentenceSet -> Bool .
+eq T in (eq T1 = T2[AS]; ) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else false fi fi .
+eq T in (ceq T1 = T2 if EC[AS]; ) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else T in EC fi fi .
+eq T in (mb T1 : St [AS]; ) =
+   if   T == T1 then true
+   else false fi .
+eq T in (cmb T1 : St if EC[AS]; ) =
+   if   T == T1 then true
+   else T in EC fi .
+eq T in (rl T1 => T2[AS]; ) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else false fi fi .
+eq T in (crl T1 => T2 if Co[AS]; ) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else T in Co fi fi .   
+op _in_ : Term Condition -> Bool .
+eq T in (nil).EqCondition = false .
+eq T in (T1 = T2 /\ Co) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else T in Co fi fi .
+eq T in (T1 := T2 /\ Co) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else T in Co fi fi .	
+eq T in (T1 : St /\ Co) =
+   if   T == T1 then true
+   else T in Co fi .
+eq T in (T1 => T2 /\ Co) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else T in Co fi fi .
 --- -------------------------------------------------------------------------
 --- index ---
 --- -------------------------------------------------------------------------
@@ -796,24 +844,24 @@ op metaRed : Module Condition -> Condition .
 --- -------------------------------------------------------------------------
 --- Goal ---
 --- -------------------------------------------------------------------------
- sorts #Goal# #NeGoalList# #GoalList# .
- subsort #Goal# < #NeGoalList# < #GoalList# .
- op <_,_> : Module SentenceSet -> #Goal# [ctor].
- op emptyGoalList : -> #GoalList# [ctor] .
- op __ : #GoalList# #GoalList#   -> #GoalList#   [ctor assoc id: emptyGoalList].
- op __ : #GoalList# #NeGoalList# -> #NeGoalList# [ctor assoc id: emptyGoalList].
- op __ : #NeGoalList# #GoalList# -> #NeGoalList# [ctor assoc id: emptyGoalList].
+ sorts Goal NeGoalList GoalList .
+ subsort Goal < NeGoalList < GoalList .
+ op <_,_> : Module SentenceSet -> Goal [ctor].
+ op emptyGoalList : -> GoalList [ctor] .
+ op __ : GoalList GoalList   -> GoalList   [ctor assoc id: emptyGoalList].
+ op __ : GoalList NeGoalList -> NeGoalList [ctor assoc id: emptyGoalList].
+ op __ : NeGoalList GoalList -> NeGoalList [ctor assoc id: emptyGoalList].
 --- -------------------------------------------------------------------------
 eq < M,(none).SentenceSet > = emptyGoalList .
 --- -------------------------------------------------------------------------
-var G : #Goal# .
-var GL : #GoalList# .
+var G : Goal .
+var GL : GoalList .
 --- -------------------------------------------------------------------------
-op noGoals : #GoalList# -> Nat .
+op noGoals : GoalList -> Nat .
  eq noGoals(emptyGoalList)= 0 .
  eq noGoals(G GL) = s noGoals(GL).
 --- -------------------------------------------------------------------------
-op lastGoal : #NeGoalList# -> #Goal# .
+op lastGoal : NeGoalList -> Goal .
  eq lastGoal(GL G) = G .
 --- -------------------------------------------------------------------------
 endfm
@@ -823,87 +871,125 @@ endfm
 fmod #REDUCTION# is
  inc #LIBRARY# .
 --- -------------------------------------------------------------------------
- var GL : #GoalList# .
- var G  : #Goal# .
+ var GL : GoalList .
+ var G  : Goal .
  var M  : Module .
  var SS : SentenceSet .
- vars T T1 T2 S1 S2 : Term .
- vars AS : AttrSet .
+ var Sn : Sentence .
+ vars T T' T1 T2 S1 S2 : Term .
+ vars AS AT : AttrSet .
  vars N NS P R C : Nat .
  var B : Bound .
  var MP : MatchPair? .
  var E : Equation .
  var ES : EquationSet .
  vars EC EC1 : EqCondition .
+ var Co : Condition .
+ vars St St1 : Sort .
 ---
  ops ROWS COLUMNS : -> Nat .
  eq ROWS = 100 .
- eq COLUMNS = 1000 .
+ eq COLUMNS = 1000 . 
 ---
-op red : #GoalList# -> #GoalList# .
+op red : GoalList -> GoalList .
  eq red(emptyGoalList) = emptyGoalList .
  eq red(< M,SS > GL) = < M,metaRed(M,SS) > red(GL).
 --- -------------------------------------------------------------------------
-op #applyEq# : Module Equation Term Nat Bound Nat -> Term .
- ceq #applyEq#(M,eq T1 = T2 [AS].,T,N,B,NS) = 
-     if   MP == noMatch then T
-     else getContext(MP) << (T2 << getSubstitution(MP)) fi
-  if MP := metaXmatch(M,T1,T,nil,N,B,NS)/\
-     (eq T1 = T2[AS].) in getEqs(M).
----     
- ceq #applyEq#(M,ceq T1 = T2 if EC[AS].,T,N,B,NS) =
-     if   MP == noMatch then T
-     else if   #red*#(ROWS,COLUMNS,M,EC << getSubstitution(MP)) =/= (nil).EqCondition then T
-          else getContext(MP) << (T2 << getSubstitution(MP)) fi fi
-  if MP := metaXmatch(M,T1,T,nil,N,B,NS) /\
-     (ceq T1 = T2 if EC[AS].) in getEqs(M).
----
- eq #applyEq#(M,E,T,N,B,NS) = T [owise].
+ op cond2sen : Condition -> SentenceSet .
+ eq cond2sen((nil).EqCondition) = (none).SentenceSet .
+ eq cond2sen(T1 = T2 /\ Co) = eq T1 = T2[none]; cond2sen(Co).
+ eq cond2sen(T1 := T2 /\ Co)= eq T2 = T1[none]; cond2sen(Co).
+ eq cond2sen(T : St /\ Co)  = mb T : St [none]; cond2sen(Co).
+ eq cond2sen(T1 => T2 /\ Co)= rl T1 => T2[none]; cond2sen(Co). 
 --- -------------------------------------------------------------------------
-op #redStep# : Nat Nat Module EquationSet Term -> Term .
-   eq #redStep#(R,C,M,(none).EquationSet,T)= T .
-  ceq #redStep#(R,C,M,(ceq T1 = T2 if EC[AS].) ES,T)=
-      if   MP == noMatch then #redStep#(R,C,M,ES,T)
-      else if   #red*#(R,C,M,EC << getSubstitution(MP)) =/= (nil).EqCondition then #redStep#(R,C,M,ES,T)
-           else getContext(MP) << (T2 << getSubstitution(MP)) fi fi
-   if MP := metaXmatch(M,T1,T,nil,0,unbounded,0).
+ sort Assign .
+ op _<<-_ : Term Term -> Assign . 
+ var ASG : Assign .
 ---
-  ceq #redStep#(R,C,M,(eq T1 = T2[AS].)ES,T) =
-      if   MP == noMatch then #redStep#(R,C,M,ES,T)
+ op _<<<_ : Term Assign -> Term .
+ eq T <<< (T1 <<- T2)= if T == T1 then T2 else T fi .
+---
+ op _<<<_ : Condition Assign -> Condition .
+ eq (nil).EqCondition <<< ASG = (nil).EqCondition .
+ eq (T = T' /\ Co) <<< ASG = (T <<< ASG) = (T' <<< ASG) /\ (Co <<< ASG).
+ eq (T := T' /\ Co)<<< ASG = (T <<< ASG) := (T' <<< ASG) /\(Co <<< ASG).
+ eq (T : St /\ Co) <<< ASG = (T <<< ASG) : St /\ (Co <<< ASG).
+ eq (T => T' /\ Co) <<< ASG = (T <<< ASG) => (T' <<< ASG) /\ (Co <<< ASG).
+---
+ op _<<<_ : SentenceSet Assign -> SentenceSet .
+ eq (none).SentenceSet <<< ASG = (none).SentenceSet .
+ eq (eq T = T'[AS]; SS) <<< ASG = eq (T <<< ASG) = (T' <<< ASG)[AS]; (SS <<< ASG).
+ eq (ceq T = T' if EC[AS]; SS)<<< ASG = ceq (T <<< ASG) = (T' <<< ASG) if (EC <<< ASG)[AS]; (SS <<< ASG).
+ eq (mb T : St[AS]; SS)<<< ASG = mb (T <<< ASG) : St[AS]; (SS <<< ASG).
+ eq (cmb T : St if EC[AS]; SS)<<< ASG = cmb (T <<< ASG) : St if (EC <<< ASG)[AS]; (SS <<< ASG).
+ eq (rl T => T'[AS]; SS)<<< ASG = rl (T <<< ASG) => (T' <<< ASG)[AS]; (SS <<< ASG).
+ eq (crl T => T' if Co[AS]; SS)<<< ASG = crl (T <<< ASG) => (T' <<< ASG) if (Co <<< ASG)[AS]; (SS <<< ASG). 
+--- -------------------------------------------------------------------------
+ op applyEq : Goal Sentence Term Nat Bound Nat -> Goal . 
+ eq applyEq(G,Sn,T,N,B,NS) = G [owise].
+--- 
+ceq applyEq(< M,SS >,eq T1 = T2[AS];,T,N,B,NS) =
+    if   MP == noMatch then < M,SS >
+    else < M,SS <<< (T <<- (getContext(MP)<<(T2 << getSubstitution(MP)))) > fi
+ if MP := metaXmatch(M,T1,T,nil,N,B,NS).
+---
+ceq applyEq(< M,SS >,ceq T1 = T2 if EC[AS];,T,N,B,NS) =
+    if   MP == noMatch then < M,SS >
+    else < M,(SS <<<(T <<-(getContext(MP)<<(T2 << getSubstitution(MP))))) cond2sen(EC << getSubstitution(MP))> fi
+ if MP := metaXmatch(M,T1,T,nil,N,B,NS).
+--- -------------------------------------------------------------------------
+ op redStep : Nat Nat Module EquationSet Term -> Term .
+ eq redStep(R,C,M,ES,T) = T [owise].
+--- 
+ceq redStep(R,C,M,(ceq T1 = T2 if EC[AS].) ES,T)=
+    if   MP == noMatch then redStep(R,C,M,ES,T)
+    else if   redFin(R,C,M,EC << getSubstitution(MP)) =/= nil then redStep(R,C,M,ES,T)
+         else getContext(MP) << (T2 << getSubstitution(MP)) fi fi
+ if MP := metaXmatch(M,T1,T,nil,0,unbounded,0).
+---
+  ceq redStep(R,C,M,(eq T1 = T2[AS].)ES,T) =
+      if   MP == noMatch then redStep(R,C,M,ES,T)
       else getContext(MP) << (T2 << getSubstitution(MP)) fi
    if MP := metaXmatch(M,T1,T,nil,0,unbounded,0).
----
-  eq #redStep#(R,C,M,E ES,T) = T [owise].
 --- -------------------------------------------------------------------------
-op #red*# : Nat Nat Nat Module Term -> Term .
+op redFin : Nat Nat Nat Module Term -> Term .
 --- the first argument is fixed and it gives the number of rewriting steps to perform
 --- the second argument gives the number of conditions to be evaluated
 --- the third argument represents the number of rewriting steps left to perform
-   eq #red*#(P,0,C,M,T)= T .
-   eq #red*#(P,R,0,M,T)= T .
-  ceq #red*#(P,s R, s C,M,T)= 
+   eq redFin(P,R,C,M,T)= T [owise].
+  ceq redFin(P,s R, s C,M,T)= 
       if   T1 == T then T
-      else #red*#(P,s R,C,M,T1) fi
-   if T1 := #redStep#(R,P,M,getEqs(M),T).
+      else redFin(P,s R,C,M,T1) fi
+   if T1 := redStep(R,P,M,getEqs(M),T).
 --- -------------------------------------------------------------------------
-op #red*# : Nat Nat Module EqCondition -> EqCondition .
-   eq #red*#(R,C,M,(nil).EqCondition) = (nil).EqCondition .
-  ceq #red*#(R,C,M, T1 = T2 /\ EC) =
-      if   S1 == S2 then #red*#(R,C,M,EC)
-      else S1 = S2 /\ #red*#(R,C,M,EC) fi
-   if S1 := #red*#(C,R,C,M,T1) /\
-      S2 := #red*#(C,R,C,M,T2).
+op redFin : Nat Nat Module EqCondition -> EqCondition .
+   eq redFin(R,C,M,(nil).EqCondition) = (nil).EqCondition .
+  ceq redFin(R,C,M, T1 = T2 /\ EC) =
+      if   S1 == S2 then redFin(R,C,M,EC)
+      else S1 = S2 /\ redFin(R,C,M,EC) fi
+   if S1 := redFin(C,R,C,M,T1) /\
+      S2 := redFin(C,R,C,M,T2).
+ceq redFin(R,C,M, T1 := T2 /\ EC) =
+      if   S1 == S2 then redFin(R,C,M,EC)
+      else S1 := S2 /\ redFin(R,C,M,EC) fi
+   if S1 := redFin(C,R,C,M,T1) /\
+      S2 := redFin(C,R,C,M,T2).
+ --- we assume that the sort of a term is computable     
+   ceq redFin(R,C,M, T : St /\ EC) =
+       if    sortLeq(M,leastSort(M,T1),St) then redFin(R,C,M,EC)
+       else  T1 : St /\  redFin(R,C,M,EC) fi
+    if T1 :=  redFin(C,R,C,M,T).
 --- -------------------------------------------------------------------------
 endfm 
 --- -------------------------------------------------------------------------
-eof
+
 --- -------------------------------------------------------------------------
 fmod #IMPLICATION# is 
  inc #LIBRARY# .
 --- -------------------------------------------------------------------------
- var G : #Goal# .
- var NGL : #NeGoalList# .
- var GL : #GoalList# .
+ var G : Goal .
+ var NGL : NeGoalList .
+ var GL : GoalList .
  var M : Module .
  var Sen : Sentence .
  var SSet : SentenceSet .
@@ -913,7 +999,7 @@ fmod #IMPLICATION# is
  vars St St' : Sort .
  var Co : Condition .
 --- -------------------------------------------------------------------------
- op imp : #GoalList# -> #GoalList# .
+ op imp : GoalList -> GoalList .
 --- -------------------------------------------------------------------------
  eq imp(emptyGoalList) = emptyGoalList .
  eq imp(G NGL)  = imp(G) imp(NGL).
@@ -947,13 +1033,13 @@ fmod #THEOREM-OF-CONSTANTS# is
  var Sen : Sentence .  
  var M : Module .
  var SS : SentenceSet .
- var G : #Goal# .
- var NGL : #NeGoalList# .
- var GL : #GoalList# .
+ var G : Goal .
+ var NGL : NeGoalList .
+ var GL : GoalList .
  var TL : TermList .
  var Subst : Substitution .
 --- -------------------------------------------------------------------------
- op tc : #GoalList# -> #GoalList# .
+ op tc : GoalList -> GoalList .
 --- -------------------------------------------------------------------------
  eq tc(emptyGoalList) = emptyGoalList .
  eq tc(G NGL) = tc(G) tc(NGL).
@@ -976,9 +1062,9 @@ fmod #CASE-ANALYSIS# is
  var V : Variable .       var EC : EqCondition .
  var St : Sort .          var Subst : Substitution .
  var ASet : AttrSet .     var N : Nat .
- var G : #Goal# .
- var GL : #GoalList# .
- var NGL : #NeGoalList# .
+ var G : Goal .
+ var GL : GoalList .
+ var NGL : NeGoalList .
  var Str : String .
  var Sen : Sentence .
  var SSet SeSet SnSet ScSet : SentenceSet .
@@ -1085,7 +1171,7 @@ fmod #CASE-ANALYSIS# is
 --- splitting the goal (case analysis) ---
 --- the second SentenceSet is for validation (it doesn't change) ---
 --- -------------------------------------------------------------------------
-op split : #Goal# SentenceSet Nat GroundTerm SentenceSet -> #GoalList# .
+op split : Goal SentenceSet Nat GroundTerm SentenceSet -> GoalList .
  eq split(emptyGoalList,SeSet,N,GT,SnSet)= emptyGoalList .
  eq split(G,none,N,GT,SnSet) = G .
  ceq split(< M,SSet >,SeSet,N,GT,SnSet) = 
@@ -1096,7 +1182,7 @@ op split : #Goal# SentenceSet Nat GroundTerm SentenceSet -> #GoalList# .
   else split(< M,SSet >,rmSen(SeSet,T),0,GT,SnSet) fi
  if T := firstTerm(SeSet) /\ MP := metaXmatch(M,T,GT,nil,0,unbounded,N).
 --- -------------------------------------------------------------------------
-op split-h : #Goal# SentenceSet Nat GroundTerm SentenceSet SentenceSet -> #GoalList# .
+op split-h : Goal SentenceSet Nat GroundTerm SentenceSet SentenceSet -> GoalList .
  eq split-h(G,SeSet,N,GT,SnSet,none) = emptyGoalList .
 --- Equation ---
  eq split-h(< M,SSet >,SeSet,N,GT,SnSet,ceq T = T' if EC [ASet]; ScSet) = 
@@ -1177,13 +1263,13 @@ op match? : Module SentenceSet GroundTerm -> Bool .
     then true
     else match?(M,SSet,GT) fi .
 --- -------------------------------------------------------------------------
-op ca : #GoalList# -> #GoalList# .
+op ca : GoalList -> GoalList .
 --- -------------------------------------------------------------------------
  eq ca(emptyGoalList) = emptyGoalList .
  eq ca(G NGL)  = ca(G) ca(NGL).
  eq ca(< M,Sen SSet >) = ca(< M,Sen >,getGTerm(Sen)) ca(< M,SSet >).
 --- -------------------------------------------------------------------------
-op ca : #Goal# GroundTermList -> #GoalList# .
+op ca : Goal GroundTermList -> GoalList .
 --- -------------------------------------------------------------------------
  eq ca(G,empty) = G .
  eq ca(emptyGoalList,GTL) = emptyGoalList . 
@@ -1203,7 +1289,7 @@ op getGTerm-1 : SentenceSet -> GroundTermList .
  eq getGTerm-1(SSet rl T => T' [ASet];) = getGTerm-1(SSet) @ (T',T) .
  eq getGTerm-1(SSet crl T => T' if Co [ASet];) = (getGTerm-1(SSet) @ getGTerm(Co)) @ (T',T).
 --- -------------------------------------------------------------------------
-op ca-1 : #GoalList# -> #GoalList# .
+op ca-1 : GoalList -> GoalList .
 --- -------------------------------------------------------------------------
  eq ca-1(emptyGoalList) = emptyGoalList .
  eq ca-1(G NGL)  = ca-1(G) ca-1(NGL).
@@ -1301,8 +1387,8 @@ op makeIH : RuleSet Variable GroundTermList -> RuleSet .
 --- -------------------------------------------------------------------------
  var H : Header .             var IList : ImportList .
  vars StSet SrSet : SortSet . var SbSet : SubsortDeclSet .
- var G : #Goal# .               var GList : #GoalList# .
- var NGL : #NeGoalList# .
+ var G : Goal .               var GList : GoalList .
+ var NGL : NeGoalList .
 --- -------------------------------------------------------------------------
 --- Module ---
 op substitute : Module Variable GroundTermList -> Module .
@@ -1347,7 +1433,7 @@ op substitute : RuleSet Variable GroundTermList -> RuleSet .
 --- -------------------------------------------------------------------------
 --- induction case ---
 --- -------------------------------------------------------------------------
-op indCase : #Goal# Variable OpDeclSet -> #GoalList# .
+op indCase : Goal Variable OpDeclSet -> GoalList .
  eq  indCase(G,V,none) = emptyGoalList .
 ---
  ceq indCase(< M,SSet >,V,op Q : TpL -> Tp [ASet]. OSet) =
@@ -1360,7 +1446,7 @@ op indCase : #Goal# Variable OpDeclSet -> #GoalList# .
 --- -------------------------------------------------------------------------
 --- induction ---
 --- -------------------------------------------------------------------------
- op ind : #GoalList# -> #GoalList# .
+ op ind : GoalList -> GoalList .
 --- -------------------------------------------------------------------------
  eq ind(emptyGoalList) = emptyGoalList .
  eq ind(G NGL)  = ind(G)  ind(NGL) .
@@ -1455,7 +1541,7 @@ fmod #UNIFICATION# is
  inc #LIBRARY# .
 --- -------------------------------------------------------------------------
  var M : Module .
- var GL : #GoalList# .
+ var GL : GoalList .
  vars N P : Nat .
  vars T T1 T2 T1' T2' : Term .
  vars NTL1 NTL2 : NeTermList .
@@ -1585,14 +1671,14 @@ ceq l-unify(M,(T1,NTL1),T2,P,N,Cx) =
 --- -------------------------------------------------------------------------
 --- critical pairs left ---
 --- -------------------------------------------------------------------------
-op CP-L : #GoalList# String String Nat -> #GoalList# .
+op CP-L : GoalList String String Nat -> GoalList .
  eq CP-L(emptyGoalList,Str1,Str2,N) = emptyGoalList .
  eq CP-L(GL < M,SS >,Str1,Str2,N)=
     if   getSentence(M,Str1):: Sentence and getSentence(M,Str2):: Sentence
     then CP-L(GL < M,SS >,getSentence(M,Str1),getSentence(M,Str2),N)
     else GL < M,SS > fi .
 --- -------------------------------------------------------------------------
-op CP-L : #GoalList# Sentence Sentence Nat -> #GoalList# .
+op CP-L : GoalList Sentence Sentence Nat -> GoalList .
  eq CP-L(emptyGoalList,St,Sn,N) = emptyGoalList .
  eq CP-L(GL < M,SS >, St,Sn,N) = GL < addSen(M,CP-L(M,St,Sn,N)),SS > .
 --- -------------------------------------------------------------------------
@@ -1678,14 +1764,14 @@ op CP-LEFT : Module Sentence Sentence Nat -> SentenceSet .
 --- -------------------------------------------------------------------------
 --- critical pairs right --
 --- -------------------------------------------------------------------------
-op CP-R : #GoalList# String String Nat -> #GoalList# .
+op CP-R : GoalList String String Nat -> GoalList .
  eq CP-R(emptyGoalList,Str1,Str2,N) = emptyGoalList .
  eq CP-R(GL < M,SS >,Str1,Str2,N)=
     if   getSentence(M,Str1):: Sentence and getSentence(M,Str2):: Sentence
     then CP-R(GL < M,SS >,getSentence(M,Str1),getSentence(M,Str2),N)
     else GL < M,SS > fi .
 --- -------------------------------------------------------------------------
-op CP-R : #GoalList# Sentence Sentence Nat -> #GoalList# .
+op CP-R : GoalList Sentence Sentence Nat -> GoalList .
  eq CP-R(emptyGoalList,St,Sn,N) = emptyGoalList .
  eq CP-R(GL < M,SS >, St,Sn,N) = GL < addSen(M,CP-R(M,St,Sn,N)),SS > .
 --- -------------------------------------------------------------------------
@@ -1739,9 +1825,9 @@ endfm
 fmod #INIT# is
  inc #LIBRARY# .
 --- -------------------------------------------------------------------------
- vars GL GL1 : #GoalList# .
- var NGL : #NeGoalList# .
- var G : #Goal# .
+ vars GL GL1 : GoalList .
+ var NGL : NeGoalList .
+ var G : Goal .
  var Str : String .
  vars T T1 T2 : Term .
  var TL : TermList .
@@ -1789,30 +1875,30 @@ op rmAttr : SentenceSet -> SentenceSet .
 op INIT : Module SentenceSet Substitution -> Module .
  eq INIT(M,SS,Sub) = addSen(M,rmAttr(metaRed(M,SS << Sub))).
 --- -------------------------------------------------------------------------
-op INIT : #GoalList# SentenceSet Substitution -> #GoalList# .
+op INIT : GoalList SentenceSet Substitution -> GoalList .
  eq INIT(emptyGoalList,SS,Sub) = emptyGoalList .
  eq INIT(GL < M, SS >,SS1,Sub) = GL < INIT(M,SS1,Sub),SS > .
 --- -------------------------------------------------------------------------
-op INIT : #GoalList# String Substitution -> #GoalList# .
+op INIT : GoalList String Substitution -> GoalList .
  eq INIT(emptyGoalList,Str,Sub) = emptyGoalList .
  eq INIT(GL < M, SS >, Str,Sub) = INIT(GL < M,SS >, getSentence(M,Str),Sub) .
 --- -------------------------------------------------------------------------
 op INIT-R : Module SentenceSet Substitution -> Module .
  eq INIT-R(M,SS,Sub) = addSen(M,rmAttr(metaRed(M,flat(SS) << Sub))).
 --- -------------------------------------------------------------------------
-op INIT-R : #GoalList# SentenceSet Substitution -> #GoalList# .
+op INIT-R : GoalList SentenceSet Substitution -> GoalList .
  eq INIT-R(emptyGoalList,SS,Sub) = emptyGoalList .
  eq INIT-R(GL < M, SS >,SS1,Sub) = GL < INIT-R(M,SS1,Sub),SS > .
 --- -------------------------------------------------------------------------
-op INIT-R : #GoalList# String Substitution -> #GoalList# .
+op INIT-R : GoalList String Substitution -> GoalList .
  eq INIT-R(emptyGoalList,Str,Sub) = emptyGoalList .
  eq INIT-R(GL < M, SS >, Str,Sub) = INIT-R(GL < M,SS >, getSentence(M,Str),Sub) .
 --- -------------------------------------------------------------------------
-op select : #GoalList# Nat -> #GoalList# .
+op select : GoalList Nat -> GoalList .
  eq select(emptyGoalList,N) = emptyGoalList .
  eq select(NGL,N) = select(NGL,N,emptyGoalList).
 ---
-op select : #NeGoalList# Nat #GoalList# -> #GoalList# .
+op select : NeGoalList Nat GoalList -> GoalList .
  eq select(NGL ,0,GL1)= NGL GL1 .
  eq select(GL G,1,GL1)= GL GL1 G .
 ceq select(GL G,N,GL1)= select(GL,sd(N,1),G GL1) if 2 <= N .
@@ -1832,7 +1918,7 @@ op addComment : SentenceSet TermList -> SentenceSet .
     then addComment(SS,TL)
     else addComment(addComment(SS,"induction-on-" + string(T)),TL) fi .
 --- -------------------------------------------------------------------------
-op addComment : #GoalList# TermList -> #GoalList# .
+op addComment : GoalList TermList -> GoalList .
  eq addComment(emptyGoalList,TL) = emptyGoalList .
  eq addComment(GL < M,SS >,TL) = addComment(GL,TL) < M,addComment(SS,TL) > .
 --- -------------------------------------------------------------------------
@@ -1843,9 +1929,9 @@ endfm
 fmod #SEQUENCE# is 
  inc #LIBRARY# .
 --- -------------------------------------------------------------------------
- var G : #Goal# .
- var GList : #GoalList# .
- var NGL : #NeGoalList# .
+ var G : Goal .
+ var GList : GoalList .
+ var NGL : NeGoalList .
  vars Sen Sen1 Sen2 : Sentence .
  vars SSet SS : SentenceSet .
  vars ECo ECd ECn : EqCondition .
@@ -1906,7 +1992,7 @@ ceq < M, crl T => T' if Co /\ T1 := GT /\ Cd /\ T2 := GT /\ Cn[ASet]; SS > = < M
 --- --------------------------------------------------------------------------------------------------------------------------------------------------
 --- Case Analysis for sequences ---
 --- --------------------------------------------------------------------------------------------------------------------------------------------------
- op cs : #GoalList# -> #GoalList# . 
+ op cs : GoalList -> GoalList . 
 ---
  eq cs(emptyGoalList) = emptyGoalList .
  eq cs(G NGL) = cs(G) cs(NGL).
@@ -2254,9 +2340,9 @@ fmod #INDUCTIONX# is
  vars GTL GTL' : GroundTermList . 
  vars EC ECo ECd : EqCondition .
  vars Co Cd : Condition .
- var G : #Goal# .
- var GList : #GoalList# .
- var NGL : #NeGoalList# . 
+ var G : Goal .
+ var GList : GoalList .
+ var NGL : NeGoalList . 
  vars SSet SenSet SS : SentenceSet .
  var Sen Sen1 Sen2 : Sentence .   
  var MSet : MembAxSet .
@@ -2317,7 +2403,7 @@ ceq tuple(Q[NTL] := Q[NGTL] /\ Co)= makeCond(NTL,NGTL) /\ tuple(Co)
 --- -------------------------------------------------------------------------
 --- induction ---
 --- -------------------------------------------------------------------------
- op indx : #GoalList# -> #GoalList# .
+ op indx : GoalList -> GoalList .
 --- ------------------------------------------------------------------------- 
  eq indx(emptyGoalList) = emptyGoalList .
  eq indx(G NGL)  = indx(G)  indx(NGL).
@@ -2333,7 +2419,7 @@ ceq indx(< M,SSet >)=
 --- -------------------------------------------------------------------------
 --- induction case ---
 --- -------------------------------------------------------------------------
-op indCaseAx : #Goal# Variable MembAxSet -> #GoalList# .
+op indCaseAx : Goal Variable MembAxSet -> GoalList .
  eq  indCaseAx(G,V,(none).MembAxSet) = emptyGoalList .
 ---
  ceq indCaseAx(< M,SSet >,V,cmb T : St if EC [metadata(Str) ASet]. MSet) = 
@@ -2520,8 +2606,8 @@ var TP : Type .
 var TPL : TypeList .
 vars CD CD1 CD2 : Condition .
 var ECD : EqCondition .
-vars GL GL1 GL2 : #GoalList# .
-var NGL : #NeGoalList# .
+vars GL GL1 GL2 : GoalList .
+var NGL : NeGoalList .
 var M : Module .
 var N : Nat .
 var ATS : AttrSet .
@@ -2533,7 +2619,7 @@ var SS : SentenceSet .
 vars T T1 T2 : Term .
 vars ST ST1 ST2 : Sort .
 --- -------------------------------------------------------------------------
-op goalPrint : #GoalList# -> QidList .
+op goalPrint : GoalList -> QidList .
 --- print module ---
 op modulePrint : Module -> QidList .
  ceq modulePrint(M) =
@@ -2707,13 +2793,13 @@ ceq rlPrint(M,crl T1 => T2 if CD [metadata(STR) ATS]. RS)=
   eq attrPrint(right-id(QI) ATS)= '\b 'right-id: QI '\o attrPrint(ATS).
   eq attrPrint(prec(N) ATS)     = '\b 'prec qid(string(N,10)) '\o attrPrint(ATS).
 --- print goals ---
- op goalPrint : #GoalList# -> QidList .
+ op goalPrint : GoalList -> QidList .
   eq goalPrint(emptyGoalList) = nil .
   eq goalPrint(NGL) =
   '\n '====================================================
   goalPrint(NGL,noGoals(NGL))
   '==================================================== .
- op goalPrint : #GoalList# Nat -> QidList .
+ op goalPrint : GoalList Nat -> QidList .
   eq goalPrint(emptyGoalList,N) = nil .
   eq goalPrint(< M,SS > GL,N) = if N == 1
      then
@@ -2919,6 +3005,9 @@ fmod #GRAMMAR# is
  sort #Nat# .
  op bNat : Qid -> #Nat#[ctor] .
 --- -------------------------------------------------------------------------
+ sort #Bound# .
+ op bBound : Qid -> #Bound#[ctor].
+--- -------------------------------------------------------------------------
  sorts #Term# #TermList# .
  subsort #Term# < #TermList# .
  op bTermList : QidList -> #TermList# [ctor].
@@ -2938,7 +3027,9 @@ fmod #GRAMMAR# is
  ops #init# #init-r# : #SentenceSet# #Substitution# -> #Tactic# [ctor].
  ops #cp-l# #cp-r# : String String #Nat# -> #Tactic# [ctor].
  ops #cp-l# #cp-r# : #Sentence# #Sentence# #Nat# -> #Tactic# [ctor].
---- specific proof tactics -- 
+ ops #applyEq# : #Sentence# #Term# #Nat# #Bound# #Nat# -> #Tactic# [ctor].
+ ops #applyEq# : String #Term# #Nat# #Bound# #Nat# -> #Tactic# [ctor].
+--- specific proof tactics ---
  op #cs# : -> #Tactic# [ctor].
  ops #indx-on# : #TermList# -> #Tactic# [ctor].
 --- -------------------------------------------------------------------------
@@ -2961,7 +3052,7 @@ endfm
 fmod #COMMAND-PRINTER# is
  inc #GRAMMAR# .
 --- -------------------------------------------------------------------------
-vars QI QI1 QI2 : Qid .
+vars QI QI1 QI2 QI3 QI4 : Qid .
 vars NQIL NQIL1 NQIL2 : NeQidList .
 vars QIL QIL1 QIL2 : QidList .
 var CM : #Tactic# .
@@ -3020,6 +3111,10 @@ eq tacticPrint(#cp-l#(bSentence(QI1 NQIL1),bSentence(QI2 NQIL2),bNat(QI))) = if 
 eq tacticPrint(#cp-r#(bSentence(QI1 NQIL1),bSentence(QI2 NQIL2),bNat(QI))) = if QI == '0
    then 'cp-r QI1 NQIL1 '>< QI2 NQIL2
    else 'cp-r QI1 NQIL1 '>< QI2 NQIL2 'skip QI fi .
+eq tacticPrint(#applyEq#(bSentence(QI1 NQIL1),bTerm(NQIL),bNat(QI2),bBound(QI3),bNat(QI4)))=
+   'applyEq QI1 NQIL1 'to NQIL 'at QI2 QI3 QI4 .
+eq tacticPrint(#applyEq#(STR,bTerm(NQIL),bNat(QI2),bBound(QI3),bNat(QI4)))=
+   'applyEq qid(STR) 'to NQIL 'at QI2 QI3 QI4 .    
 --- specific tactics ---
 eq tacticPrint(#cs#)   = 'cs .
 eq tacticPrint(#indx-on#(bTermList(QIL))) = 'indx 'on QIL .
@@ -3055,7 +3150,7 @@ endfm
 fmod #COMMAND-PARSER# is
  inc #GRAMMAR# .
 --- -------------------------------------------------------------------------
-vars QI QI1 QI2 : Qid .
+vars QI QI1 QI2 QI3 QI4 : Qid .
 vars NQIL NQIL1 NQIL2 : NeQidList .
 vars QIL QIL1 QIL2 : QidList .
 var CM : #Tactic# .
@@ -3093,6 +3188,10 @@ var CML : #TacticList# .
  eq tacticParse('cp-r QI1 '>< QI2) = #cp-r#(string(QI1),string(QI2),bNat('0)).
  eq tacticParse('cp-l QI1 NQIL1 '>< QI2 NQIL2) = #cp-l#(bSentence(QI1 NQIL1),bSentence(QI2 NQIL2),bNat('0)).
  eq tacticParse('cp-r QI1 NQIL1 '>< QI2 NQIL2) = #cp-r#(bSentence(QI1 NQIL1),bSentence(QI2 NQIL2),bNat('0)).
+ eq tacticParse('applyEq QI1 NQIL1 'to NQIL 'at QI2 QI3 QI4)=
+    #applyEq#(bSentence(QI1 NQIL1),bTerm(NQIL),bNat(QI2),bBound(QI3),bNat(QI4)).
+eq tacticParse('applyEq QI1 'to NQIL 'at QI2 QI3 QI4)=
+    #applyEq#(string(QI1),bTerm(NQIL),bNat(QI2),bBound(QI3),bNat(QI4)).    
 --- parse specific tactics ---
  eq tacticParse('cs)   = #cs#   .
  eq tacticParse('indx 'on QIL) = #indx-on#(bTermList(QIL)).
@@ -3125,20 +3224,23 @@ endfm
 fmod #COMPUTE# is
  inc #PARSER# .
  inc #GRAMMAR# .
+ inc #PRINTER# .
 --- -------------------------------------------------------------------------
-var QI : Qid .
+vars QI QI1 QI2 QI3 : Qid .
 vars NQIL NQIL1 NQIL2 : NeQidList .
 vars QIL QIL1 QIL2 : QidList .
-vars GL GL1 GL2 : #GoalList# .
-var G : #Goal# .
+vars GL GL1 GL2 : GoalList .
+var G : Goal .
 vars SS SS1 SS2 : SentenceSet .
+var Sn : Sentence .
 var M : Module .
-var NGL : #NeGoalList# .
+var NGL : NeGoalList .
 vars STR STR1 STR2 : String .
-var EGL : [#GoalList#] .
+var EGL : [GoalList] .
 var EM : [Module] .
 var ESS : [SentenceSet] .
-var EN : [Nat] .
+vars EN EN1 EN2 EN3 : [Nat] .
+var EB : [Bound] .
 vars ESN ESN1 ESN2 : [Sentence] .
 var ESUB : [Substitution] .
 var CM   : #Tactic# .
@@ -3146,17 +3248,18 @@ var TCL  : #TacticList# .
 var NTCL : #NeTacticList# .
 var N : Nat .
 var ETL : [TermList] .
+var ET : [Term].
 --- -------------------------------------------------------------------------
 --- compute commands ---
 --- -------------------------------------------------------------------------
 sort #Result# .
- op `[_`,_`] : #GoalList# QidList -> #Result# [ctor].
- op compute : #TacticList# #GoalList# -> #Result# .
+ op `[_`,_`] : GoalList QidList -> #Result# [ctor].
+ op compute : #TacticList# GoalList -> #Result# .
 --- -------------------------------------------------------------------------
  eq compute(none,GL)= [GL,nil] .
  eq compute(NTCL,GL)= compute(1,NTCL,GL).
 --- -------------------------------------------------------------------------
- op compute : Nat #TacticList# #GoalList# -> #Result# .
+ op compute : Nat #TacticList# GoalList -> #Result# .
 --- -------------------------------------------------------------------------
  eq compute(N,none,GL) = [GL,nil].
  eq compute(N,CM TCL,emptyGoalList)= compute(N + 1, TCL,emptyGoalList)[owise].
@@ -3360,6 +3463,61 @@ ceq compute(N,#cp-r#(bSentence(NQIL1),bSentence(NQIL2),bNat(QI)) NTCL,NGL)=
     then [NGL,QIL1]
     else compute(N + 1,NTCL,GL1) fi
  if [GL1,QIL1] := compute(N,#cp-r#(bSentence(NQIL1),bSentence(NQIL2),bNat(QI)),NGL).
+---
+ op conv : Qid ~> Bound .
+ eq conv('unbounded) = unbounded .
+ceq conv(QI) = N if N := rat(string(QI),10).
+---
+ceq compute(N,#applyEq#(bSentence(NQIL1),bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL < M,SS >)=
+    if   not(ESN1 :: Sentence)
+    then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'sentence '\o]
+    else if   not(ET :: Term)
+         then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
+         else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
+              then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
+              else if   not(EN1 :: Nat)
+                   then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
+	           else if   not(EB :: Bound)
+		        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
+	                else if   not(EN3 :: Nat)
+	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'number 'of 'solutions 'is 'invalid '\o]
+		             else [GL EGL, nil]  fi fi fi fi fi fi
+ if ESN1 := senParse(M,NQIL1) /\
+    ET   := getTerm(metaParse(M,NQIL,anyType))/\
+    EN1  := rat(string(QI1),10) /\
+    EB   := conv(QI2) /\
+    EN3  := rat(string(QI3),10) /\
+    EGL  := applyEq(< M,SS >,ESN1,ET,EN1,EB,EN3).
+---
+ceq compute(N,#applyEq#(STR,bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL < M,SS >)=
+    if   not(ESN1 :: Sentence)
+    then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'sentence '\o]
+    else if   not(ET :: Term)
+         then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
+         else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
+              then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
+              else if   not(EN1 :: Nat)
+                   then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
+	           else if   not(EB :: Bound)
+		        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
+	                else if   not(EN3 :: Nat)
+	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'number 'of 'solutions 'is 'invalid '\o]
+		             else if   QIL1 :: NeQidList
+		                  then [GL < M,SS >, QIL1]
+			          else [GL1 EGL,nil] fi fi fi fi fi fi fi
+ if ESN1 := getSentence(M,STR) /\
+    ET   := getTerm(metaParse(M,NQIL,anyType))/\
+    EN1  := rat(string(QI1),10) /\
+    EB   := conv(QI2) /\
+    EN3  := rat(string(QI3),10) /\
+    EGL  := applyEq(< M,SS >,ESN1,ET,EN1,EB,EN3) /\
+    [GL1,QIL1] := compute(N,#applyEq#(STR,bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL).
+---    
+ceq compute(N,#applyEq#(bSentence(NQIL1),bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)) NTCL,NGL)=
+    if   QIL1 :: NeQidList
+    then [NGL,QIL1]
+    else compute(N + 1,NTCL,GL1) fi
+ if [GL1,QIL1] := compute(N,#applyEq#(bSentence(NQIL1),bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)),NGL).    
 --- specific tactics ---
  eq compute(N,#cs#   TCL,NGL) = compute(N + 1,TCL,cs(NGL)).
 ceq compute(N,#indx-on#(bTermList(QIL)),GL < M,SS >)=
@@ -3382,14 +3540,14 @@ endfm
 
 --- -------------------------------------------------------------------------
 mod #CITP# is
- inc #PRINTER# .
+--- inc #PRINTER# .
  inc #COMMAND-PRINTER# .
  inc #COMMAND-PARSER#  .
  inc #COMPUTE# . 
  inc LOOP-MODE .
 --- -------------------------------------------------------------------------
  sorts #NeSeqGoalList# #SeqGoalList# .
- subsorts #GoalList# < #NeSeqGoalList# < #SeqGoalList# .
+ subsorts GoalList < #NeSeqGoalList# < #SeqGoalList# .
  op empty : -> #SeqGoalList# [ctor].
  op _*_ : #NeSeqGoalList# #SeqGoalList# -> #NeSeqGoalList# [ctor assoc id: empty prec 42].
  op _*_ : #SeqGoalList# #NeSeqGoalList# -> #NeSeqGoalList# [ctor assoc id: empty prec 42].
@@ -3399,7 +3557,7 @@ mod #CITP# is
  op init : -> System .
 --- -------------------------------------------------------------------------
  vars QIL QIL1 QIL2 : QidList .
- vars GL GL1 GL2 : #GoalList# .
+ vars GL GL1 GL2 : GoalList .
  var NTCL : #NeTacticList# .
  var TCL : #TacticList# .
  var SS : SentenceSet .
@@ -3410,7 +3568,9 @@ mod #CITP# is
  var NSTCL : #NeSeqTacticList# .
  var STCL  : #SeqTacticList# .
  var ET : [Term] .
- var ECM : [#Command#] . 
+ var ECM : [#Command#] .
+ var EGL : [GoalList] .
+ var EQIL : [QidList].
 --- -------------------------------------------------------------------------
  eq init = [nil,< none,none,emptyGoalList,nil >,
  '\n 'Welcome 'to '\b 'Constructor-based 'Inductive 'Theorem 'Prover '\o '\n
@@ -3423,20 +3583,20 @@ crl [in]: [NQIL,< none,NSTCL,NSGL,nil > ,QIL] => if ECM :: #Command#
 ---  out  ---
  rl [out]: [QIL1,< none,NSTCL,NSGL,NQIL >,QIL2] => [QIL1,< none,NSTCL,NSGL,nil >,NQIL].
 --- tactics ---
-crl < NTCL,NSTCL,SGL * GL,nil > => if QIL :: NeQidList
-    then < none,NSTCL,SGL * GL,QIL >
-    else if   GL1 == GL
-         then < none,NSTCL,SGL * GL, '\m 'Goal 'Unchanged '\o >
-	 else if   GL1 == emptyGoalList
-	      then < none,NSTCL * NTCL,SGL * GL * GL1,
-	             '==================================================== '\n   
-	             '\m 'Empty 'Goal 'List '\o '\n
-		     '==================================================== '\n
-		     '\g 'INFO: '\o 'No 'goals 'to 'prove >
-	      else < none,NSTCL * NTCL,SGL * GL * GL1, 
-	             goalPrint(lastGoal(GL1)) '\n
-		     '\g 'INFO: '\o qid(string(noGoals(GL1),10)) 'goal`(s`) 'to 'prove '\n > fi fi fi
- if [GL1,QIL] := compute(NTCL,GL).
+crl < NTCL,NSTCL,SGL * GL,nil > =>
+    if   not(EGL :: GoalList) then < none,NSTCL,SGL * GL,'\m 'Command 'could 'not 'be 'computed '\o '\n >
+    else if   EQIL :: NeQidList
+         then < none,NSTCL,SGL * GL,EQIL >
+         else if   EGL == GL
+              then < none,NSTCL,SGL * GL, '\m 'Goal 'Unchanged '\o >
+	      else if   EGL == emptyGoalList
+	           then < none,NSTCL * NTCL,SGL * GL * EGL,
+	                '==================================================== '\n   
+	                '\m 'Empty 'Goal 'List '\o '\n
+		        '==================================================== '\n
+		        '\g 'INFO: '\o 'No 'goals 'to 'prove >
+	           else < none,NSTCL * NTCL,SGL * GL * EGL,goalPrint(EGL) '\n > fi fi fi fi
+ if [EGL,EQIL] := compute(NTCL,GL).
 --- commands ---
  rl < #rollback#,none,emptyGoalList,nil > => < none,none,emptyGoalList,'\m 'Empty 'Goal 'List '\o > .
  rl < #rollback#,STCL * TCL * NTCL,SGL * GL1 * GL2,nil > => if GL1 == emptyGoalList

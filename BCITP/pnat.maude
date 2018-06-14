@@ -1,0 +1,32 @@
+fmod PNAT is 
+ sorts PNat PNzNat .
+ subsorts PNzNat < PNat .
+ op 0 : -> PNat [ctor] .
+ op s_ : PNat -> PNzNat [ctor].
+ op _+_ : PNat PNat -> PNat [prec 33].
+ vars M N P : PNat .
+---
+ eq 0 + N = N             [metadata "1"].
+ eq s M + N = s(M + N)    [metadata "2"].
+endfm
+
+in citp
+
+select #CITP# .
+loop init .
+
+---> Proof of lemma:
+*** 1 ***
+(goal PNAT |-
+eq M:PNat + 0 = M:PNat ;
+eq M:PNat + s N:PNat = s(M:PNat + N:PNat);)
+*** 2 ***
+(ind on M:PNat tc)
+(. applyEq 2 to s x#1 + s N#2 at 0 unbounded 0)
+(. applyEq 4 to  s(x#1 + s N#2) at 0 unbounded 0)
+(. applyEq 2 to s(s x#1 + N#2) at 0 unbounded 0)
+(. applyEq 2 to s x#1 + 0 at 0 unbounded 0)
+(. applyEq 3 to s(x#1 + 0) at 0 unbounded 0)
+(. applyEq 1 to 0 + s N#1 at 0 unbounded 0)
+
+---> QED
