@@ -389,28 +389,29 @@ op _in_ : Rule RuleSet -> Bool .
  eq R in RS = false [owise].
 --- -------------------------------------------------------------------------
 op _in_ : Term SentenceSet -> Bool .
-eq T in (eq T1 = T2[AS]; ) =
+eq T in (none).SentenceSet = false .
+eq T in (eq T1 = T2[AS]; SS) =
    if   T == T1 then true
    else if   T == T2 then true
-        else false fi fi .
-eq T in (ceq T1 = T2 if EC[AS]; ) =
+        else T in SS fi fi .
+eq T in (ceq T1 = T2 if EC[AS]; SS) =
    if   T == T1 then true
    else if   T == T2 then true
-        else T in EC fi fi .
-eq T in (mb T1 : St [AS]; ) =
+        else (T in EC) or (T in SS) fi fi .
+eq T in (mb T1 : St [AS]; SS) =
    if   T == T1 then true
-   else false fi .
-eq T in (cmb T1 : St if EC[AS]; ) =
+   else T in SS fi .
+eq T in (cmb T1 : St if EC[AS]; SS) =
    if   T == T1 then true
-   else T in EC fi .
-eq T in (rl T1 => T2[AS]; ) =
-   if   T == T1 then true
-   else if   T == T2 then true
-        else false fi fi .
-eq T in (crl T1 => T2 if Co[AS]; ) =
+   else (T in EC) or (T in SS) fi .
+eq T in (rl T1 => T2[AS]; SS) =
    if   T == T1 then true
    else if   T == T2 then true
-        else T in Co fi fi .   
+        else T in SS fi fi .
+eq T in (crl T1 => T2 if Co[AS]; SS) =
+   if   T == T1 then true
+   else if   T == T2 then true
+        else (T in Co) or (T in SS) fi fi .   
 op _in_ : Term Condition -> Bool .
 eq T in (nil).EqCondition = false .
 eq T in (T1 = T2 /\ Co) =
@@ -2545,33 +2546,22 @@ fmod #TOOL# is
  vars T T' : Term .
  var St : Sort .
  var ASet : AttrSet .
+ var SS : SentenceSet .
  --- enhanced equality ---
- ceq [EN1]: < M,eq T = T' [metadata("enhanced") ASet]; > = emptyGoalList 
+ ceq [EN1]: < M,eq T = T' [metadata("enhanced") ASet]; SS > = < M,SS >
      if metaSearch(M,T,T',nil,'*,1000000,0) :: ResultTriple .
- ceq [EN2]: < M,eq T = T' [metadata("enhanced") ASet]; > = emptyGoalList 
+ ceq [EN2]: < M,eq T = T' [metadata("enhanced") ASet]; SS > = < M,SS >
      if metaSearch(M,T',T,nil,'*,1000000,0) :: ResultTriple .
 --- contradiction ----
- ceq [CTe]: < M,eq T = T' [ASet]; >  = emptyGoalList 
+ ceq [CT1]: < M,SS >  = emptyGoalList 
      if metaSearch(M,'true.Bool,'false.Bool,nil,'*,1000000,0) :: ResultTriple .
 
- ceq [CTe]: < M,eq T = T' [ASet]; >  = emptyGoalList 
-     if metaSearch(M,'false.Bool,'true.Bool,nil,'*,1000000,0) :: ResultTriple .
-
- ceq [CTm]: < M,mb T : St [ASet]; > = emptyGoalList
-     if metaSearch(M,'true.Bool,'false.Bool,nil,'*,1000000,0) :: ResultTriple .
-
- ceq [CTm]: < M,mb T : St [ASet]; > = emptyGoalList 
-     if metaSearch(M,'false.Bool,'true.Bool,nil,'*,1000000,0) :: ResultTriple .
-
- ceq [CTr]: < M,rl T => T' [ASet]; >  = emptyGoalList 
-     if metaSearch(M,'true.Bool,'false.Bool,nil,'*,1000000,0) :: ResultTriple .
-
- ceq [CTr]: < M,rl T => T' [ASet]; >  = emptyGoalList 
+ ceq [CT2]: < M,SS >  = emptyGoalList 
      if metaSearch(M,'false.Bool,'true.Bool,nil,'*,1000000,0) :: ResultTriple .
 --- tautology ---
- eq  [TLe]: < M,eq T = T [ASet];  > = emptyGoalList .
- ceq [TLm]: < M,mb T : St [ASet]; > = emptyGoalList if sortLeq(M,leastSort(M,T),St).
- ceq [TLr]: < M,rl T => T'[ASet]; > = emptyGoalList if metaSearch(M,T,T',nil,'*,1000000,0) :: ResultTriple .
+ eq  [TLe]: < M,eq T = T [ASet];  SS > = < M,SS > .
+ ceq [TLm]: < M,mb T : St [ASet]; SS > = < M,SS > if sortLeq(M,leastSort(M,T),St).
+ ceq [TLr]: < M,rl T => T'[ASet]; SS > = < M,SS > if metaSearch(M,T,T',nil,'*,1000000,0) :: ResultTriple .
 --- -------------------------------------------------------------------------
 endfm
 --- -------------------------------------------------------------------------
@@ -3472,17 +3462,19 @@ ceq compute(N,#applyEq#(bSentence(NQIL1),bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(
     then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'sentence '\o]
     else if   not(ESN1 inc M) and not(flip(ESN1) inc M)
          then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
-         else if   not(ET :: Term)
+         else if   not(ET :: Term) 
               then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
-              else if   not(EN1 :: Nat)
-                   then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
-	           else if   not(EB :: Bound)
-		        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
-	                else if   not(EN3 :: Nat)
-	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'no 'of 'solutions 'to 'skip 'is 'invalid '\o]
-		             else if   QIL1 :: NeQidList
-			          then [GL < M,SS >, QIL1]
-				  else [GL1 EGL,nil] fi fi fi fi fi fi fi
+              else if   not(ET in SS)
+	           then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'term 'not 'in 'the 'sentence 'set 'to 'prove '\o]
+		   else if   not(EN1 :: Nat)
+                        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
+	                else if   not(EB :: Bound)
+		             then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
+	                     else if   not(EN3 :: Nat)
+	                          then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'no 'of 'solutions 'to 'skip 'is 'invalid '\o]
+		                  else if   QIL1 :: NeQidList
+			               then [GL < M,SS >, QIL1]
+				       else [GL1 EGL,nil] fi fi fi fi fi fi fi fi
  if ESN1 := senParse(M,NQIL1) /\
     ET   := getTerm(metaParse(M,NQIL,anyType))/\
     EN1  := rat(string(QI1),10) /\
@@ -3498,15 +3490,17 @@ ceq compute(N,#applyEq#(STR,bTerm(NQIL),bNat(QI1),bBound(QI2),bNat(QI3)), GL < M
          then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'sentence 'is 'not 'in 'the 'module '\o]
          else if   not(ET :: Term)
               then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'invalid 'term '\o]
-              else if   not(EN1 :: Nat)
-                   then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
-	           else if   not(EB :: Bound)
-		        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
-	                else if   not(EN3 :: Nat)
-	                     then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'no 'of 'solutions 'to 'skip 'is 'invalid '\o]
-		             else if   QIL1 :: NeQidList
-		                  then [GL < M,SS >, QIL1]
-			          else [GL1 EGL,nil] fi fi fi fi fi fi fi
+              else if   not(ET in SS)
+	           then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'term 'not 'in 'the 'sentence 'set 'to 'proove '\o]
+		   else if   not(EN1 :: Nat)
+                        then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'upper 'bound 'is 'invalid '\o]
+	                else if   not(EB :: Bound)
+		             then [GL < M,SS >, 'ERROR '`( qid(string(N,10)) '`) ': '\m 'lower 'bound 'is 'invalid '\o]
+	                     else if   not(EN3 :: Nat)
+	                          then [GL < M,SS >,'ERROR '`( qid(string(N,10)) '`) ': '\m 'no 'of 'solutions 'to 'skip 'is 'invalid '\o]
+		                  else if   QIL1 :: NeQidList
+		                       then [GL < M,SS >, QIL1]
+			               else [GL1 EGL,nil] fi fi fi fi fi fi fi fi
  if ESN1 := getSentence(M,STR) /\
     ET   := getTerm(metaParse(M,NQIL,anyType))/\
     EN1  := rat(string(QI1),10) /\
@@ -3578,7 +3572,8 @@ mod #CITP# is
  '\n 'Welcome 'to '\b 'Constructor-based 'Inductive 'Theorem 'Prover '\o '\n
  '\t '--- 'CITP '2.0 'built: 'April '2017 '--- '\n ] .
 --- in --- 
-crl [in]: [NQIL,< none,NSTCL,NSGL,nil > ,QIL] => if ECM :: #Command#
+crl [in]: [NQIL,< none,NSTCL,NSGL,nil > ,QIL] =>
+          if   ECM :: #Command#
           then [nil ,< ECM,NSTCL,NSGL,nil >,QIL]
           else [nil ,< none,NSTCL,NSGL,nil > , 'ERROR: '\m 'invalid 'command '\o] fi
  if ECM := commandParse(NQIL).
