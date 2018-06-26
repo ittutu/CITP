@@ -1,0 +1,249 @@
+*** States =====================================================================
+
+fmod SWITCH is
+    sort Switch .
+    
+    op off    : -> Switch .
+    op auto   : -> Switch .
+    op manual : -> Switch .
+endfm
+
+fmod STATE is *** fth
+    protecting SWITCH .
+    protecting NAT .
+
+    sort State .
+    
+    op switch : State -> Switch .
+
+    *** constants
+    op insulinCapacity : -> Nat .
+
+    ops minDose *** minSingleDose
+        maxDailyDose
+        maxSingleDose : -> Nat .
+
+    eq minDose <= maxSingleDose = true .
+    eq maxSingleDose <= maxDailyDose = true .
+
+    ops safeMin
+        safeMax : -> Nat .
+
+    eq safeMin <= safeMax = true .
+endfm
+
+*** Off states =================================================================
+
+fmod OFF is *** fth
+    including STATE .
+    
+    sort Off .
+    subsort Off < State .
+
+    eq switch (s:Off) = off .
+
+    var s : State .
+    cmb s : Off if switch (s) = off .
+endfm
+
+*** On states ==================================================================
+
+fmod ON is *** fth
+    including STATE .
+
+    sort On .
+    subsort On < State .
+
+    op insulinAvailable : On  -> Nat .
+    eq insulinAvailable (s:On) <= insulinCapacity = true .
+
+    op reading : On -> Nat .
+    op cumulativeDose : On -> Nat .
+endfm
+
+*** Test states ================================================================
+
+fmod TEST-RESULT is
+    sort TestResult .
+    
+    op pass : -> TestResult .
+    op fail : -> TestResult .
+endfm
+
+fmod TEST is    
+    including ON .
+    protecting TEST-RESULT .
+
+    sort Test .
+    subsort Test < On .
+
+    op testResult : Test -> TestResult .
+endfm
+
+*** Ready states ===============================================================
+
+fmod READY is
+    including ON .
+
+    sort Ready .
+    subsort Ready < On .
+
+    op dose : Ready -> Nat .
+endfm
+
+*** Auto states ================================================================
+
+fmod AUTO is
+    including READY .
+
+    sort Auto .
+    subsort Auto < Ready .
+
+    eq switch (s:Auto) = auto .
+
+    op prev : Auto -> On .
+    
+    ceq dose(s:Auto) = 0
+      if reading(s:Auto) <= safeMin .
+    
+    ceq dose(s:Auto) = 0
+      if reading(s:Auto) > safeMin
+          /\ reading(s:Auto) <= safeMax
+          /\ reading(s:Auto) <= reading(prev(s:Auto)) .
+    
+    ceq dose(s:Auto) = minDose
+      if reading(s:Auto) > safeMin
+          /\ reading(s:Auto) <= safeMax
+          /\ reading(s:Auto) > reading(prev(s:Auto)) .
+    
+    ceq dose(s:Auto) =
+        min(sd(reading(s:Auto), reading(prev(s:Auto))) quo 4, maxSingleDose)
+      if reading(s:Auto) > safeMax .
+endfm
+
+*** Manual states ==============================================================
+
+fmod MANUAL is
+    including READY .
+
+    sort Manual .
+    subsort Manual < Ready .
+
+    eq switch (s:Manual) = manual .
+
+    op userInput : Manual -> Nat .
+    eq dose(s:Manual) = min(userInput(s:Manual), maxSingleDose) .
+endfm
+
+*** Reset states ===============================================================
+
+fmod RESET is
+    including ON .
+
+    sort Reset .
+    subsort Reset < On .
+
+    eq insulinAvailable (s:Reset) = insulinCapacity .
+endfm
+
+*** Suspend states =============================================================
+
+fmod SUSPEND is
+    including ON .
+
+    sort Suspend .
+    subsort Suspend < On .
+endfm
+
+*** Transitions ================================================================
+
+mod IIP is
+    including OFF .
+    including TEST .
+    including AUTO .
+    including MANUAL .
+    including RESET .
+    including SUSPEND .
+
+    op iip : -> Off .
+
+    *** from Off states --------------------------------------------------------
+
+    op start_ : Off -> Test .
+    eq cumulativeDose(start (s:Off)) = 0 .
+    
+    rl iip => start iip .
+    eq switch(start iip) = auto .
+
+    *** from On states ---------------------------------------------------------
+
+    op stop_ : On -> Off .
+    op replaceReservoir_ : On -> Reset .
+
+    rl (s:On) => stop (s:On) .
+    *** TODO
+    
+    op test_ : On -> Test .
+    eq cumulativeDose(test (s:On)) = cumulativeDose(s:On) .
+
+    *** from Test states -------------------------------------------------------
+    
+    op auto_ : Test -> Auto .
+    eq prev(auto (s:Test)) = s:Test .
+    eq cumulativeDose(auto (s:Test)) = cumulativeDose(s:Test) .
+    
+    crl (s:Test) => auto (s:Test)
+      if testResult(s:Test) = pass /\ switch(s:Test) = auto .
+
+    op manual_ : Test -> Manual .
+    eq cumulativeDose(manual (s:Test)) = cumulativeDose(s:Test) .
+    
+    crl (s:Test) => manual (s:Test)
+      if testResult(s:Test) = pass /\ switch(s:Test) = manual .
+    
+    op error_ : Test -> Suspend .
+    eq cumulativeDose(error (s:Test)) = cumulativeDose(s:Test) .
+    
+    crl (s:Test) => error (s:Test) if testResult(s:Test) = fail .
+
+    *** from Ready states ------------------------------------------------------
+
+    rl (s:Ready) => test (s:Ready) .
+
+    op error_ : Ready -> Suspend .
+    eq cumulativeDose(error (s:Ready)) = cumulativeDose(s:Ready) .
+
+    crl (s:Ready) => error (s:Ready)
+      if dose(s:Ready) > insulinAvailable(s:Ready) .
+      
+    *** from Auto states -------------------------------------------------------
+
+    op deliverInsulin_ : Auto -> Auto .
+    eq prev(deliverInsulin (s:Auto)) = s:Auto .
+    eq cumulativeDose(deliverInsulin (s:Auto)) =
+        cumulativeDose(s:Auto) + dose(s:Auto) .
+
+    op bolus_ : Auto -> Test .
+    eq cumulativeDose(bolus (s:Auto)) = cumulativeDose(s:Auto) .
+    eq switch(bolus (s:Auto)) = manual .
+    
+    *** from Manual states -----------------------------------------------------
+
+    op deliverInsulin_ : Manual -> Auto .
+    eq prev(deliverInsulin (s:Manual)) = s:Manual .
+    eq cumulativeDose(deliverInsulin (s:Manual)) =
+        cumulativeDose(s:Manual) + dose(s:Manual) + userInput(s:Manual) .
+
+    op auto_ : Manual -> Test .
+    eq cumulativeDose(auto (s:Manual)) = cumulativeDose(s:Manual) .
+    eq switch(auto (s:Manual)) = auto .
+
+    *** from Reset states ------------------------------------------------------
+
+    rl (s:Reset) => test (s:Reset) .
+    
+    *** from Suspend states ----------------------------------------------------
+
+    crl (s:Suspend) => test (s:Suspend)
+      if switch(s:Suspend) = manual .
+endm
