@@ -1,0 +1,55 @@
+in citp
+in cloudr
+
+fmod INV6 is 
+ pr CLOUD .
+ var CS : C-Status .
+ vars CV PV PV1 PV2 TMP TMP1 TMP2 : Nat .
+ var A : MSet .
+ ceq true = false if [< CS,CV >,A < gotvalue,PV1,TMP1 > < gotvalue,PV2,TMP2 >]: Reach[nonexec metadata "inv3"].
+ ceq true = false if [< CS,CV >,A < gotvalue,PV1,TMP1 > < updated ,PV2,TMP2 >]: Reach[nonexec metadata "inv4"].
+endfm
+
+select #CITP# .
+loop init .
+
+*** 1 ***
+(goal INV6 |-
+ceq CV:Nat = TMP:Nat
+ if [< CS:C-Status,CV:Nat >,A:MSet < gotvalue,PV:Nat,TMP:Nat >]:= S:Reach[nonexec metadata "inv6"];)
+
+(indx on S:Reach red cs red tc red imp red)
+
+(select 2)
+(. init 1 by)
+
+(. cp-l 1 >< 3)
+(. init inv4 by CS:C-Status <- busy ; CV:Nat <- CV#1 ;
+   A:MSet <- A#6 ;
+   PV1:Nat <- PV#7 ; TMP1:Nat <- TMP#5 ;
+   PV2:Nat <- PV#3 ; TMP2:Nat <- TMP#4)
+
+(. cp-l 2 >< 4)
+(. init inv3 by CS:C-Status <- busy ; CV:Nat <- CV#3 ;
+   A:MSet <- A#5 ;
+   PV1:Nat <- NEW#1 ; TMP1:Nat <- CV#3 ;
+   PV2:Nat <- PV#6 ; TMP2:Nat <- TMP#4)
+
+(. cp-l 2 >< 4)
+(. init inv3 by CS:C-Status <- busy ; CV:Nat <- CV#1 ;
+   A:MSet <- A#5 ;
+   PV1:Nat <- NEW#3 ; TMP1:Nat <- CV#1 ;
+   PV2:Nat <- PV#6 ; TMP2:Nat <- TMP#4)
+---> gotval 
+(. cp-l 1 >< 3)
+(. init inv6  by CS:C-Status <- idlec ; CV:Nat <- CV#1 ;
+   A:MSet <- A#6 < idlep,NEW#3,TMP#4 > ;
+   PV:Nat <- PV#7 ; TMP:Nat <- TMP#5 red)
+
+(. cp-l 1 >< 3)
+
+(. init inv6  by CS:C-Status <- CS#1 ; CV:Nat <- CV#2 ;
+   A:MSet <- A#8 < idlep,PV#6,TMP#5 > ;
+   PV:Nat <- PV#9 ; TMP:Nat <- TMP#7 red)
+
+
