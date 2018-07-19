@@ -9,7 +9,7 @@ present document describes the main commands supported by CITP.
 The CITP uses [Maude](http://maude.cs.illinois.edu/w/index.php?title=The_Maude_System)
 as rewriting engine. Hence, the first step is to download and install the Maude
 system following the instructions [here](http://maude.cs.illinois.edu/w/index.php?title=Maude_download_and_installation).
-We present a basic introduction to Maude [here](Maude)
+We present a basic introduction to Maude [here](#maude)
 
 Once Maude has been installed (we assume a **maude** command for executing it),
 we can download the CITP repository by using
