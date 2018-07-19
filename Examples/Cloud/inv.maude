@@ -1,0 +1,20 @@
+in citp
+in cloudr
+
+select #CITP# .
+loop init .
+
+(goal CLOUD |-
+ ceq true = false if [< idlec,CV:Nat >,< updated,PV:Nat,TMP:Nat > A:MSet]:= S:Reach [metadata "inv1"];
+ ceq true = false if [< idlec,CV:Nat >,< gotvalue,PV:Nat,TMP:Nat > A:MSet]:= S:Reach [metadata "inv2"];
+ ceq true = false if [< CS:C-Status,CV:Nat >,< gotvalue,PV1:Nat,TMP1:Nat > < gotvalue,PV2:Nat,TMP2:Nat > A:MSet]:= S:Reach [metadata "inv3"];
+ ceq true = false if [< CS:C-Status,CV:Nat >,< gotvalue,PV1:Nat,TMP1:Nat > < updated,PV2:Nat,TMP2:Nat > A:MSet]:= S:Reach [metadata "inv4"];
+ ceq true = false if [< CS:C-Status,CV:Nat >,< updated,PV1:Nat,TMP1:Nat > < updated,PV2:Nat,TMP2:Nat > A:MSet]:= S:Reach [metadata "inv5"];)
+
+(indx on S:Reach red cs red imp red)
+
+---> discharge goals correspoding to the constructor init
+(init 1 by)
+
+---> QED
+
