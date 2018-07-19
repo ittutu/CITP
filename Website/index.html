@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>CITP</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css">
+    <link href="css/extra.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js"></script>
+
+    <!-- <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"> -->
+    <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script> -->
+  </head>
+
+  <body id="page-top">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand js-scroll-trigger" href="#page-top">CITP</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#download">Download</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#manual">Manual</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Examples
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapsePNAT" aria-expanded="true" aria-controls="collapsePNAT">PNAT</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseParam" aria-expanded="true" aria-controls="collapseParam">Parameterized lists with void elements</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseFUN" aria-expanded="true" aria-controls="collapseFUN">FUN</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseDS" aria-expanded="true" aria-controls="collapseDS">Decoding Stream (DS)</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseQLOCK" aria-expanded="true" aria-controls="collapseQLOCK">Mutual Exclusion Protocol (QLOCK)</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseABP" aria-expanded="true" aria-controls="collapseABP">Alternating Bit Protocol (ABP)</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseCloud" aria-expanded="true" aria-controls="collapseCloud">Cloud</a>
+                <a class="dropdown-item js-scroll-trigger" href="#examples" data-toggle="collapse" data-target="#collapseST" aria-expanded="true" aria-controls="collapseST">Spanning Tree</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#references">References</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Header -->
+    <header>
+      <div class="container text-center">
+        <h1>Constructor-based Inductive Theorem Prover (CITP)</h1>
+        <p class="lead">A tool for proving inductive properties of software systems specified with constructor-based logics</p>
+      </div>
+    </header>
+
+    <!-- About section -->
+    <section id="about">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            
+            <p>
+              CITP is implemented in <a href="http://maude.cs.uiuc.edu/">Core Maude</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download section -->
+    <section id="download">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+
+            <h2>Download</h2>
+            <p>
+              CITP consists of one file <a href="tool/citp.maude">citp.maude</a> .
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Manual section -->
+    <section id="manual">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+
+            <h2>Instructions</h2>
+            <p>
+              In order to use CITP, copy <em>citp.maude</em>, start
+              <em>Maude</em> and type <em>in citp</em>.
+              See the following PDF for the list of commands available for CITP.
+            </p>
+            <ul>
+              <li> <a href="tool/readme.pdf">Readme</a>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Examples section -->
+    <section id="examples">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+
+            <h2>Examples</h2>
+            <p>
+              The followings are examples of specifications and proofs perfomed with CITP.
+            </p>
+
+            <div class="accordion" id="accordionExample">
+
+              <div class="card">
+                <div class="card-header" id="headingPNAT">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapsePNAT" aria-expanded="true" aria-controls="collapsePNAT">
+                      PNAT
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapsePNAT" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      Associativity and commutativity of addition.
+                    </p>
+                    <ul>
+                      <li> <a href="examples/pnat/pnat.maude">Specification</a>
+                      <li> <a href="examples/pnat/proofs.html">Proofs</a> 
+                    </ul>  
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header" id="headingParam">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseParam" aria-expanded="false" aria-controls="collapseParam">
+                      Parameterized lists with void elements
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseParam" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <ul>
+                      <li> <a href="examples/list/list.maude">Specification </a>
+                      <li> <a href="examples/list/assoc.maude">Associativity of append</a>
+                      <li> <a href="examples/list/distLen.maude">Distributivity of length over append</a>
+                      <li> <a href="examples/list/distRev.maude">Distributivity of reverse over append</a>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header" id="headingFUN">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseFUN" aria-expanded="false" aria-controls="collapseFUN">
+                      FUN
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseFUN" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      Demonstrates  the strength of case analysis performed by CITP.
+                    </p>
+                    <ul>
+                      <li> <a href="examples/fun/fun.maude"> Specification </a>
+                      <li> <a href="examples/fun/lemma.maude"> Proof </a>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="headingDS">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseDS" aria-expanded="false" aria-controls="collapseDS">
+                      Decoding Stream (DS)
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseDS" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      One agent puts repeatedly pairs &lt; <em>bit, d</em> &gt; of bits and
+                      encoded datas into a <em>channel</em> which automatically decode the information. When
+                      the agent gets <em>&lt; bit&apos;, d&apos; &gt;</em> from the <em>channel</em>
+                      such that <em>bit</em> = <em>bit&apos;</em>, it is a confirmation that the data sent for decoding was received.
+                      In this case, the agent stores the data received into a list
+                      structure, alternates the <em>bit</em>, and selects the next encoded data for
+                      sending. We assume that the <em>channel</em> is unreliable, meaning
+                      that the data in the channel may be lost or duplicated, but not exchanged or damaged.
+                    </p>
+                    <ul>
+                      <li> <a href="examples/ds/ds.maude">Specification</a>
+                      <li> <a href="examples/ds/proofs.html">Proofs</a> 
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="headingQLOCK">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseQLOCK" aria-expanded="false" aria-controls="collapseQLOCK">
+                      Mutual Exclusion Protocol (QLOCK)
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseQLOCK" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      Assume that many agents (or processes) are competting for a common
+                      equipment, but at any moment of time only one agent can use the
+                      equipment That is, the agents are mutually excluded in using the
+                      equipment. A protocol which can achieve the mutual exclusion is
+                      called "mutual exclusion protocol" (<a href="examples/qlock/qlock.pdf">slides</a>).
+                    </p>
+                    <ul>
+                      <li> <a href="examples/qlock/qlock.html">Solution 1 (OTS/CafeOBJ method) </a>
+                      <li> <a href="examples/qlockr/qlock.html"> Solution 2 (states described explicitly)</a>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="headingABP">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseABP" aria-expanded="false" aria-controls="collapseABP">
+                      Alternating Bit Protocol (ABP)
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseABP" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      The protocol consists of two processes, <em>Sender</em> and <em>Receiver</em>, each having a data buffer and a one bit state. 
+                      Sender and Receiver use two channels to communicate with each other,
+                      as they do not share any common memory:
+
+                      (a) a <em>data channel</em> from Sender to Receiver for sending <em>bit-packet</em> pairs, and 
+
+                      (b) an <em>acknowledgement channel</em> from Receiver to Sender for sending single bits for confirmation. 
+
+                      The protocol works as follows:
+                      <ul>
+
+                        <li> Initially both channels are empty and Sender's bit is different from Receiver's bit.
+
+                        <li> Sender repeatedly puts bit-packet pairs < <em>bit,pac</em> > into the data channel, where <em>bit</em> is the Sender's bit and <em>pac</em> is the Sender's data to transmit. 
+                            If the Sender gets <em>bit</em> from Receiver over the acknowledgement channel then it is a confirmation that the packet sent was received. 
+                            In this case, Sender flips its bit and select the next packet to send.
+
+                            <li> Receiver puts its bit  into the acknowledgement channel
+                              repeatedly. When Receiver gets a pair < <em>bit,pac</em> > such that <em>bit</em> is different from its bit then it stores <em>pac</em> and flips its bit.
+                      </ul>
+
+                      A snapshot of the protocol can be found <a href="examples/abp/snapshot/ABPsnapshot.pdf">here</a>.
+                    </p>
+
+                    <ul>
+                      <li> <a href="examples/abp/abp.html">Solution 1 (OTS/CafeOBJ method) </a>
+                      <li> <a href="examples/abpr/abp.html"> Solution 2 (states described explicitly)</a>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="headingCloud">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseCloud" aria-expanded="false" aria-controls="collapseCloud">
+                      Cloud
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseCloud" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      Arbitrary many PCs can connect to a cloud, fetch the value from the cloud, compare it with their own value, and update the cloud or their own value depending on which is larger
+                      <a href="examples/cloud/cloud.pdf">(cloud in images)</a>.
+                    </p>
+
+                    <ul>
+                      <li> <a href="examples/cloud/cloud.html">Solution 1 (OTS/CafeOBJ method) </a>
+                      <li> <a href="examples/cloudr/cloud.html"> Solution 2 (states described explicitly)</a>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header" id="headingST">
+                  <h5 class="mb-0">
+                    <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseST" aria-expanded="false" aria-controls="collapseST">
+                      Spanning Tree
+                    </button>
+                  </h5>
+                </div>
+                <div id="collapseST" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                  <div class="card-body">
+                    <p>
+                      Every connected graph has a spanning tree (<a href="examples/tree/tree.pdf">slides</a>).
+                    </p>
+
+                    <ul>
+                      <li> <a href="examples/tree/tree.maude">Specification</a>
+                      <li> <a href="examples/tree/proofs.html">Proofs</a>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- References section -->
+    <section id="references">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+
+            <h2 >References</h2>
+            <ul>
+              <li> Michel Bidoit, Rolf Hennicker:
+                Constructor-based observational logic.
+                J. Log. Algebr. Program. 67(1-2): 3-51 (2006)
+              <li> Michel Bidoit, Rolf Hennicker, Alexander Kurz:
+                Observational logic, constructor-based logic, and their duality.
+                Theor. Comput. Sci. 3(298): 471-510 (2003)
+              <li> Kokichi Futatsugi, Daniel G&#259;in&#259;, Kazuhiro Ogata:
+                Principles of proof scores in CafeOBJ.
+                Theor. Comput. Sci. 464:90-112 (2012)
+              <li> Daniel G&#259;in&#259;, Kokichi Futatsugi, Kazuhiro Ogata:
+                Constructor-based Logics.
+                J. UCS 18(16): 2204-2233 (2012)
+              <li> Daniel G&#259;in&#259;:
+                Interpolation in logics with constructors.
+                Theor. Comput. Sci. 474: 46-59 (2013)
+              <li> Daniel G&#259;in&#259;, Kokichi Futatsugi:
+                Initial semantics in logics with constructors.
+                 J. Log. Comput. 25(1): 95-116 (2015)
+              <li> Daniel G&#259;in&#259;, Zhang Min, Yuki Chiba, Yasuhito Arimoto:
+                Constructor-based Inductive Theorem Prover.
+                CALCO 2013, Warsaw, Poland, September 3-6 (2013)  
+              <li> Daniel G&#259;in&#259;, Dorel Lucanu, Kazuhiro Ogata, Kokichi Futatsugi:
+                On Automation of OTS/CafeOBJ Method.
+                Specification, Algebra, and Software: 578-602 (2014)
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-5 bg-light">
+      <div class="container">
+        <p class="m-0 text-center">
+          Copyright &copy; daniel[at]imi.kyushu-u.ac.jp 2018
+        </p>
+      </div>
+    </footer>
+
+    <script src="js/extra.js"></script>
+  </body>
+</html>
