@@ -1,5 +1,11 @@
+html {
+    position: relative;
+    min-height: 100%;
+}
+
 body {
     padding-top: 54px;
+    margin-bottom: 135px;
 }
 
 nav {
@@ -12,11 +18,28 @@ header {
 }
 
 section{
-    padding: 27px 0;
+    padding: 14px 0;
 }
 
 footer {
     padding: 160px 0 54px;
     background-color: rgba(0,0,0,.03);
     border-top: 1px solid rgba(0,0,0,.125);
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+pre {
+    background-color: rgba(0,0,0,.03);
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+h2 {
+    padding: 14px 0;
+}
+
+h3 {
+    font-size: large;
+    padding: 14px 0;
 }

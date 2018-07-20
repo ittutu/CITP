@@ -16,8 +16,9 @@
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js"></script>
 
-    <!-- <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"> -->
-    <!-- <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+    <script src="js/maude.js"></script>
   </head>
 
   <body id="page-top">
@@ -90,7 +91,7 @@
 
             <h2>Download</h2>
             <p>
-              CITP consists of one file <a href="tool/citp.maude">citp.maude</a> .
+              CITP consists of one file <a href="tool/citp.maude">citp.maude</a>.
             </p>
           </div>
         </div>
@@ -256,33 +257,33 @@
                 <div id="collapseABP" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
                   <div class="card-body">
                     <p>
-                      The protocol consists of two processes, <em>Sender</em> and <em>Receiver</em>, each having a data buffer and a one bit state. 
+                      The protocol consists of two processes, <em>Sender</em> and <em>Receiver</em>, each having a data buffer and a one-bit state. 
                       Sender and Receiver use two channels to communicate with each other,
                       as they do not share any common memory:
 
-                      (a) a <em>data channel</em> from Sender to Receiver for sending <em>bit-packet</em> pairs, and 
+                      <i>(a)</i> a <em>data channel</em> from Sender to Receiver for sending <em>bit-packet</em> pairs, and 
 
-                      (b) an <em>acknowledgement channel</em> from Receiver to Sender for sending single bits for confirmation. 
+                      <i>(b)</i> an <em>acknowledgement channel</em> from Receiver to Sender for sending single bits for confirmation. 
 
                       The protocol works as follows:
                       <ul>
 
-                        <li> Initially both channels are empty and Sender's bit is different from Receiver's bit.
+                        <li> Initially, both channels are empty and Sender's bit is different from Receiver's bit.
 
-                        <li> Sender repeatedly puts bit-packet pairs < <em>bit,pac</em> > into the data channel, where <em>bit</em> is the Sender's bit and <em>pac</em> is the Sender's data to transmit. 
-                            If the Sender gets <em>bit</em> from Receiver over the acknowledgement channel then it is a confirmation that the packet sent was received. 
-                            In this case, Sender flips its bit and select the next packet to send.
+                        <li> Sender repeatedly writes bit-packet pairs <code>< bit, pac ></code> to the data channel, where <code>bit</code> is the Sender's bit and <code>pac</code> is the Sender's data to transmit. 
+                            If the Sender receives <code>bit</code> from Receiver over the acknowledgement channel, then that is a confirmation that the packet sent has been delivered.
+                            In that case, Sender flips its bit and select the next packet to send.
 
-                            <li> Receiver puts its bit  into the acknowledgement channel
-                              repeatedly. When Receiver gets a pair < <em>bit,pac</em> > such that <em>bit</em> is different from its bit then it stores <em>pac</em> and flips its bit.
+                        <li> Receiver writes its bit to the acknowledgement channel repeatedly.
+                          When Receiver reads a pair <code>< bit, pac ></code> such that <code>bit</code> is different from its bit, then it stores <code>pac</code> and flips its bit.
                       </ul>
 
-                      A snapshot of the protocol can be found <a href="examples/abp/snapshot/ABPsnapshot.pdf">here</a>.
+                      A snapshot of the protocol can be found <a href="examples/abp/snapshot/ABPsnapshot.pdf">here.</a>
                     </p>
 
                     <ul>
-                      <li> <a href="examples/abp/abp.html">Solution 1 (OTS/CafeOBJ method) </a>
-                      <li> <a href="examples/abpr/abp.html"> Solution 2 (states described explicitly)</a>
+                      <li> <a href="examples/abp/abp.html">Solution 1 (OTS/CafeOBJ method)</a>
+                      <li> <a href="examples/abpr/abp.html">Solution 2 (states described explicitly)</a>
                     </ul>
                   </div>
                 </div>
