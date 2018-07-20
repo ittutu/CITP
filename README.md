@@ -151,7 +151,7 @@ the TAS protocol in Maude. Then, we prove properties on it with CITP.
 ### Maude
 
 We first define the `LABEL` module to specify the possible states of processes:
-in reminder section (label `cs`) or in critical section (label `cs`).
+in remainder  section (label `cs`) or in critical section (label `cs`).
 These operators are *constructors* (attribute `ctor`) of the sort `Label`.
 We also define a predicate `_~_` for checking whether two labels are equal:
 
@@ -225,7 +225,7 @@ lock:
 ```
 
 We define some variables and start specifying the observations for the initial
-state. In this case all proceses are in the reminder section and the lock is open.
+state. In this case all proceses are in the remainder section and the lock is open.
 Note that we use the attribute `metadata` to assign names to these equations.
 These names can be used later when proving properties with CITP:
 
@@ -237,30 +237,52 @@ These names can be used later when proving properties with CITP:
  eq lock(init) = open [metadata "CA-A"] .
 ```
 
-We define next observations for `enter`:
+We define next observations for `enter`. We define `pc` first:
 * The equation `CA-PCE1` indicates that, if the lock is open and the process is in the
-reminder section, then it can go into the critical section.
+remainder section, then it can go into the critical section.
+* In any other case we need a recursive call:
+	+ Equation `CA-PCE2` is applied when the processes are different.
+	+ Equation `CA-PCE3` is applied when the process is not in the remainder section.
+	+ Equation `CA-PCE4` is applied when the lock is closed.
+
+Then, we define the equations for `lock`:
+* The equation `CA-LE1` indicates the lock changes to `close` when a process enters the
+critical section.
+* Otherwise, we recursively traverse the system:
+ + The equation `CA-LE2` is applied when the process is not in the remainder section.
+ + The equation `CA-LE3` is applied when the lock was not `open`.
 
 ```
  ceq pc(enter(S,I),J) = cs      if J = I /\ pc(S,I) = rs /\ lock(S) = open [metadata "CA-PCE1"].
  ceq pc(enter(S,I),J) = pc(S,J) if (J ~ I) = false                         [metadata "CA-PCE2"].
  ceq pc(enter(S,I),J) = pc(S,J) if (pc(S,I) ~ rs) = false                  [metadata "CA-EPCE3"].
- ceq pc(enter(S,I),J) = pc(S,J) if (lock(S) ~ close) = false               [metadata "CA-PCE4"].
+ ceq pc(enter(S,I),J) = pc(S,J) if (lock(S) ~ open) = false                [metadata "CA-PCE4"].
 
  ceq lock(enter(S,I)) = close   if pc(S,I) = rs /\ lock(S) = open [metadata "CA-LE1"].
  ceq lock(enter(S,I)) = lock(S) if (pc(S,I) ~ rs) = false         [metadata "CA-LE2"].
  ceq lock(enter(S,I)) = lock(S) if (lock(S) ~ open) = false       [metadata "CA-LE3"].
 ```
 
-Finally, we define the behavior of the observations for `leave`.
+Finally, we define the behavior of the observations for `leave`. For `pc`
+we have:
+* The equation `CA-PCV1` indicates that the process goes to the remainder section
+when it was in the critical section.
+* Otherwise, we recursively check the state:
+ + The equation `CA-PCV2` is applied when we are looking for a different process.
+ + The equation `CA-PCV3` is applied when it was not in the critical section.
+
+Regarding `lock`, we have the following equations:
+* The equation `CA-LL1` indicates that the lock opens when the process goes
+out of the critical section.
+* Otherwise, the equation `CA-LL2` recursively checks the system:
 
 ```
  ceq pc(leave(S,I),J) = rs      if J = I /\ pc(S,I) = cs [metadata "CA-PCV1"].
  ceq pc(leave(S,I),J) = pc(S,J) if (J ~ I) = false       [metadata "CA-PCV2"].
- ceq pc(leave(S,I),J) = pc(S,J) if (pc(S,I) ~ cs) = false[metadata "CA-PCV2"].
----
+ ceq pc(leave(S,I),J) = pc(S,J) if (pc(S,I) ~ cs) = false[metadata "CA-PCV3"].
+
  ceq lock(leave(S,I)) = open if pc(S,I) = cs              [metadata "CA-LL1"].
- ceq lock(leave(S,I)) = lock(S) if (pc(S,I) ~ cs) = false [metadata "CA-LL1"].
+ ceq lock(leave(S,I)) = lock(S) if (pc(S,I) ~ cs) = false [metadata "CA-LL2"].
 endfm
 ```
 
