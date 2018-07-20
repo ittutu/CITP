@@ -1,0 +1,41 @@
+in abp
+
+mod ABP-L is
+ inc ABP .
+ vars B1 B2 B : Bit .
+ var N : PNat .
+ var P : Packet .
+ var D : Data .
+ vars Ch1 Cn1 : Channel1 .
+ vars Ch2 Cn2 : Channel2 .
+ var BP : BP-Pair .
+--- lemmas ---
+ ceq B2 = B1    if [B1,N,Ch1,B2,D,(Ch2,B1,Cn2)]: Reach [nonexec metadata "inv3"].
+ ceq B  = B1    if [B1,N,(Ch1,< B,P >,Cn1),B1,D,Ch2]: Reach [nonexec metadata "inv2"].
+ ceq P = pac(N) if [B,N,(Ch1,< B,P >,Cn1),B2,D,Ch2]: Reach [nonexec metadata "inv5"].
+endm
+
+select #CITP# .
+loop init .
+
+(goal ABP-L |-
+ceq mk(N:PNat)= D:Data if[B:Bit,N:PNat,Ch1:Channel1,B:Bit,D:Data,Ch2:Channel2]:= S:Reach [metadata "goal1"];
+ceq mk(N:PNat)= pac(N:PNat),D:Data if[B:Bit,N:PNat,Ch1:Channel1,not B:Bit,D:Data,Ch2:Channel2]:= S:Reach [metadata "goal2"];)
+
+(indx on S:Reach red cs red tc red imp red)
+
+---> rec1 goal1 <---
+(. cp-l 1 >< 4
+   init inv3 by B1:Bit <- B1#1 ; N:PNat <- N#2 ; B2:Bit <- B2#4 ; D:Data <- D#5 ;
+        Ch1:Channel1 <- Ch1#3 ; Ch2:Channel2 <- Ch2#6 ; Cn2:Channel2 <- (empty).Channel2)	
+
+---> rec2 goal2 <---
+(. cp-l 1 >< 4
+   init inv2 by B1:Bit <- B1#1 ; N:PNat <- N#2 ; B:Bit <- not B1#1 ; P:Packet <- P#5 ; D:Data <- D#6 ;
+	Ch1:Channel1 <- Ch1#3 ;	Cn1:Channel1 <-(empty).Channel1 ; Ch2:Channel2 <- Ch2#7)
+
+---> rec2 goal1 <---
+(. cp-l 1 >< 4
+   init inv5 by B:Bit <- B1#1 ; N:PNat <- N#2 ; P:Packet <- P#5 ; B2:Bit <- not B1#1 ; D:Data <- D#6 ;
+        Ch1:Channel1 <- Ch1#3 ; Cn1:Channel1 <-(empty).Channel1 ; Ch2:Channel2 <- Ch2#7
+   red)
