@@ -2,10 +2,21 @@ body {
     padding-top: 54px;
 }
 
+nav {
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
 header {
     padding: 108px 0 54px;
 }
 
 section{
     padding: 27px 0;
+}
+
+footer {
+    padding: 160px 0 54px;
+    background-color: rgba(0,0,0,.03);
+    border-top: 1px solid rgba(0,0,0,.125);
 }
