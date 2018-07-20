@@ -1,0 +1,116 @@
+
+*****************************************************************************************************
+***(Since Maude doesn't allow importation of theories in protecting mode,
+all modules wil be imported with "including" but the intended semantics is that of protecting)
+*****************************************************************************************************
+in citp
+--- ---------------------------------------------
+fth ELT is
+ sort Elt .
+endfth
+--- ---------------------------------------------
+fmod SEQ{X :: ELT} is
+ sort Seq .
+ subsorts X$Elt < Seq . 
+ op empty : -> Seq [ctor].
+ op _`,_ : Seq  Seq -> Seq  [id: empty assoc ctor].
+ vars Se Sq : Seq .
+ var E : X$Elt .
+--- lemma ---
+ceq true = false if Se,E,Sq := empty [metadata "lemma-seq"].
+endfm
+--- ---------------------------------------------
+fmod PAIR{X :: ELT,Y :: ELT} is
+ sort Pair . 
+ op <_`,_> : X$Elt Y$Elt -> Pair [ctor].
+endfm
+--- ---------------------------------------------
+fmod BIT is
+ sort Bit .
+ op f : -> Bit [ctor].
+ op t : -> Bit [ctor].
+ op not_ : Bit -> Bit .
+ eq not f = t .
+ eq not t = f .
+---
+ var B : Bit .
+--- lemma ---
+ ceq true = false if t = f .
+  eq not not B = B .
+endfm
+--- ---------------------------------------------
+view ELT2BIT from ELT to BIT is
+ sort Elt to Bit .
+endv
+--- ---------------------------------------------
+fmod CHANNEL2 is
+ inc SEQ{ELT2BIT} * (sort Seq to Channel2).
+endfm
+--- ---------------------------------------------
+fmod PNAT is
+ sorts PNat PNNat .
+ subsorts PNNat < PNat .
+ op 0 : -> PNat [ctor].
+ op s_ : PNat -> PNNat [ctor]. 
+endfm
+--- ---------------------------------------------
+view ELT2PNAT from ELT to PNAT is
+ sort Elt to PNat .
+endv
+--- ---------------------------------------------
+fmod PACKET is inc PNAT .
+ sort Packet .
+ op pac : PNat -> Packet [ctor].
+endfm
+--- ---------------------------------------------
+view ELT2PACKET from ELT to PACKET is
+ sort Elt to Packet .
+endv
+--- ---------------------------------------------
+fmod BP-PAIR is
+ inc PAIR{ELT2BIT,ELT2PACKET} * (sort Pair to BP-Pair).
+endfm
+--- ---------------------------------------------
+view ELT2BP-PAIR from ELT to BP-PAIR is
+ sort Elt to BP-Pair .
+endv
+--- ---------------------------------------------
+fmod CHANNEL1 is
+ inc SEQ{ELT2BP-PAIR} * (sort Seq to Channel1).
+endfm
+--- ---------------------------------------------
+fmod DATA is
+ inc SEQ{ELT2PACKET} * (sort Seq to Data).
+ op mk : PNat -> Data .
+ var N : PNat .
+ eq mk(0)   = pac(0) .
+ eq mk(s N) = pac(s N),mk(N).
+endfm
+--- ---------------------------------------------
+--- ---------------------------------------------
+fmod ABP is
+ inc CHANNEL1 . inc CHANNEL2 . inc DATA .
+ sorts Reach Sys .
+ subsort Reach < Sys .
+ op `[_`,_`,_`,_`,_`,_`] : Bit PNat Channel1 Bit Data Channel2 -> Sys [ctor].
+ vars B1 B2 B : Bit .
+ var N : PNat .
+ var P : Packet .
+ var D : Data .
+ vars Ch1 Cn1 : Channel1 .
+ vars Ch2 Cn2 : Channel2 .
+ var BP : BP-Pair .
+--- init ---
+ mb [t,0,(empty).Channel1,f,(empty).Data,(empty).Channel2] : Reach [metadata "ctor-init"] .
+--- sender --- 
+ cmb [B1,N,(< B1,pac(N) >,Ch1), B2, D, Ch2]: Reach if [B1,N,Ch1,B2,D,Ch2]: Reach [metadata "ctor-send1"].
+ cmb [not B1,s N,Ch1,B2,D,Ch2]: Reach              if [B1,N,Ch1,B2,D,(Ch2,B1)]: Reach [metadata "ctor-rec1"].
+ cmb [B1,N,(Ch1,Cn1),B2,D,Ch2]: Reach              if [B1,N,(Ch1,BP,Cn1),B2,D,Ch2]: Reach [metadata "ctor-drop1" nonexec].
+ cmb [B1,N,(Ch1,BP,BP,Cn1),B2,D,Ch2]: Reach        if [B1,N,(Ch1,BP,Cn1),B2,D,Ch2]: Reach [metadata "ctor-dup1"].
+--- receiver ---
+ cmb [B1,N,Ch1,B2,D,(B2,Ch2)]: Reach  if [B1,N,Ch1,B2,D,Ch2]: Reach [metadata "ctor-send2"].
+ cmb [B1,N,Ch1,B2,(P,D),Ch2]: Reach   if [B1,N,(Ch1,< B2,P >),not B2,D,Ch2]: Reach [metadata "ctor-rec2"].
+ cmb [B1,N,Ch1,B2,D,(Ch2,Cn2)]: Reach if [B1,N,Ch1,B2,D,(Ch2,B,Cn2)]: Reach [metadata "ctor-drop2" nonexec].
+ cmb [B1,N,Ch1,B2,D,(Ch2,B,B,Cn2)]: Reach if [B1,N,Ch1,B2,D,(Ch2,B,Cn2)]: Reach [metadata "ctor-dup2"]. 
+endfm
+--- ---------------------------------------------
