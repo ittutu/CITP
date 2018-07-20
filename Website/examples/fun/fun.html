@@ -38,7 +38,7 @@
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
             <li class="nav-item">
-              <a class="nav-link js-scroll-trigger" href="#page-top">PNAT</a>
+              <a class="nav-link js-scroll-trigger" href="#page-top">Case analysis</a>
             </li>
           </ul>
         </div>
@@ -48,7 +48,7 @@
     <!-- Header -->
     <header>
       <div class="container text-center">
-        <h1>Commutativity & associativity of the addition of natural numbers</h1>
+        <h1>Case analysis</h1>
       </div>
     </header>
 
@@ -58,14 +58,26 @@
         <div class="row">
           <div class="col-lg-8 mx-auto">
             <p>
-              The aim is to prove that the addition of natural numbers is both commutative and associative; that is, for any three natural numbers $m$, $n$, and $p$ we have:
+              Consider the following two functions on natural numbers:
               $$
-              m + n = n + m
+              F(x) = \left\{
+              \begin{array}{ll}
+              5 & \text{if}\ x \leq 7 \\
+              1 & \text{if}\ 8 \leq x
+              \end{array}\right.
               \qquad
               \text{and}
               \qquad
-              (m + n) + p = m + (n + p)
+              G(x) = \left\{
+              \begin{array}{ll}
+              2 & \text{if}\ x \leq 4 \\
+              7 & \text{if}\ 5 \leq x
+              \end{array}\right.
               $$
+            </p>
+
+            <p>
+              The aim is to prove that $9 \leq G(F(x)) + G(x)$ for all natural numbers $x$.
             </p>
           </div>
         </div>
@@ -83,7 +95,7 @@
             <pre class="pre-scrollable"><code id="spec" class="maude hljs"></code></pre>
             <script>
               jQuery.ajax({
-                url: "pnat.maude",
+                url: "fun.maude",
                 dataType: "text",
                 success : function (data) {
                   $("#spec").text(data);
@@ -92,7 +104,7 @@
             </script>
 
             <p>
-              See <a href="pnat.maude">pnat.maude</a> for the full specification.
+              See <a href="fun.maude">fun.maude</a> for the full specification.
             </p>
 
           </div>
@@ -108,32 +120,14 @@
             
             <h2>Verification</h2>
 
-            <h3>Lemmas</h3>
-
             <p>
-              To prove the commutativity and associativity of addition, we need two lemmas:
-              <pre><code class="maude hljs">PNAT |- eq N:PNat + 0 = N:PNat [metadata "lemma1"] ;
-PNAT |- eq M:PNat + s N:PNat = s(M:PNat + N:PNat) [metadata "lemma2"] ; </code></pre>
+              The goal is easily discharged using the theorem of constants (i.e. by adding the variables of the goal to the body of the specification <code class="maude">FG-FUN</code> as fresh constants), case analysis, and reduction.
             </p>
+            
+            <pre><code class="maude hljs">FG-FUN |- eq 9 <= G(F(X:Nat)) + G(X:Nat) = true ; </code></pre>
 
             <p>
-              See <a href="lemma.maude">lemma.maude</a> for a proof of these lemmas.
-            </p>
-
-            <h3>Commutativity</h3>
-
-            <pre><code class="maude hljs">PNAT + {lemma1, lemma2} |- eq M:PNat + N:PNat = N:PNat + M:PNat ; </code></pre>
-
-            <p>
-              See <a href="comm.maude">comm.maude</a> for a proof of the commutativity.
-            </p>
-
-            <h3>Associativity</h3>
-
-            <pre><code class="maude hljs">PNAT |- eq (M:PNat + N:PNat) + P:PNat = N:PNat + (M:PNat + P:PNat) ;</code></pre>
-
-            <p>
-              See <a href="assoc.maude">assoc.maude</a> for a proof of the associativity.
+              See <a href="goal.maude">goal.maude</a> for the full proof.
             </p>
 
           </div>
