@@ -76,6 +76,17 @@
           <div class="col-lg-8 mx-auto">
             
             <p>
+              The Constructor-based Inductive Theorem Prover (CITP) is a proof management tool built on top of a variation of conditional equational logic enhanced with many modern features.
+            </p>
+            <p>
+              The tool consists of two parts:
+              <ul>
+                <li> the core, which implements proof tactics, and </li>
+                <li> the user interface, which implements the parser, displays the results, and defines commands throught which users can interact with the tool. </li>
+              </ul>
+            </p>
+
+            <p>
               CITP is implemented in <a href="http://maude.cs.uiuc.edu/">Core Maude</a>.
             </p>
           </div>
@@ -91,7 +102,8 @@
 
             <h2>Download</h2>
             <p>
-              CITP consists of one file <a href="tool/citp.maude">citp.maude</a>.
+              CITP consists of only one file, <a href="tool/citp.maude">citp.maude</a> (now at version 2.0).
+              However, please note that you need to have <a href="http://maude.cs.illinois.edu/w/index.php?title=Maude_download_and_installation">Maude</a> installed in order to use the tool.
             </p>
           </div>
         </div>
@@ -106,9 +118,9 @@
 
             <h2>Instructions</h2>
             <p>
-              In order to use CITP, copy <em>citp.maude</em>, start
-              <em>Maude</em> and type <em>in citp</em>.
-              See the following PDF for the list of commands available for CITP.
+              To use CITP, simply copy the file <a href="tool/citp.maude">citp.maude</a> to your current/working directory, start <a href="http://maude.lcc.uma.es/manual271/maude-manualch2.html#x13-240002.2">Maude</a>, and type:
+              <pre><code class="nohighlight hljs">in citp</code></pre>
+              See the following PDF for the list of commands available in CITP:
             </p>
             <ul>
               <li> <a href="tool/readme.pdf">Readme</a>
