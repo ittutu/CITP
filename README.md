@@ -142,3 +142,164 @@ for interacting with the interface, as shown by the table below.
 | **show proof**   | Shows the sequence of lists of tactics applied                                   |
 | **redTerm t**    | Reduces the term **t** to its normal form  w.r.t. the current module.            |
 
+## TAS example
+
+We present here a simple example to give users a flavor of how to specify systems
+in Maude and prove properties of them with the CITP. First, we describe how to specify
+the TAS protocol in Maude. Then, we prove properties on it with CITP.
+
+### Maude
+
+We first define the `LABEL` module to specify the possible states of processes:
+in reminder section (label `cs`) or in critical section (label `cs`).
+These operators are *constructors* (attribute `ctor`) of the sort `Label`.
+We also define a predicate `_~_` for checking whether two labels are equal:
+
+```
+fmod LABEL is
+ sort Label .
+
+ ops rs cs : -> Label [ctor] .
+ op _~_ : Label Label -> Bool [comm] .
+ eq (L:Label ~ L:Label) = true .
+ eq (rs ~ cs) = false .
+endfm
+```
+
+The theory `PID` defines generic process identifiers
+(sort `Pid`) and the same equality predicate for them:
+
+```
+fth PID is inc BOOL .
+ sort Pid .
+ op _~_ : Pid Pid -> Bool [comm] .
+ eq (P:Pid ~ P:Pid) = true .
+endfth
+```
+
+The module `STATUS` specifies the states of the lock, which can be
+either `open` or `close`, constructors of the sort `Status`. We also
+define in this case the equality operator:
+
+```
+fmod STATUS is
+ sort Status .
+ ops open close : -> Status [ctor] .
+ op _~_ : Status Status -> Bool [comm] .
+ eq (L:Status ~ L:Status) = true .
+ eq (open ~ close) = false .
+endfm
+```
+
+The module `TAS` is in charge of defining the behavior of the system. It is
+parameterized by the theory `PID` above, imports the rest of modules, and
+defines a sort `Sys` for the system:
+
+```
+fmod TAS{X :: PID} is
+ pr LABEL .
+ pr STATUS .
+ sort Sys .
+```
+
+We define next the constructors for the system. It can be in the initial
+state (`init`), a process identifier can be entering the critical section
+(`enter`) or leaving it (`leave`):
+
+```
+ --- any initial state
+ op init : -> Sys [ctor] .
+ --- transitions
+ op enter : Sys X$Pid -> Sys [ctor] .
+ op leave : Sys X$Pid -> Sys [ctor] .
+```
+
+We also define *observations* to observe the state of the system in
+a particular moment. The observation `pc` returns the label associated
+to the `Pid` given as argument, while `lock` returns the status of the
+lock:
+
+```
+ op pc   : Sys X$Pid -> Label .
+ op lock : Sys -> Status .
+```
+
+We define some variables and start specifying the observations for the initial
+state. In this case all proceses are in the reminder section and the lock is open.
+Note that we use the attribute `metadata` to assign names to these equations.
+These names can be used later when proving properties with CITP:
+
+```
+ vars I J : X$Pid .
+ var  S : Sys .
+
+ eq pc(init,I) = rs   [metadata "CA-1"] .
+ eq lock(init) = open [metadata "CA-A"] .
+```
+
+We define next observations for `enter`:
+* The equation `CA-PCE1` indicates that, if the lock is open and the process is in the
+reminder section, then it can go into the critical section.
+
+```
+ ceq pc(enter(S,I),J) = cs      if J = I /\ pc(S,I) = rs /\ lock(S) = open [metadata "CA-PCE1"].
+ ceq pc(enter(S,I),J) = pc(S,J) if (J ~ I) = false                         [metadata "CA-PCE2"].
+ ceq pc(enter(S,I),J) = pc(S,J) if (pc(S,I) ~ rs) = false                  [metadata "CA-EPCE3"].
+ ceq pc(enter(S,I),J) = pc(S,J) if (lock(S) ~ close) = false               [metadata "CA-PCE4"].
+
+ ceq lock(enter(S,I)) = close   if pc(S,I) = rs /\ lock(S) = open [metadata "CA-LE1"].
+ ceq lock(enter(S,I)) = lock(S) if (pc(S,I) ~ rs) = false         [metadata "CA-LE2"].
+ ceq lock(enter(S,I)) = lock(S) if (lock(S) ~ open) = false       [metadata "CA-LE3"].
+```
+
+Finally, we define the behavior of the observations for `leave`.
+
+```
+ ceq pc(leave(S,I),J) = rs      if J = I /\ pc(S,I) = cs [metadata "CA-PCV1"].
+ ceq pc(leave(S,I),J) = pc(S,J) if (J ~ I) = false       [metadata "CA-PCV2"].
+ ceq pc(leave(S,I),J) = pc(S,J) if (pc(S,I) ~ cs) = false[metadata "CA-PCV2"].
+---
+ ceq lock(leave(S,I)) = open if pc(S,I) = cs              [metadata "CA-LL1"].
+ ceq lock(leave(S,I)) = lock(S) if (pc(S,I) ~ cs) = false [metadata "CA-LL1"].
+endfm
+```
+
+
+### CITP
+
+We show now how to prove some properties on this protocol. In particular, we
+prove that the lock is closed when there is a process in the critical section
+(first equation of the goal) and that, if two processes are in the critical
+section at the same time, it is because they are the same process (second equation):
+
+```
+(goal TAS |-
+ceq lock(S:Sys)= close if pc(S:Sys,I:X$Pid)= cs[nonexec];
+ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid)= cs /\ pc(S:Sys,J:X$Pid)= cs[nonexec];)
+```
+
+```
+(ind on S:Sys red)
+*** 3 ***
+(select 2)
+*** 4 ***
+(. tc red imp red cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 5 ***
+(tc red ca-1 red ca red imp red)
+*** 6 ***
+(init 2 by I:X$Pid <- I#3 red)
+*** 7 ***
+(init 1 by I:X$Pid <- I#3 ; J:X$Pid <- z#2 red)
+*** 8 ***
+(. cp-l 3 >< 7)
+*** 9 ***
+(. cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 10 ***
+(init 1 by I:X$Pid <- I#3 ; J:X$Pid <- J#4 red)
+*** 11 ***
+(. cp-l eq(open ~ close)= false ; >< eq open = close ;)
+*** 12 ***
+(. init 2 by I:X$Pid <- J#4)
+*** 13 ***
+(. cp-l eq(open ~ close)= false ; >< eq open = close ;)
+```
