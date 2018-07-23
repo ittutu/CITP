@@ -445,3 +445,29 @@ above:
 (. init 2 by I:X$Pid <- J#4)
 (. cp-l eq(open ~ close)= false ; >< eq open = close ;)
 ```
+
+## References
+* Michel Bidoit, Rolf Hennicker:
+[Constructor-based observational logic](https://doi.org/10.1016/j.jlap.2005.09.002).
+J. Log. Algebr. Program. 67(1-2): 3-51 (2006).
+* Michel Bidoit, Rolf Hennicker, Alexander Kurz:
+[Observational logic, constructor-based logic, and their duality](https://doi.org/10.1016/S0304-3975(02)00865-4).
+Theor. Comput. Sci. 3(298): 471-510 (2003).
+* Kokichi Futatsugi, Daniel Gaina, Kazuhiro Ogata:
+[Principles of proof scores in CafeOBJ](https://doi.org/10.1016/j.tcs.2012.07.041).
+Theor. Comput. Sci. 464:90-112 (2012).
+* Daniel Gaina, Kokichi Futatsugi, Kazuhiro Ogata:
+[Constructor-based Logics](https://doi.org/10.3217/jucs-018-16-2204).
+J. UCS 18(16): 2204-2233 (2012).
+* Daniel Gaina:
+[Interpolation in logics with constructors](https://doi.org/10.1016/j.tcs.2012.12.002).
+Theor. Comput. Sci. 474: 46-59 (2013).
+* Daniel Gaina, Kokichi Futatsugi:
+[Initial semantics in logics with constructors](https://doi.org/10.1093/logcom/exs044).
+J. Log. Comput. 25(1): 95-116 (2015)
+* Daniel Gaina, Zhang Min, Yuki Chiba, Yasuhito Arimoto:
+[Constructor-based Inductive Theorem Prover](https://doi.org/10.1007/978-3-642-40206-7_26).
+CALCO 2013, Warsaw, Poland, September 3-6 (2013).
+* Daniel Gaina, Dorel Lucanu, Kazuhiro Ogata, Kokichi Futatsugi:
+[On Automation of OTS/CafeOBJ Method](https://doi.org/10.1007/978-3-642-54624-2_29).
+Specification, Algebra, and Software: 578-602 (2014).
