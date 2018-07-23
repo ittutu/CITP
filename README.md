@@ -122,7 +122,7 @@ It is important to note that these tactics are designed for goals consisting of 
 specification and a single formula: **ca, tc, imp, red, cs, pair**. However, if one
 of these tactics is applied to a goal of the form **M |- {E1,...,En}**, the goal
 is decomposed into a list of subgoals **(M |- E1), ..., (M |- En)** and then the
-tactic is applied to each goal **M |- Ei*.
+tactic is applied to each goal **M |- Ei**.
 
 | Tactic                               | Command  |
 |--------------------------------------|----------|
