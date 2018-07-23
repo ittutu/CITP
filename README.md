@@ -27,7 +27,7 @@ should do as follows:
 ```
 maude Tool/citp.maude
 
-cd CITP/Examples/tas_exercise
+cd CITP/Examples/TAS
 load tas.maude
 
 select #CITP# .
@@ -147,7 +147,7 @@ for interacting with the interface, as shown by the table below.
 We present here a simple example to give users a flavor of how to specify systems
 in Maude and prove properties of them with the CITP. First, we describe how to specify
 the TAS protocol in Maude. Then, we prove properties on it with CITP. The specification
-of the protocol and the proofs are available [here](https://github.com/ittutu/CITP/tree/master/Examples/tas_exercise).
+of the protocol and the proofs are available [here](https://github.com/ittutu/CITP/tree/master/Examples/TAS).
 
 ### Maude
 
