@@ -43,7 +43,12 @@ introducing commands.
 
 ## Using the CITP
 
-In the following we present how to introduce and prove goals in CITP.
+In the following we present how to introduce and prove goals in CITP. In Section
+[Goals](#goals) we present the syntax for goals. Then, in the
+[next section](#proof-tactics) we introduce the tactics that can be used to discharge
+these goals. Finally, we present some [tips](#tips) to take advantage of all the
+features implemented in CITP.
+
 It is important to note that all the commands presented here must be introduced in
 the tool enclosed in parentheses, so they can be parsed by the CITP.
 
@@ -142,14 +147,207 @@ for interacting with the interface, as shown by the table below.
 | **show proof**   | Shows the sequence of lists of tactics applied                                   |
 | **redTerm t**    | Reduces the term **t** to its normal form  w.r.t. the current module.            |
 
-## TAS example
+### Tips
+
+In this section we present some syntax conventions useful for specifying and
+proving properties with CITP:
+
+* CITP is well suited for finding inconsistencies in Booleans. For this reason, if we reach
+a module premises like `ctor_i = ctor_j` it might be useful to define conditional equations
+of the form `ceq true = false if ctor_i = ctor_j`.
+* It might also worth defining goals as conditional equations, with the premises as conditions
+and the actual equation as conclusion.
+* Although Maude provides a built-in predicate `_==_`, its semantics are not appropriate for
+theorem proving. If equalities are required, we recommend defining a new, commutative,
+predicate (CITP examples use `_~_`) with equations stating that `X:Sort ~ X:Sort = true`
+for all sorts and `ctor_i ~ ctor_j = false` for all constructors.
+* In order to use the decision mechanisms for tuples they must
+be declared with syntax `[_,...,_]` or `<_,...,_>`.
+* In order to use the decision mechanisms for multisets they must be defined with syntax `__`.
+* If you try to prove the properties in the examples by yourself you may notice that some
+tactic lists are too long, in the sense that the property is proven before using all the
+tactics. We left these lists unmodified because we consider them standard strategies for
+proving goals and hence we decided to use them consistently for most examples; please feel
+free to modify them and find your own strategies.
+
+## Examples
+
+We present some examples to illustrate the features implemented in CITP.
+We first present a simple example on [natural numbers](#pnat-example) and
+then a more complex one on the specification of the [TAS protocol](#tas-example).
+
+### PNat example
+
+In this example we define natural numbers by using Peano axioms, which we use to
+define the addition and multiplication functions. Then, we prove that the addition
+is commutative and associative.
+The specification and the proofs are available
+[here](https://github.com/ittutu/CITP/tree/master/Examples/PNat).
+
+#### PNat specification
+
+A Maude equational specification starts by `fmod` (standing for *functional module*),
+followed by the module name (`PNAT` in this case, from Peano Natural numbers), and `is`.
+Then, we can define the sorts, that in our case are `PNat` for natural numbers and `PNzNat`
+for non-zero natural numbers. Moreover, we can define a subsort relation between sorts;
+in our case we indicate that all the terms that have sort `PNzNat` have sort `PNat` as well:
+
+```
+fmod PNAT is
+ sorts PNat PNzNat .
+ subsorts PNzNat < PNat .
+```
+
+Next, we define constructors (`ctor` attribute) for our sorts, using
+operators that receive the arity and the co-arity. In our case `0` is the
+constructor for `PNat` and successor (`s_`, where the underscore is a placeholder)
+is the constructor for `PNzNat`.
+
+```
+ op 0 : -> PNat [ctor] .
+ op s_ : PNat -> PNzNat [ctor].
+```
+
+If we do not use the `ctor` attribute then we are defining standard functions, like
+the addition and multiplication below. These functions have a `prec` attribute that indicate
+how high is their precedence: the lower the number the higher the precedence, so multiplication
+will be evaluated before addition:
+
+```
+ op _+_ : PNat PNat -> PNat [prec 33].
+ op _*_ : PNat PNat -> PNat [prec 31].
+```
+
+Now, we define some variables of sort `PNat` to use in equations. The equations for addition
+are defined in the usual way; the first one indicates that adding a natural number to `0`
+returns the given natural number, while the second one applies addition recursively and then
+applies successor:
+
+```
+ vars M N P : PNat .
+
+ eq 0 + N = N             [metadata "1"].
+ eq s M + N = s(M + N)    [metadata "2"].
+```
+
+Note the use of the attribute `metadata`, that will allow CITP to identify equations.
+The equations for multiplication are defined in a similar way:
+
+```
+ eq M * 0 = 0           [metadata "3"].
+ eq M * s N = M * N + M [metadata "4"].
+endfm
+```
+
+#### PNat properties
+
+In this section we show how to prove the associativity and commutativity of addition
+as defined above.
+
+##### Previous lemmas
+
+Before starting the main proof we state and prove two lemmas with particular cases
+for the commutativity:
+
+```
+(goal PNAT |-
+eq M:PNat + 0 = M:PNat ;
+eq M:PNat + s N:PNat = s(M:PNat + N:PNat);)
+```
+
+Note that the goal consists of two equations to be proved in the `PNAT` module.
+The natural way to proceed is to apply induction on `M`:
+
+```
+(ind on M:PNat)
+```
+
+This command creates two goals, one for each constructor of the sort.
+For example, the goal for the successor is:
+
+```
+--------------------- Goal: 1 ---------------------
+< fmod PNAT is
+sorts Bool PNat PNzNat .
+subsort PNzNat < PNat .
+op x#1 : -> PNat[metadata "induction-constant"].
+eq M:PNat * 0 = 0[metadata "3"].
+eq M:PNat * s N:PNat = M:PNat * N:PNat + M:PNat[metadata "4"].
+eq 0 + N:PNat = N:PNat[metadata "1"].
+eq x#1 + 0 = x#1[metadata "5" metadata "s_"].
+eq x#1 + s N:PNat = s(x#1 + N:PNat)[metadata "6" metadata "s_"].
+eq s M:PNat + N:PNat = s(M:PNat + N:PNat)[metadata "2"].
+. . .
+endfm,
+eq s x#1 + 0 = s x#1 ;
+eq s x#1 + s N:PNat = s(s x#1 + N:PNat); >
+------------------- Current goal -------------------
+```
+
+It is interesting to see the new premises generated in the module
+by the induction command. For example, we have `x#1 + 0 = x#1`, which
+will be useful to discharge the first equation in the goal by combining
+it with the equation `2` for addition. We find similar premises to
+discharge the second equation. Hence, it is enough to apply the theorem
+of constants and reduction to prove both goals:
+
+```
+(tc red)
+```
+
+##### Commutativity
+
+In order to use the lemmas above we need to create a new module importing
+`PNAT` in protecting mode (which indicates that no "junk" and no "confusion"
+is added to the module) and adding the lemmas as equations:
+
+```
+fmod PNAT-L is
+ pr PNAT .
+ vars M N : PNat .
+ eq N + 0 = N          [metadata "lemma-1"].
+ eq M + s N = s(M + N) [metadata "lemma-2"].
+endfm
+```
+
+The goal is defined in this new module:
+
+```
+(goal PNAT-L |-
+eq M:PNat + N:PNat = N:PNat + M:PNat ;)
+```
+
+It is enough to apply the same strategy we used above to prove this
+property:
+
+```
+(ind on M:PNat tc red)
+```
+
+##### Associativity
+
+The associativity property does not require the lemmas. Hence, we just
+state the goal in the `PNAT` module:
+
+```
+(goal PNAT |- eq (X:PNat + Y:PNat)+ Z:PNat = X:PNat + (Y:PNat + Z:PNat);)
+```
+
+and use the tactics shown before to prove it:
+
+```
+(ind on X:PNat tc red)
+```
+
+### TAS example
 
 We present here a simple example to give users a flavor of how to specify systems
 in Maude and prove properties of them with the CITP. First, we describe how to specify
 the TAS protocol in Maude. Then, we prove properties on it with CITP. The specification
-of the protocol and the proofs are available [here](https://github.com/ittutu/CITP/tree/master/Examples/TAS).
+of the protocol and the proofs are available
+[here](https://github.com/ittutu/CITP/tree/master/Examples/TAS).
 
-### Maude
+#### TAS specification
 
 We first define the `LABEL` module to specify the possible states of processes:
 in remainder  section (label `cs`) or in critical section (label `cs`).
@@ -288,7 +486,7 @@ endfm
 ```
 
 
-### CITP
+#### TAS properties
 
 We show now how to prove some properties on this protocol. In particular, we
 prove that the lock is closed when there is a process in the critical section

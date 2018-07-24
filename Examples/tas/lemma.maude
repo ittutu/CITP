@@ -8,7 +8,6 @@ loop init .
 
 *** Version 1 (by Daniel)
 
----> Lemma:
 *** 1 ***
 (goal TAS |-
 ceq lock(S:Sys)= close if pc(S:Sys,I:X$Pid)= cs[nonexec];
@@ -46,8 +45,8 @@ eof
 
 *** 1 ***
 (goal TAS |-
-ceq lock(S:Sys)= close if pc(S:Sys,I:X$Pid)= cs[nonexec];
-ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid)= cs /\ pc(S:Sys,J:X$Pid)= cs[nonexec];)
+ceq lock(S:Sys) = close if pc(S:Sys,I:X$Pid) = cs[nonexec];
+ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid) = cs /\ pc(S:Sys,J:X$Pid) = cs[nonexec];)
 *** 2 ***
 (ind on S:Sys red)
 *** 3 ***
