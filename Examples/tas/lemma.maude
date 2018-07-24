@@ -6,6 +6,8 @@ select #CITP# .
 
 loop init .
 
+*** Version 1 (by Daniel)
+
 ---> Lemma:
 *** 1 ***
 (goal TAS |-
@@ -37,3 +39,43 @@ ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid)= cs /\ pc(S:Sys,J:X$Pid)= cs[nonexec]
 (. cp-l eq(open ~ close)= false ; >< eq open = close ;)
 
 ---> QED
+
+eof
+
+*** Version 2 (by Adrian)
+
+*** 1 ***
+(goal TAS |-
+ceq lock(S:Sys)= close if pc(S:Sys,I:X$Pid)= cs[nonexec];
+ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid)= cs /\ pc(S:Sys,J:X$Pid)= cs[nonexec];)
+*** 2 ***
+(ind on S:Sys red)
+*** 3 ***
+(select 2)
+*** 4 ***
+(tc red)
+*** 5 ***
+(. imp red)
+*** 6 ***
+(cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 7 ***
+(. imp cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 8 ***
+(ca-1 red ca red imp red)
+*** 9 ***
+(init 2 by I:X$Pid <- I#3 red)
+*** 10 ***
+(init 1 by I:X$Pid <- I#3 ; J:X$Pid <- z#2 red)
+*** 11 ***
+(. cp-l 3 >< 7)
+*** 12 ***
+(cp-l eq(rs ~ cs)= false ; >< eq rs = cs ;)
+*** 13 ***
+(init 1 by I:X$Pid <- I#3 ; J:X$Pid <- J#4 red)
+*** 14 ***
+(. cp-l eq(open ~ close)= false ; >< eq open = close ;)
+*** 15 ***
+(init 2 by I:X$Pid <- J#4)
+*** 16 ***
+(cp-l eq(open ~ close)= false ; >< eq open = close ;)
+
