@@ -1,0 +1,37 @@
+*****************************************************************************************************
+---> for this proof, the denotational semantics of transitions "=>" will be that of equality "=" <---
+*****************************************************************************************************
+in citp
+in abp
+
+th FIN is
+ inc ABP .
+ var S : Sys . 
+ vars C1 C2 : Channel1 .
+ vars D1 D2 : Channel2 .
+ var B : Bit .
+ var P : Packet .
+ ---
+ ceq pac(next(S))= P   if C1,< B,P >,C2 := channel1(S) /\ B = bit1(S) [metadata "inv5"].
+ crl B  => bit1(S)     if C1,< B,P >,C2 := channel1(S) /\ bit2(S) = bit1(S)[nonexec metadata "inv2"] .
+ ceq bit2(S) = bit1(S) if D1,B,D2 := channel2(S)       /\ B = bit1(S)[metadata "inv3"].
+ crl true => false if bit1(S) => not bit1(S) [nonexec metadata "inc1"].
+ crl true => false if not bit1(S) => bit1(S) [nonexec metadata "inc2"].
+endth
+
+select #CITP# .
+loop init .
+
+(goal 
+ FIN |- crl mk(next(S:Sys)) => list(S:Sys) if bit2(S:Sys) = bit1(S:Sys);
+        crl mk(next(S:Sys)) => pac(next(S:Sys)),list(S:Sys) if not bit2(S:Sys) = bit1(S:Sys); )
+
+(ind on S:Sys)
+(ca red  cs red pair red tc red pair red imp red)
+
+--- rec2 ---
+(. init inv2 by S:Sys <- x#1 ;)
+(. init inv3 by S:Sys <- x#1 ;)
+(. init inv5 by S:Sys <- x#1 ;)
+(. init inc1 by S:Sys <- x#1 ;)
+(. init inc2 by S:Sys <- x#1 ;)

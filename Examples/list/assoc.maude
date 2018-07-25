@@ -1,0 +1,15 @@
+in list
+in citp
+
+select #CITP# .
+loop init .
+
+---> Proof of associativity:
+*** 1 ***
+(goal LISTS |-
+eq L1:List @(L2:List @ L3:List)=(L1:List @ L2:List)@ L3:List ;)
+*** 2 ***
+(ind on L1:List)
+*** 3 ***
+(tc ca red)
+---> QED

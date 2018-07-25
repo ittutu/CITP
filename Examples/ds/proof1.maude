@@ -1,0 +1,14 @@
+*****************************************************************************************************
+---> for this proof, the denotational semantics of transitions "=>" will be that of equality "=" <---
+*****************************************************************************************************
+in citp
+in ds
+
+select #CITP# .
+loop init .
+
+(goal DS |-
+ crl B':Bit => bit(S:Sys) if C1:Channel,< B:Bit,D:Data >,C2:Channel,< B':Bit,D':Data >,C3:Channel := channel(S:Sys)/\ B:Bit = bit(S:Sys);)
+
+(ind on S:Sys ca red cs red  tc red imp red)
+(init 1 by S:Sys <- x#1 ;)

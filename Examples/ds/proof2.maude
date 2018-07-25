@@ -1,0 +1,9 @@
+in citp
+in ds
+
+select #CITP# .
+loop init .
+
+(goal DS |- eq  mk(next(S:Sys)) = data(next(S:Sys)),list(S:Sys) ;)
+
+(ind on S:Sys ca red cs red tc red imp red)

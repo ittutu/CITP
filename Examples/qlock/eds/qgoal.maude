@@ -1,0 +1,20 @@
+in citp
+in qlock
+
+mod GOAL{X :: PID} is
+ inc  QLOCK{X} . 
+ var S : Sys . var I : X$Pid .
+ ceq top(Q:Sequence)= I:X$Pid if < Q:Sequence,< I:X$Pid,cs > A:Set > : Reach[nonexec metadata "qinv"]. 
+endm
+
+select #CITP# .
+loop init .
+
+*** 1 ***
+(goal GOAL |- ceq I:X$Pid = J:X$Pid if < Q:Sequence,< I:X$Pid,cs > < J:X$Pid,cs > A:Set > : Reach ;)
+*** 2 ***
+(tc red imp red)
+*** 3 ***
+(init qinv by Q:Sequence <- Q#3 ; A:Set <- A#4 < I#1,cs > ;  I:X$Pid <- J#2 ;
+ init qinv by Q:Sequence <- Q#3 ; A:Set <- A#4 < J#2,cs > ;  I:X$Pid <- I#1 ;
+ red)

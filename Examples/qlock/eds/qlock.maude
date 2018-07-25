@@ -1,0 +1,124 @@
+in citp
+
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod SEQUENCE{X :: TRIV} is
+ sort Sequence .
+ subsorts X$Elt < Sequence .
+--- constructors
+ op empty : -> Sequence [ctor] .
+ op _`,_ : Sequence Sequence -> Sequence [ctor id: empty assoc prec 40].
+ vars Q Q' : Sequence .
+ vars I J : X$Elt .
+--- 
+ op top : Sequence -> X$Elt .
+ eq top(empty) = empty .
+ eq top(I,Q) = I .
+---
+ op get : Sequence -> Sequence .
+ eq get(empty) = empty .
+ eq get(I,Q) = Q .
+---
+ ceq true = false if Q,I,Q' := empty .
+ ceq top(Q,I) = top(Q) if top(Q) :: X$Elt [metadata "top"].
+endfm
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod PAIR{X :: TRIV, Y :: TRIV} is
+ sort Pair .
+ --- 
+ op <_`,_> : X$Elt Y$Elt -> Pair [ctor] .
+ op fst : Pair -> X$Elt .
+ op snd : Pair -> Y$Elt .
+ --- 
+ var A : X$Elt . var B : Y$Elt .
+ --- 
+ eq fst(< A,B >) = A .
+ eq snd(< A,B >) = B .
+endfm
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod PAIR-SET{X :: TRIV, Y :: TRIV} is
+ pr PAIR{X,Y} .
+ sort Set .
+ subsorts Pair < Set .
+ op empty : -> Set [ctor].
+ op __ : Set Set -> Set [ctor id: empty assoc comm].
+vars A B : Set . vars P1 P2 : Pair .
+ op _~_ : Pair Pair -> Bool [comm].
+ eq  P1 ~ P1 = true .
+ ceq P1 = P2           if P1 ~ P2      [nonexec metadata "equal-1"].
+ ceq (P1 ~ P2) = false if P1 P2 A := B [nonexec metadata "equal-2"].
+endfm
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod LABEL is
+ sort Label .
+ ops rm wt cs : -> Label [ctor].
+ op _~_ : Label Label -> Bool [comm].
+var  L : Label .
+ eq L ~ L = true .
+ eq (rm ~ wt) = false .
+ eq (rm ~ cs) = false .
+ eq (wt ~ cs) = false .
+---
+ ceq true = false if rm = wt .
+ ceq true = false if rm = cs .
+ ceq true = false if wt = cs .
+endfm
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fth PID is inc BOOL .
+ sort Pid .
+ op _~_ : Pid Pid -> Bool [comm].
+ vars I J : Pid .
+ eq  I ~ I = true .
+ ceq I = J if I ~ J [metadata "equal" nonexec]. 
+endfth
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+view TRIV2PID from TRIV to PID is
+ sort Elt to Pid .
+endv
+
+view TRIV2LABEL from TRIV to LABEL is
+ sort Elt to Label .
+endv
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod PID-SEQ{X :: PID} is
+ pr SEQUENCE{TRIV2PID}{X} .
+endfm
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod QSET{X :: PID} is 
+ pr PAIR-SET{TRIV2PID,TRIV2LABEL}{X} .
+ op rm? : Set -> Bool .
+ eq rm?(empty) = true .
+var I : X$Pid . var A : Set .
+ eq rm?(< I,rm > A) = rm?(A). 
+ eq rm?(< I,wt > A) = false . 
+ eq rm?(< I,cs > A) = false .
+endfm
+--- -------------------------------------------------------------------------
+--- -------------------------------------------------------------------------
+fmod QLOCK{X :: PID} is
+ pr PID-SEQ{X} .
+ pr QSET{X} .
+ sorts Init Reach Sys .
+ subsorts Init < Reach < Sys .
+    
+ op <_`,_> : Sequence Set -> Sys [ctor prec 42].
+---
+ vars I J : X$Pid . var Q : Sequence . var A : Set . var S : Reach .
+--- constructors ---
+ cmb[init]: < empty,A > : Init               if rm?(A)                          [metadata "ctor-init"].
+ cmb[want]: < (Q,I) , (< I,wt > A) > : Reach if < Q,(< I,rm > A) > : Reach      [metadata "ctor-want"].
+ cmb[try]:  < (I,Q) , (< I,cs > A) > : Reach if < (I,Q) , (< I,wt > A) > : Reach[metadata "ctor-try"].
+ cmb[exit]: < Q , (< I,rm > A) > : Reach     if < (I,Q) , (< I,cs > A) > : Reach[metadata "ctor-exit"].
+--- lemma ---
+ ceq I ~ J = false if < Q, (< I,rm > < J,wt > A) > : Reach [nonexec metadata "1"].
+ ceq I ~ J = false if < Q, (< I,rm > < J,cs > A) > : Reach [nonexec metadata "2"].
+ ceq I ~ J = false if < Q, (< I,wt > < J,cs > A) > : Reach [nonexec metadata "3"]. 
+endfm
+--- --------------------------------------------------------------------------------------------

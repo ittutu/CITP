@@ -1,0 +1,31 @@
+in citp
+in tree
+
+select #CITP# .
+loop init .
+
+---> mcc(A,mktree(G)) = mcc(A,G)
+
+---> Induction base
+
+(goal GRAPH |- eq mcc(A:Vertex,mktree(nil)) = mcc(A:Vertex,nil) ;)
+
+(tc  red)
+
+---> Induction step
+
+fmod TH1 is ---> fth TH1
+ pr GRAPH . 
+ op g : -> Graph .
+ var A : Vertex .
+ eq mcc(A,mktree(g)) = mcc(A,g)[metadata "IH"] .
+endfm
+
+select #CITP# .
+loop init .
+
+(goal TH1 |- eq mcc(A:Vertex,mktree(< B:Vertex, C:Vertex > ; g)) = mcc(A:Vertex,< B:Vertex, C:Vertex > ; g) ;)
+
+(tc  red  ca  red  ca-1  red)
+
+---> QED

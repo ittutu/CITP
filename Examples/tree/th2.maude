@@ -1,0 +1,32 @@
+in citp
+in tree
+
+select #CITP# .
+loop init .
+
+---> nomcc(mktree(G)) = nomcc(G)
+
+---> Induction base
+
+(goal GRAPH |- eq nomcc(mktree(nil)) = nomcc(nil) ;)
+
+(red)
+
+---> Induction step 
+
+fmod TH2 is ---> fth TH2
+ pr GRAPH . 
+ op g : -> Graph .
+ var A : Vertex . var G : Graph .
+ eq [TH1]: mcc(A,mktree(G)) = mcc(A,G) .
+ eq [IH] : nomcc(mktree(g)) = nomcc(g) .
+endfm
+
+select #CITP# .
+loop init .
+
+(goal TH2 |- eq nomcc(mktree(< A:Vertex,B:Vertex > ; g)) = nomcc(< A:Vertex,B:Vertex > ; g) ;)
+
+(tc red ca red)
+
+---> QED

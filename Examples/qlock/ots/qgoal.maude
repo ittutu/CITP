@@ -1,0 +1,23 @@
+in citp
+in qlock
+
+mod GOAL{X :: PID} is
+ inc  QLOCK{X} . 
+ var S : Sys . var I : X$Pid .
+ ceq top(sq(S)) = I if pc(S,I) = cs [nonexec metadata "1"] . 
+endm
+
+select #CITP# .
+loop init .
+
+*** 1 ***
+(goal GOAL |-
+ ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid)= cs /\ pc(S:Sys,J:X$Pid)= cs ;)
+*** 2 ***
+(tc red imp red)
+*** 3 ***
+(init 1 by S:Sys <- S#3 ; I:X$Pid <- I#1
+ init 1 by S:Sys <- S#3 ; I:X$Pid <- J#2
+ red)
+
+---> QED

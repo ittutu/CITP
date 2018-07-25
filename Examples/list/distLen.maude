@@ -1,0 +1,17 @@
+in list
+in CITP
+
+select #CITP# .
+loop init .
+
+---> Proof of distributivity of length over append:
+*** 1 ***
+(goal LISTS |-
+eq len(L1:List @ L2:List)= len(L1:List)+ len(L2:List);)
+*** 2 ***
+(ind on L1:List red)
+*** 3 ***
+(tc ca)
+*** 4 ***
+(red)
+---> QED

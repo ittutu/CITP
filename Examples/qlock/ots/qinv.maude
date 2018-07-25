@@ -1,0 +1,19 @@
+in citp
+in qlock
+
+select #CITP# .
+loop init .
+
+*** 1 ***
+(goal QLOCK |-
+ceq top(sq(S:Sys))= I:X$Pid if pc(S:Sys,I:X$Pid)= cs[nonexec];)
+*** 2 ***
+(ind on S:Sys red tc red ca red imp red)
+
+(init ceq top(sq(S:Sys))= I:X$Pid if pc(S:Sys,I:X$Pid)= cs ; by I:X$Pid <- I#3) (red)
+
+---> exit <---
+(init 1 by I:X$Pid <- z#2)
+(cp-l 3 >< 6)
+
+---> QED

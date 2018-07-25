@@ -1,0 +1,26 @@
+in qlock
+
+select #CITP# .
+loop init .
+
+(goal QLOCK |-
+ceq top(Q:Sequence)= I:X$Pid if < Q:Sequence,< I:X$Pid,cs > A:Set > := S:Reach[nonexec];)
+
+(indx on S:Reach red cs red tc red imp red)
+
+---> want
+(. init want by A:Set <- A#5 < I#2,rm > ; I:X$Pid <- I#4 red)
+
+---> try 
+(. init try by A:Set <- A#5 < I#1,wt > ; I:X$Pid <- I#4 red)
+
+---> init 
+(. cp-l 4 >< 5)
+(. cp-l 4 >< 6)
+
+---> exit
+(. init 2 by I:X$Pid <- I#3 ; J:X$Pid <- I#4 ; Q:Sequence <- Q#1 ; A:Set <- A#5)
+(. init exit by I:X$Pid <- I#4 ; A:Set <- A#5 < I#3,cs >)
+(. cp-l 8 >< 9)
+
+---> QED

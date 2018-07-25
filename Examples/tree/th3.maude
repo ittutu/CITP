@@ -1,0 +1,34 @@
+in citp
+in tree
+
+select #CITP# .
+loop init .
+
+---> nocycle(mktree(G)) = true
+
+---> Induction base
+
+
+(goal GRAPH |- eq nocycle(mktree(nil)) = true ;)
+
+(red)
+
+---> Induction step
+
+fmod TH3 is ---> fth TH3
+ pr GRAPH . 
+ op g : -> Graph .
+ var A : Vertex . var G : Graph .
+ eq mcc(A,mktree(G)) = mcc(A,G) [metadata "1"] .
+ eq nomcc(mktree(G)) = nomcc(G) [metadata "2"].
+ eq nocycle(mktree(g)) = true [metadata "3"].
+endfm
+
+select #CITP# .
+loop init .
+
+(goal TH3 |- eq nocycle(mktree(< A:Vertex,B:Vertex > ; g)) = true ;)
+
+(tc red ca red)
+
+---> QED

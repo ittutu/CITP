@@ -1,0 +1,28 @@
+*****************************************************************************************************
+---> for this proof, the denotational semantics of transitions "=>" will be that of equality "=" <---
+*****************************************************************************************************
+in citp
+in abp
+
+th INV is inc ABP .
+crl true => false if not bit1(S:Sys) => bit1(S:Sys) [nonexec metadata "inc"] .
+endth
+
+select #CITP# .
+
+loop init .
+
+(goal INV |- 
+crl B1:Bit => bit1(S:Sys) if 
+    C1:Channel1,< B:Bit,P:Packet >,C2:Channel1,< B1:Bit,P1:Packet >,C3:Channel1 := channel1(S:Sys) /\ B:Bit = bit1(S:Sys) ;
+crl B:Bit => bit1(S:Sys) if 
+    C1:Channel1,< B:Bit,P:Packet >,C2:Channel1 := channel1(S:Sys) /\ bit2(S:Sys) = bit1(S:Sys) ;
+ceq bit2(S:Sys) = bit1(S:Sys) if 
+    C2:Channel2,B:Bit,C3:Channel2 := channel2(S:Sys) /\ B:Bit = bit1(S:Sys) [metadata "enhanced"];
+crl B':Bit => bit1(S:Sys) if D1:Channel2,B:Bit,D2:Channel2,B':Bit,D3:Channel2 := channel2(S:Sys) /\ B:Bit = bit1(S:Sys) ;)
+
+(ind on S:Sys red)
+
+(ca red cs red pair red tc red pair red imp red)
+
+(init inc by S:Sys <- x#1 ;)

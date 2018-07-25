@@ -1,0 +1,24 @@
+in list
+in citp
+
+fmod LISTS-ASSOC{X :: ELT} is
+ pr LISTS{X} .
+ eq (L1:List @ L2:List) @ L3:List = L1:List @ (L2:List @ L3:List) [metadata "assoc" nonexec]. 
+endfm
+
+select #CITP# .
+loop init .
+
+---> Proof of distributivity rev over append:
+*** 1 ***
+(goal LISTS-ASSOC |-
+eq rev(L1:List @ L2:List)= rev(L2:List)@ rev(L1:List);)
+*** 2 ***
+(ind on L1:List red)
+*** 3 ***
+(tc ca red)
+*** 4 ***
+(init assoc by L1:List <- rev(L2#3); L2:List <- rev(x#2); L3:List <- z#1 nil)
+*** 5 ***
+(red)
+---> QED
