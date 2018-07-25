@@ -1,7 +1,7 @@
 **** *************************************************************************************************
 **** *************************************************************************************************
 **** *************************************************************************************************
-*** CITP 2.0 built: April 2017 ***
+*** CITP 2.0 built: July 2018 ***
 **** *************************************************************************************************
 **** *************************************************************************************************
 **** *************************************************************************************************
@@ -1796,7 +1796,7 @@ fmod #SEQUENCE# is
  var TL : TermList .
  var NTL : NeTermList .
  var Q : Qid .
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 op isTuple : Qid -> Bool .
  eq isTuple(Q) = false [owise].
  eq isTuple('<_`,_>) = true .
@@ -1809,38 +1809,47 @@ op isTuple : Qid -> Bool .
  eq isTuple('`[_`,_`,_`,_`]) = true .
  eq isTuple('`[_`,_`,_`,_`,_`]) = true .
  eq isTuple('`[_`,_`,_`,_`,_`,_`]) = true .
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 op makeCond : TermList GroundTermList -> EqCondition .
  eq makeCond((empty).TermList,GTL)= (nil).EqCondition .
  eq makeCond(TL,(empty).GroundTermList) = (nil).EqCondition .
  eq makeCond((T,TL),(GT,GTL)) = (T := GT) /\ makeCond(TL,GTL).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 --- pair ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq < M, ceq T = T' if ECo /\ Q[NTL] := Q[NGTL] /\ ECd[ASet]; SS > = < M, ceq T = T' if ECo /\ makeCond(NTL,NGTL) /\ ECd[ASet]; SS >
+--- -------------------------------------------------------------------------------------
+ceq < M, ceq T = T' if ECo /\ Q[NTL] := Q[NGTL] /\ ECd[ASet]; SS > =
+    < M, ceq T = T' if ECo /\ makeCond(NTL,NGTL) /\ ECd[ASet]; SS >
  if len(NTL) = len(NGTL) /\ isTuple(Q).
-ceq < M, cmb T : St if ECo /\ Q[NTL] := Q[NGTL] /\ ECd[ASet]; SS > = < M, cmb T : St if ECo /\ makeCond(NTL,NGTL) /\ ECd[ASet]; SS >
+ceq < M, cmb T : St if ECo /\ Q[NTL] := Q[NGTL] /\ ECd[ASet]; SS > =
+    < M, cmb T : St if ECo /\ makeCond(NTL,NGTL) /\ ECd[ASet]; SS >
  if len(NTL) = len(NGTL) /\ isTuple(Q).
-ceq < M, crl T => T' if Co /\ Q[NTL] := Q[NGTL] /\ Cd[ASet]; SS >  = < M, crl T => T' if Co /\ makeCond(NTL,NGTL) /\ Cd[ASet]; SS >
+ceq < M, crl T => T' if Co /\ Q[NTL] := Q[NGTL] /\ Cd[ASet]; SS >  =
+    < M, crl T => T' if Co /\ makeCond(NTL,NGTL) /\ Cd[ASet]; SS >
  if len(NTL) = len(NGTL) /\ isTuple(Q). 
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- substitute
---- --------------------------------------------------------------------------------------------------------------------------------------------------
- eq < M, ceq T = T' if ECo /\ V := Bx /\ ECd[ASet]; SS > = < M,ceq T <<(V <- Bx) = T' <<(V <- Bx) if ECo <<(V <- Bx) /\ ECd <<(V <- Bx)[ASet]; SS > .
- eq < M, cmb T : St if ECo /\ V := Bx /\ ECd[ASet]; SS > = < M,cmb T <<(V <- Bx) : St if ECo <<(V <- Bx) /\ ECd <<(V <- Bx)[ASet]; SS > .
- eq < M, crl T => T' if Co /\ V := Bx /\ Cd[ASet]; SS > = < M,crl T <<(V <- Bx) => T' <<(V <- Bx) if Co <<(V <- Bx) /\ Cd <<(V <- Bx)[ASet]; SS > .
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
+--- substitute ---
+--- -------------------------------------------------------------------------------------
+ eq < M, ceq T = T' if ECo /\ V := Bx /\ ECd[ASet]; SS > =
+    < M,ceq T <<(V <- Bx) = T' <<(V <- Bx) if ECo <<(V <- Bx) /\ ECd <<(V <- Bx)[ASet]; SS > .
+ eq < M, cmb T : St if ECo /\ V := Bx /\ ECd[ASet]; SS > =
+    < M,cmb T <<(V <- Bx) : St if ECo <<(V <- Bx) /\ ECd <<(V <- Bx)[ASet]; SS > .
+ eq < M, crl T => T' if Co /\ V := Bx /\ Cd[ASet]; SS > =
+    < M,crl T <<(V <- Bx) => T' <<(V <- Bx) if Co <<(V <- Bx) /\ Cd <<(V <- Bx)[ASet]; SS > .
+--- -------------------------------------------------------------------------------------
 --- join ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq < M, ceq T = T' if ECo /\ T1 := GT /\ ECd /\ T2 := GT /\ ECn[ASet]; SS > = < M, ceq T = T' if ECo /\ T1 := GT /\ ECd /\ T2 := T1 /\ ECn[ASet]; SS >
+--- -------------------------------------------------------------------------------------
+ceq < M, ceq T = T' if ECo /\ T1 := GT /\ ECd /\ T2 := GT /\ ECn[ASet]; SS > =
+    < M, ceq T = T' if ECo /\ T1 := GT /\ ECd /\ T2 := T1 /\ ECn[ASet]; SS >
  if T1 =/= GT /\ T2 =/= GT .
-ceq < M, cmb T : St if ECo /\ T1 := GT /\ ECd /\ T2 := GT /\ ECn[ASet]; SS > = < M, cmb T : St if ECo /\ T1 := GT /\ ECd /\ T2 := T1 /\ ECn[ASet]; SS >
+ceq < M, cmb T : St if ECo /\ T1 := GT /\ ECd /\ T2 := GT /\ ECn[ASet]; SS > =
+    < M, cmb T : St if ECo /\ T1 := GT /\ ECd /\ T2 := T1 /\ ECn[ASet]; SS >
  if T1 =/= GT /\ T2 =/= GT .
-ceq < M, crl T => T' if Co /\ T1 := GT /\ Cd /\ T2 := GT /\ Cn[ASet]; SS > = < M, crl T => T' if Co /\ T1 := GT /\ Cd /\ T2 := T1 /\ Cn[ASet]; SS >
+ceq < M, crl T => T' if Co /\ T1 := GT /\ Cd /\ T2 := GT /\ Cn[ASet]; SS > =
+    < M, crl T => T' if Co /\ T1 := GT /\ Cd /\ T2 := T1 /\ Cn[ASet]; SS >
  if T1 =/= GT /\ T2 =/= GT . 
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 --- Case Analysis for sequences ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
  op cs : #GoalList# -> #GoalList# . 
 ---
  eq cs(emptyGoalList) = emptyGoalList .
@@ -1848,328 +1857,401 @@ ceq < M, crl T => T' if Co /\ T1 := GT /\ Cd /\ T2 := GT /\ Cn[ASet]; SS > = < M
 ---
  eq cs(< M,Sen1 Sen2 SS >)= cs(< M,Sen1 >) cs(< M,Sen2 SS >).
  eq cs(G) = G [owise].
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 --- 1) Sx,Bx,Sy := GTL ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 --- Equation ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT,NGTL] /\ ECd [ASet];)>) = 
 < M,(ceq T <<(Sy <- '_`,_[Sy,NGTL]) = T' <<(Sy <- '_`,_[Sy,NGTL])
      if ECo <<(Sy <- '_`,_[Sy,NGTL]) /\ '_`,_[Sx,Bx,Sy] := GT /\ ECd <<(Sy <- '_`,_[Sy,NGTL])[ASet];) >
 cs(< M,(ceq T <<(Sx <- '_`,_[GT,Sx]) = T' <<(Sx <- '_`,_[GT,Sx])
         if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Sx)= leastSort(M,GT).
 ---
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT,NGTL] /\ ECd [ASet];)>) = 
 < M,ceq T <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])= T' <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) 
-     if ECo <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) /\ Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])[ASet]; >
+     if ECo <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) /\
+        Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])[ASet]; >
 cs(< M,(ceq T <<(Sx <- '_`,_[GT,Sx]) = T' <<(Sx <- '_`,_[GT,Sx])
         if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx)= leastSort(M,GT).
 ---
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT] /\ ECd [ASet];)>) =
 < M,ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy] := GT /\ ECd [ASet]; > 
- if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
+ if leastSort(M,Sx)= leastSort(M,Sy)/\
+    sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx)/\
+    leastSort(M,Sx)= leastSort(M,GT).
 ---
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT] /\ ECd [ASet];)>)=
 < M,ceq T <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence) = T' <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence) 
-     if ECo <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)/\ Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)[ASet]; >
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+     if ECo <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)/\ Bx := GT /\
+        ECd <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)[ASet]; >
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx)= leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 --- MembAx ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT,NGTL] /\ ECd [ASet];) >) = 
-< M,cmb T <<(Sy <- '_`,_[Sy,NGTL]) : St if ECo <<(Sy <- '_`,_[Sy,NGTL]) /\ '_`,_[Sx,Bx,Sy] := GT /\ ECd <<(Sy <- '_`,_[Sy,NGTL])[ASet]; >
-cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
+< M,cmb T <<(Sy <- '_`,_[Sy,NGTL]) : St
+     if ECo <<(Sy <- '_`,_[Sy,NGTL]) /\
+        '_`,_[Sx,Bx,Sy] := GT /\
+	ECd <<(Sy <- '_`,_[Sy,NGTL])[ASet]; >
+cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St
+         if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\
+	    ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Sx)= leastSort(M,GT).
 ---
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT,NGTL] /\ ECd [ASet];)>) = 
 < M,cmb T <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) : St 
-     if ECo <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) /\ Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])[ASet]; >
-cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
+     if ECo <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) /\
+        Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])[ASet]; >
+cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St
+         if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\
+	    ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx)= leastSort(M,GT).
 ---
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT] /\ ECd [ASet];)>) =
 < M,cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy] := GT /\ ECd [ASet]; > 
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Sx)= leastSort(M,GT).
 ---
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT] /\ ECd [ASet];)>)= 
 < M,cmb T <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence) : St 
-     if ECo <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)/\ Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)[ASet]; >
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx) = leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+     if ECo <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)/\
+        Bx := GT /\ ECd <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)[ASet]; >
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx) = leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 --- Rule ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT,NGTL] /\ Cd [ASet];)>)=
 < M,crl T <<(Sy <- '_`,_[Sy,NGTL]) => T' <<(Sy <- '_`,_[Sy,NGTL])
      if Co <<(Sy <- '_`,_[Sy,NGTL]) /\ '_`,_[Sx,Bx,Sy] := GT /\ Cd <<(Sy <- '_`,_[Sy,NGTL])[ASet]; >
 cs(< M,(crl T <<(Sx <- '_`,_[GT,Sx]) => T' <<(Sx <- '_`,_[GT,Sx])
-        if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\ Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx) = leastSort(M,GT).
+        if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\
+	   Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Sx) = leastSort(M,GT).
 ---
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT,NGTL] /\ Cd [ASet];)>) =
 < M,crl T <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) => T' <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])
-     if Co <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) /\ Bx := GT /\ Cd <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])[ASet]; >
+     if Co <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL]) /\ Bx := GT /\
+        Cd <<(Sx <- 'empty.Sequence ; Sy <- '_`,_[NGTL])[ASet]; >
 cs(< M,(crl T <<(Sx <- '_`,_[GT,Sx]) => T' <<(Sx <- '_`,_[GT,Sx])
         if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy] := '_`,_[NGTL] /\ Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx) = leastSort(M,GT).
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx) = leastSort(M,GT).
 ---
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT] /\ Cd [ASet];)>) =
 < M,crl T => T' if Co /\ '_`,_[Sx,Bx,Sy] := GT /\ Cd [ASet]; > 
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Sx)= leastSort(M,GT).
 ---
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy] := '_`,_[GT] /\ Cd [ASet];)>) = 
 < M,crl T <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence) => T' <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence) 
-     if Co <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)/\ Bx := GT /\ Cd <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)[ASet]; >
-if leastSort(M,Sx)= leastSort(M,Sy)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+     if Co <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)/\ Bx := GT /\
+        Cd <<(Sx <- 'empty.Sequence ; Sy <- 'empty.Sequence)[ASet]; >
+if leastSort(M,Sx)= leastSort(M,Sy)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx)= leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 --- 2) Sx,Bx,Sy,By,Sz := GTL ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 --- Equation ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT,NGTL] /\ ECd [ASet];)>)=
 < M,ceq T <<(Sz <- '_`,_[Sz,NGTL])= T' <<(Sz <- '_`,_[Sz,NGTL])
-     if ECo <<(Sz <- '_`,_[Sz,NGTL])/\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\ ECd <<(Sz <- '_`,_[Sz,NGTL])[ASet]; >
+     if ECo <<(Sz <- '_`,_[Sz,NGTL])/\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\
+        ECd <<(Sz <- '_`,_[Sz,NGTL])[ASet]; >
 cs(< M,(ceq T <<(Sx <- '_`,_[GT,Sx])= T' <<(Sx <- '_`,_[GT,Sx])
-        if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-cs(< M,(ceq T <<(Sy <- '_`,_[Sa,Sb]) = T' <<(Sy <- '_`,_[Sa,Sb]) if ECo <<(Sy <- '_`,_[Sa,Sb]) /\ 
-        '_`,_[Sx,Bx,Sa] := GT /\ '_`,_[Sb,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sy <- '_`,_[Sa,Sb])[ASet];)>)
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Sx) = leastSort(M,GT) /\
-   Sa := qid(string(getName(Sy)) + "#1:" + string(getType(Sy))) /\ Sb := qid(string(getName(Sy)) + "#2:" + string(getType(Sy))).
+        if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\
+	   ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+cs(< M,(ceq T <<(Sy <- '_`,_[Sa,Sb]) = T' <<(Sy <- '_`,_[Sa,Sb])
+         if ECo <<(Sy <- '_`,_[Sa,Sb]) /\ 
+            '_`,_[Sx,Bx,Sa] := GT /\ '_`,_[Sb,By,Sz] := '_`,_[NGTL] /\
+	    ECd <<(Sy <- '_`,_[Sa,Sb])[ASet];)>)
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Sx) = leastSort(M,GT) /\
+   Sa := qid(string(getName(Sy)) + "#1:" + string(getType(Sy))) /\
+   Sb := qid(string(getName(Sy)) + "#2:" + string(getType(Sy))).
 ---
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT,NGTL] /\ ECd [ASet];)>) =
 cs(< M,(ceq T <<(Sx <- 'empty.Sequence) = T' <<(Sx <- 'empty.Sequence) if ECo <<(Sx <- 'empty.Sequence) /\ 
         Bx := GT /\ '_`,_[Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- 'empty.Sequence)[ASet];)>)
 cs(< M,(ceq T <<(Sx <- '_`,_[GT,Sx])= T' <<(Sx <- '_`,_[GT,Sx])
-        if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Bx) = leastSort(M,GT).
+        if ECo <<(Sx <- '_`,_[GT,Sx]) /\
+	   '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Bx) = leastSort(M,GT).
 ---
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT] /\ ECd [ASet];)>) =
 < M,ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\ ECd [ASet]; >
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Sx) = leastSort(M,GT).
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Sx) = leastSort(M,GT).
 ---
 ceq cs(< M,(ceq T = T' if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT] /\ ECd [ASet];)>) = emptyGoalList
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Bx) = leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Bx) = leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 --- MembAx ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT,NGTL] /\ ECd [ASet];)>) =
-< M,cmb T <<(Sz <- '_`,_[Sz,NGTL]) : St if ECo <<(Sz <- '_`,_[Sz,NGTL])/\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\ ECd <<(Sz <- '_`,_[Sz,NGTL])[ASet]; >
-cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-cs(< M,(cmb T <<(Sy <- '_`,_[Sa,Sb]) : St if ECo <<(Sy <- '_`,_[Sa,Sb]) /\ 
-        '_`,_[Sx,Bx,Sa] := GT /\ '_`,_[Sb,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sy <- '_`,_[Sa,Sb])[ASet];)>)
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Sx) = leastSort(M,GT) /\
-   Sa := qid(string(getName(Sy)) + "#1:" + string(getType(Sy))) /\ Sb := qid(string(getName(Sy)) + "#2:" + string(getType(Sy))).
+< M,cmb T <<(Sz <- '_`,_[Sz,NGTL]) : St
+     if ECo <<(Sz <- '_`,_[Sz,NGTL])/\
+        '_`,_[Sx,Bx,Sy,By,Sz] := GT /\
+        ECd <<(Sz <- '_`,_[Sz,NGTL])[ASet]; >
+cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St
+         if ECo <<(Sx <- '_`,_[GT,Sx]) /\
+	    '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\
+	    ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+cs(< M,(cmb T <<(Sy <- '_`,_[Sa,Sb]) : St
+         if ECo <<(Sy <- '_`,_[Sa,Sb]) /\ 
+            '_`,_[Sx,Bx,Sa] := GT /\ '_`,_[Sb,By,Sz] := '_`,_[NGTL] /\
+	    ECd <<(Sy <- '_`,_[Sa,Sb])[ASet];)>)
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Sx) = leastSort(M,GT) /\
+   Sa := qid(string(getName(Sy)) + "#1:" + string(getType(Sy))) /\
+   Sb := qid(string(getName(Sy)) + "#2:" + string(getType(Sy))).
 ---
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT,NGTL] /\ ECd [ASet];)>) =
-cs(< M,(cmb T <<(Sx <- 'empty.Sequence) : St if ECo <<(Sx <- 'empty.Sequence) /\
-        Bx := GT /\ '_`,_[Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- 'empty.Sequence)[ASet];)>)
-cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St if ECo <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Bx) = leastSort(M,GT).
+cs(< M,(cmb T <<(Sx <- 'empty.Sequence) : St
+         if ECo <<(Sx <- 'empty.Sequence) /\
+            Bx := GT /\ '_`,_[Sy,By,Sz] := '_`,_[NGTL] /\
+	    ECd <<(Sx <- 'empty.Sequence)[ASet];)>)
+cs(< M,(cmb T <<(Sx <- '_`,_[GT,Sx]) : St
+         if ECo <<(Sx <- '_`,_[GT,Sx]) /\
+	    '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\
+	    ECd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Bx) = leastSort(M,GT).
 ---
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT] /\ ECd [ASet];)>) =
 < M,cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\ ECd [ASet]; >
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-    sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Sx) = leastSort(M,GT).
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Sx) = leastSort(M,GT).
 ---
 ceq cs(< M,(cmb T : St if ECo /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT] /\ ECd [ASet];)>) = emptyGoalList
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Bx) = leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Bx) = leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 --- Rule ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT,NGTL] /\ Cd [ASet];)>) =
 < M,crl T <<(Sz <- '_`,_[Sz,NGTL]) => T' <<(Sz <- '_`,_[Sz,NGTL])
      if Co <<(Sz <- '_`,_[Sz,NGTL])/\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\ Cd <<(Sz <- '_`,_[Sz,NGTL])[ASet]; >
 cs(< M,(crl T <<(Sx <- '_`,_[GT,Sx]) => T' <<(Sx <- '_`,_[GT,Sx])
-        if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+        if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\
+	   Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
 cs(< M,(crl T <<(Sy <- '_`,_[Sa,Sb]) => T' <<(Sy <- '_`,_[Sa,Sb]) if Co <<(Sy <- '_`,_[Sa,Sb]) /\ 
-        '_`,_[Sx,Bx,Sa] := GT /\ '_`,_[Sb,By,Sz] := '_`,_[NGTL] /\ Cd <<(Sy <- '_`,_[Sa,Sb])[ASet];)>)
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Sx) = leastSort(M,GT) /\
-   Sa := qid(string(getName(Sy)) + "#1:" + string(getType(Sy))) /\ Sb := qid(string(getName(Sy)) + "#2:" + string(getType(Sy))).
+        '_`,_[Sx,Bx,Sa] := GT /\
+	'_`,_[Sb,By,Sz] := '_`,_[NGTL] /\
+	Cd <<(Sy <- '_`,_[Sa,Sb])[ASet];)>)
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Sx) = leastSort(M,GT) /\
+   Sa := qid(string(getName(Sy)) + "#1:" + string(getType(Sy))) /\
+   Sb := qid(string(getName(Sy)) + "#2:" + string(getType(Sy))).
 ---
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT,NGTL] /\ Cd [ASet];)>) =
 cs(< M,(crl T <<(Sx <- 'empty.Sequence) => T' <<(Sx <- 'empty.Sequence) if Co <<(Sx <- 'empty.Sequence) /\ 
         Bx := GT /\ '_`,_[Sy,By,Sz] := '_`,_[NGTL] /\ Cd <<(Sx <- 'empty.Sequence)[ASet];)>)
 cs(< M,(crl T <<(Sx <- '_`,_[GT,Sx]) => T' <<(Sx <- '_`,_[GT,Sx])
-        if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\ Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Bx) = leastSort(M,GT).
+        if Co <<(Sx <- '_`,_[GT,Sx]) /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[NGTL] /\
+	   Cd <<(Sx <- '_`,_[GT,Sx])[ASet];)>)
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Bx) = leastSort(M,GT).
 ---
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT] /\ Cd [ASet];)>)=
 < M,crl T => T' if Co /\ '_`,_[Sx,Bx,Sy,By,Sz] := GT /\ Cd [ASet]; >
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Sx) = leastSort(M,GT).
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Sx) = leastSort(M,GT).
 ---
 ceq cs(< M,(crl T => T' if Co /\ '_`,_[Sx,Bx,Sy,By,Sz] := '_`,_[GT] /\ Cd [ASet];) >) = emptyGoalList
-if leastSort(M,Sx) = leastSort(M,Sy) /\ leastSort(M,Sx) = leastSort(M,Sz) /\ leastSort(M,Bx) = leastSort(M,By) /\ 
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\ leastSort(M,Bx) =/= leastSort(M,Sx) /\ leastSort(M,Bx) = leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+if leastSort(M,Sx) = leastSort(M,Sy) /\
+   leastSort(M,Sx) = leastSort(M,Sz) /\
+   leastSort(M,Bx) = leastSort(M,By) /\ 
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx)) /\
+   leastSort(M,Bx) =/= leastSort(M,Sx) /\
+   leastSort(M,Bx) = leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 --- Case Analysis for sets ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- 1) Bx Sx := GTL ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- Equation ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
+--- Bx Sx := GT,NGTL ---
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,Sx] := '__[GT,NGTL] /\ ECd [ASet];)>) = 
 < M,ceq T <<(Sx <- '__[Sx,NGTL]) = T' <<(Sx <- '__[Sx,NGTL])
      if ECo <<(Sx <- '__[Sx,NGTL]) /\ '__[Bx,Sx] := GT /\ ECd <<(Sx <- '__[Sx,NGTL])[ASet]; >
 cs(< M,(ceq T <<(Sx <- '__[GT,Sx]) = T' <<(Sx <- '__[GT,Sx])
         if ECo <<(Sx <- '__[GT,Sx]) /\ '__[Bx,Sx] := '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
+if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Sx)= leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,Sx] := '__[GT,NGTL] /\ ECd [ASet];)>) = 
 < M,ceq T <<(Sx <- '__[NGTL])= T' <<(Sx <- '__[NGTL])
      if ECo <<(Sx <- '__[NGTL]) /\ Bx := GT /\ ECd <<(Sx <- '__[NGTL])[ASet]; >
 cs(< M,(ceq T <<(Sx <- '__[GT,Sx]) = T' <<(Sx <- '__[GT,Sx])
         if ECo <<(Sx <- '__[GT,Sx]) /\ '__[Bx,Sx] := '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
----
+if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx)= leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
+--- Bx,Sx := '__[GT] ---
+--- -------------------------------------------------------------------------------------
 ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,Sx] := '__[GT] /\ ECd [ASet];)>) =
 < M,ceq T = T' if ECo /\ '__[Bx,Sx] := GT /\ ECd [ASet]; > 
- if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
+ if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx)/\
+    leastSort(M,Sx)= leastSort(M,GT).
+
 ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,Sx] := '__[GT] /\ ECd [ASet];)>)=
 < M,ceq T <<(Sx <- 'empty.Set) = T' <<(Sx <- 'empty.Set) 
      if ECo <<(Sx <- 'empty.Set)/\ Bx := GT /\ ECd <<(Sx <- 'empty.Set)[ASet]; >
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- MembAx ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,Sx] := '__[GT,NGTL] /\ ECd [ASet];)>) = 
-< M,cmb T <<(Sx <- '__[Sx,NGTL]) : St
-     if ECo <<(Sx <- '__[Sx,NGTL]) /\ '__[Bx,Sx] := GT /\ ECd <<(Sx <- '__[Sx,NGTL])[ASet]; >
-cs(< M,(cmb T <<(Sx <- '__[GT,Sx]) : St
-        if ECo <<(Sx <- '__[GT,Sx]) /\ '__[Bx,Sx] := '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,Sx] := '__[GT,NGTL] /\ ECd [ASet];)>) = 
-< M,cmb T <<(Sx <- '__[NGTL]) : St
-     if ECo <<(Sx <- '__[NGTL]) /\ Bx := GT /\ ECd <<(Sx <- '__[NGTL])[ASet]; >
-cs(< M,(cmb T <<(Sx <- '__[GT,Sx]) : St
-        if ECo <<(Sx <- '__[GT,Sx]) /\ '__[Bx,Sx] := '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
----
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,Sx] := '__[GT] /\ ECd [ASet];)>) =
-< M,cmb T : St if ECo /\ '__[Bx,Sx] := GT /\ ECd [ASet]; > 
- if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,Sx] := '__[GT] /\ ECd [ASet];)>)=
-< M,cmb T <<(Sx <- 'empty.Set) : St
-     if ECo <<(Sx <- 'empty.Set)/\ Bx := GT /\ ECd <<(Sx <- 'empty.Set)[ASet]; >
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- Rule ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,Sx] := '__[GT,NGTL] /\ Cd [ASet];)>) = 
-< M,crl T <<(Sx <- '__[Sx,NGTL]) => T' <<(Sx <- '__[Sx,NGTL])
-     if Co <<(Sx <- '__[Sx,NGTL]) /\ '__[Bx,Sx] := GT /\ Cd <<(Sx <- '__[Sx,NGTL])[ASet]; >
-cs(< M,(crl T <<(Sx <- '__[GT,Sx]) => T' <<(Sx <- '__[GT,Sx])
-        if Co <<(Sx <- '__[GT,Sx]) /\ '__[Bx,Sx] := '__[NGTL] /\ Cd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,Sx] := '__[GT,NGTL] /\ Cd [ASet];)>) = 
-< M,crl T <<(Sx <- '__[NGTL])=> T' <<(Sx <- '__[NGTL])
-     if Co <<(Sx <- '__[NGTL]) /\ Bx := GT /\ Cd <<(Sx <- '__[NGTL])[ASet]; >
-cs(< M,(crl T <<(Sx <- '__[GT,Sx]) => T' <<(Sx <- '__[GT,Sx])
-        if Co <<(Sx <- '__[GT,Sx]) /\ '__[Bx,Sx] := '__[NGTL] /\ Cd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
----
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,Sx] := '__[GT] /\ Cd [ASet];)>) =
-< M,crl T => T' if Co /\ '__[Bx,Sx] := GT /\ Cd [ASet]; > 
- if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,Sx] := '__[GT] /\ Cd [ASet];)>)=
-< M,crl T <<(Sx <- 'empty.Set) => T' <<(Sx <- 'empty.Set) 
-     if Co <<(Sx <- 'empty.Set)/\ Bx := GT /\ Cd <<(Sx <- 'empty.Set)[ASet]; >
-if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- 1) Bx By Sx := GTL ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- Equation ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,By,Sx]:= '__[GT,NGTL]/\ ECd [ASet];)>) = 
-< M,ceq T <<(Sx <- '__[Sx,NGTL])= T' <<(Sx <- '__[Sx,NGTL])
-     if ECo <<(Sx <- '__[Sx,NGTL])/\ '__[Bx,By,Sx] := GT /\ ECd <<(Sx <- '__[Sx,NGTL])[ASet]; >
-cs(< M,(ceq T <<(Sx <- '__[GT,Sx]) = T' <<(Sx <- '__[GT,Sx])
-        if ECo <<(Sx <- '__[GT,Sx])/\ '__[Bx,By,Sx] := '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
+if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx)/\
+   leastSort(M,Bx)= leastSort(M,GT).
+--- -------------------------------------------------------------------------------------
+--- Sx Bx By := GT NGTL ---
+--- -------------------------------------------------------------------------------------
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx,By]:= '__[GT,NGTL]/\ ECd [ASet]; >) = 
+   < M,ceq T <<(Sx <- '__[Sx,NGTL])= T' <<(Sx <- '__[Sx,NGTL])
+        if ECo <<(Sx <- '__[Sx,NGTL])/\ '__[Sx,Bx,By] := GT /\ ECd <<(Sx <- '__[Sx,NGTL])[ASet]; >
+cs(< M,ceq T <<(Sx <- '__[GT,Sx]) = T' <<(Sx <- '__[GT,Sx])
+        if ECo <<(Sx <- '__[GT,Sx])/\ '__[Sx,Bx,By]:= '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet]; >)
 cs(< M, ceq T <<(Sx <- '__[Sa,Sb])= T' <<(Sx <- '__[Sa,Sb])
-        if ECo <<(Sx <- '__[Sa,Sb])/\ '__[Bx,Sa] := GT /\ '__[By,Sb] := '__[NGTL] /\ ECd <<(Sx <- '__[Sa,Sb])[ASet]; >)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT)
-/\ Sa := qid(string(getName(Sx)) + "#1:" + string(getType(Sx))) /\ Sb := qid(string(getName(Sx)) + "#2:" + string(getType(Sx))) .
----
-ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,By,Sx]:= '__[GT,NGTL]/\ ECd [ASet];)>)= 
-cs(< M,(ceq T = T' if ECo /\ Bx := GT /\ '__[By,Sx]:= '__[NGTL] /\ ECd [ASet];)>)
-cs(< M,(ceq T = T' if ECo /\ By := GT /\ '__[Bx,Sx]:= '__[NGTL] /\ ECd [ASet];)>)
-cs(< M,(ceq T <<(Sx <- '__[GT,Sx])= T' <<(Sx <- '__[GT,Sx])if ECo <<(Sx <- '__[GT,Sx])/\ '__[Bx,By,Sx]:= '__[NGTL]/\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
----
-ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,By,Sx]:= '__[GT]/\ ECd [ASet];)>)=
-cs(< M,(ceq T = T' if ECo /\ '__[Bx,By,Sx]:= GT /\ ECd [ASet];)>)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(ceq T = T' if ECo /\ '__[Bx,By,Sx]:= '__[GT]/\ ECd [ASet];)>)= emptyGoalList
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- MembAx ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,By,Sx]:= '__[GT,NGTL]/\ ECd [ASet];)>) = 
-< M,cmb T <<(Sx <- '__[Sx,NGTL]) : St
-     if ECo <<(Sx <- '__[Sx,NGTL])/\ '__[Bx,By,Sx] := GT /\ ECd <<(Sx <- '__[Sx,NGTL])[ASet]; >
-cs(< M,(cmb T <<(Sx <- '__[GT,Sx]) : St
-        if ECo <<(Sx <- '__[GT,Sx])/\ '__[Bx,By,Sx] := '__[NGTL] /\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-cs(< M, cmb T <<(Sx <- '__[Sa,Sb]) : St
-        if ECo <<(Sx <- '__[Sa,Sb])/\ '__[Bx,Sa] := GT /\ '__[By,Sb] := '__[NGTL] /\ ECd <<(Sx <- '__[Sa,Sb])[ASet]; >)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT)
-/\ Sa := qid(string(getName(Sx)) + "#1:" + string(getType(Sx))) /\ Sb := qid(string(getName(Sx)) + "#2:" + string(getType(Sx))) .
----
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,By,Sx]:= '__[GT,NGTL]/\ ECd [ASet];)>)= 
-cs(< M,(cmb T : St if ECo /\ Bx := GT /\ '__[By,Sx]:= '__[NGTL] /\ ECd [ASet];)>)
-cs(< M,(cmb T : St if ECo /\ By := GT /\ '__[Bx,Sx]:= '__[NGTL] /\ ECd [ASet];)>)
-cs(< M,(cmb T <<(Sx <- '__[GT,Sx]) : St if ECo <<(Sx <- '__[GT,Sx])/\ '__[Bx,By,Sx]:= '__[NGTL]/\ ECd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
----
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,By,Sx]:= '__[GT]/\ ECd [ASet];)>)=
-cs(< M,(cmb T : St if ECo /\ '__[Bx,By,Sx]:= GT /\ ECd [ASet];)>)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(cmb T : St if ECo /\ '__[Bx,By,Sx]:= '__[GT]/\ ECd [ASet];)>)= emptyGoalList
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
---- Rule ---
---- --------------------------------------------------------------------------------------------------------------------------------------------------
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,By,Sx]:= '__[GT,NGTL]/\ Cd [ASet];)>) = 
-< M,crl T <<(Sx <- '__[Sx,NGTL])=> T' <<(Sx <- '__[Sx,NGTL])
-     if Co <<(Sx <- '__[Sx,NGTL])/\ '__[Bx,By,Sx] := GT /\ Cd <<(Sx <- '__[Sx,NGTL])[ASet]; >
-cs(< M,(crl T <<(Sx <- '__[GT,Sx]) => T' <<(Sx <- '__[GT,Sx])
-        if Co <<(Sx <- '__[GT,Sx])/\ '__[Bx,By,Sx] := '__[NGTL] /\ Cd <<(Sx <- '__[GT,Sx])[ASet];)>)
-cs(< M, crl T <<(Sx <- '__[Sa,Sb])=> T' <<(Sx <- '__[Sa,Sb])
-        if Co <<(Sx <- '__[Sa,Sb])/\ '__[Bx,Sa] := GT /\ '__[By,Sb] := '__[NGTL] /\ Cd <<(Sx <- '__[Sa,Sb])[ASet]; >)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT)
-/\ Sa := qid(string(getName(Sx)) + "#1:" + string(getType(Sx))) /\ Sb := qid(string(getName(Sx)) + "#2:" + string(getType(Sx))) .
----
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,By,Sx]:= '__[GT,NGTL]/\ Cd [ASet];)>)= 
-cs(< M,(crl T => T' if Co /\ Bx := GT /\ '__[By,Sx]:= '__[NGTL] /\ Cd [ASet];)>)
-cs(< M,(crl T => T' if Co /\ By := GT /\ '__[Bx,Sx]:= '__[NGTL] /\ Cd [ASet];)>)
-cs(< M,(crl T <<(Sx <- '__[GT,Sx])=> T' <<(Sx <- '__[GT,Sx])if Co <<(Sx <- '__[GT,Sx])/\ '__[Bx,By,Sx]:= '__[NGTL]/\ Cd <<(Sx <- '__[GT,Sx])[ASet];)>)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
----
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,By,Sx]:= '__[GT]/\ Cd [ASet];)>)=
-cs(< M,(crl T => T' if Co /\ '__[Bx,By,Sx]:= GT /\ Cd [ASet];)>)
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Sx)= leastSort(M,GT).
----
-ceq cs(< M,(crl T => T' if Co /\ '__[Bx,By,Sx]:= '__[GT]/\ Cd [ASet];)>)= emptyGoalList
-if leastSort(M,Bx)= leastSort(M,By)/\ sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ leastSort(M,Bx)=/= leastSort(M,Sx)/\ leastSort(M,Bx)= leastSort(M,GT).
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+         if ECo <<(Sx <- '__[Sa,Sb])/\ '__[Sa,Bx] := GT /\ '__[Sb,By] := '__[NGTL] /\
+	    ECd <<(Sx <- '__[Sa,Sb])[ASet]; >)
+cs(< M, ceq T <<(Sx <- '__[Sa,Sb])= T' <<(Sx <- '__[Sa,Sb])
+         if ECo <<(Sx <- '__[Sa,Sb])/\ '__[Sa,By] := GT /\ '__[Sb,Bx] := '__[NGTL] /\
+	    ECd <<(Sx <- '__[Sa,Sb])[ASet]; >)	    
+if leastSort(M,Bx)= leastSort(M,By)/\
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+   leastSort(M,Bx)=/= leastSort(M,Sx) /\
+   leastSort(M,Sx)= leastSort(M,GT) /\
+   Sa := qid(string(getName(Sx)) + "#1:" + string(getType(Sx))) /\
+   Sb := qid(string(getName(Sx)) + "#2:" + string(getType(Sx))).
+--- -------------------------------------------------------------------------------------
+--- '__[Sx,Bx,By]:= '__[GT] ---
+--- -------------------------------------------------------------------------------------
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx,By]:= '__[GT]/\ ECd [ASet]; >) =
+    < M,ceq T = T' if ECo /\ '__[Sx,Bx,By]:= GT /\ ECd [ASet]; >
+ if leastSort(M,Bx)= leastSort(M,By)/\
+    sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx) /\
+    leastSort(M,GT) = leastSort(M,Sx).
+
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx,By]:= '__[GT]/\ ECd [ASet]; >) = emptyGoalList
+ if leastSort(M,Bx)= leastSort(M,By)/\
+    sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx) /\
+    leastSort(M,GT) = leastSort(M,Bx).
+--- -------------------------------------------------------------------------------------
+--- '__[Sx,Bx]:= '__[GT] ---
+--- -------------------------------------------------------------------------------------
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx]:= '__[GT]/\ ECd [ASet]; >) =
+    < M,ceq T = T' if ECo /\ '__[Sx,Bx]:= GT /\ ECd [ASet]; > 
+ if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx) /\
+    leastSort(M,GT) = leastSort(M,Sx).
+
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx]:= '__[GT]/\ ECd [ASet]; >) =
+    < M,ceq T = T' if ECo /\ Bx := GT /\ ECd [ASet]; > 
+ if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx) /\
+    leastSort(M,GT) = leastSort(M,Bx).    
+--- -------------------------------------------------------------------------------------
+--- '__[Sx,Bx]:= GT NGTL ---
+--- -------------------------------------------------------------------------------------
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx]:= '__[GT,NGTL]/\ ECd [ASet]; >) =
+< M,ceq T <<(Sx <- '__[Sx,NGTL]) = T' <<(Sx <- '__[Sx,NGTL])
+     if ECo <<(Sx <- '__[Sx,NGTL]) /\ '__[Sx,Bx]:= GT /\ ECd <<(Sx <- '__[Sx,NGTL])[ASet]; >
+cs(< M,ceq T <<(Sx <- '__[Sx,GT]) = T' <<(Sx <- '__[Sx,GT])
+     if ECo <<(Sx <- '__[Sx,GT]) /\ '__[Sx,Bx]:= '__[NGTL] /\ ECd <<(Sx <- '__[Sx,GT])[ASet]; >)     
+ if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx) /\
+    leastSort(M,GT) = leastSort(M,Sx).
+
+ceq cs(< M,ceq T = T' if ECo /\ '__[Sx,Bx]:= '__[GT,NGTL]/\ ECd [ASet]; >) =
+< M,ceq T <<(Sx <- '__[NGTL]) = T' <<(Sx <- '__[NGTL])
+     if ECo <<(Sx <- '__[NGTL]) /\ Bx := GT /\ ECd <<(Sx <- '__[NGTL])[ASet]; >
+cs(< M,ceq T <<(Sx <- '__[Sx,GT]) = T' <<(Sx <- '__[Sx,GT])
+     if ECo <<(Sx <- '__[Sx,GT]) /\ '__[Sx,Bx]:= '__[NGTL] /\ ECd <<(Sx <- '__[Sx,GT])[ASet]; >)     
+ if sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
+    leastSort(M,Bx)=/= leastSort(M,Sx) /\
+    leastSort(M,GT) = leastSort(M,Bx).
+--- -------------------------------------------------------------------------------------
 endfm
---- --------------------------------------------------------------------------------------------------------------------------------------------------
+--- -------------------------------------------------------------------------------------
 
 --- -------------------------------------------------------------------------
 fmod #INDUCTIONX# is
@@ -3349,7 +3431,7 @@ mod #CITP# is
 --- -------------------------------------------------------------------------
  eq init = [nil,< none,none,emptyGoalList,nil >,
  '\n 'Welcome 'to '\b 'Constructor-based 'Inductive 'Theorem 'Prover '\o '\n
- '\t '--- 'CITP '2.0 'built: 'April '2017 '--- '\n ] .
+ '\t '--- 'CITP '2.0 'built: 'July '2018 '--- '\n ] .
 --- in --- 
 crl [in]: [NQIL,< none,NSTCL,NSGL,nil > ,QIL] => if ECM :: #Command#
           then [nil ,< ECM,NSTCL,NSGL,nil >,QIL]
