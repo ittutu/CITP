@@ -26,12 +26,19 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top" id="mainNav">
       <div class="container">
-        <a class="navbar-brand js-scroll-trigger" href="#page-top">CITP</a>
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="http://imi.kyushu-u.ac.jp/~daniel/">Back to Daniel Gaina's website</a>
+          </li>
+        </ul>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="#page-top">Home</a>
+            </li>
             <li class="nav-item">
               <a class="nav-link js-scroll-trigger" href="#download">Download</a>
             </li>
@@ -306,13 +313,14 @@
                 <div id="collapseCloud" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
                   <div class="card-body">
                     <p>
-                      Arbitrary many PCs can connect to a cloud, fetch the value from the cloud, compare it with their own value, and update the cloud or their own value depending on which is larger
-                      <a href="examples/cloud/cloud.pdf">(cloud in images)</a>.
+                      Consider a scenario where arbitrarily many PCs are connected to a Cloud in order to exchange messages – for simplicity, we treat these messages as natural values.
+                      Each of the PCs can fetch the latest value from the cloud, compare it with their own value, and update the Cloud or their own value depending on which is larger;
+                      see the <a href="examples/cloud/cloud.pdf">Cloud in images</a>.
                     </p>
 
                     <ul>
-                      <li> <a href="examples/cloud/cloud.html">Solution 1 (OTS/CafeOBJ method) </a>
-                      <li> <a href="examples/cloudr/cloud.html"> Solution 2 (states described explicitly)</a>
+                      <li> <a href="examples/cloud/cloud.html">Solution 1 (OTS/CafeOBJ method)</a>
+                      <li> <a href="examples/cloudr/cloud.html">Solution 2 (states described explicitly)</a>
                     </ul>
                   </div>
                 </div>
