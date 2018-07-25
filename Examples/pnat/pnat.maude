@@ -1,3 +1,5 @@
+in ../../Tool/citp
+
 fmod PNAT is 
  sorts PNat PNzNat .
  subsorts PNzNat < PNat .

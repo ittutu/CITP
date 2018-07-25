@@ -1,3 +1,5 @@
+in ../../Tool/citp
+
 fth ELT is
  pr BOOL .
  sorts Elt .

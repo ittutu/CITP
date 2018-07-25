@@ -4,6 +4,8 @@
 --- all modules wil be imported with "including" but the intended semantics is that of protecting
 --- ---------------------------------------------
 --- ---------------------------------------------
+in ../../Tool/citp
+--- ---------------------------------------------
 fmod SEQUENCE{X :: TRIV} is
  sort Sequence .
  subsorts X$Elt < Sequence .

@@ -1,9 +1,8 @@
-
 *****************************************************************************************************
 ***(Since Maude doesn't allow importation of theories in protecting mode,
 all modules wil be imported with "including" but the intended semantics is that of protecting)
 *****************************************************************************************************
-in citp
+in ../../../Tool/citp
 --- ---------------------------------------------
 fth ELT is
  sort Elt .

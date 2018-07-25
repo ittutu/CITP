@@ -1,3 +1,5 @@
+in ../../Tool/citp
+
 fmod FG-FUN is
  protecting NAT .
  op F : Nat -> Nat .

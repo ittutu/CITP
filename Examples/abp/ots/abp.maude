@@ -1,6 +1,6 @@
 ***( Note : Since Maude doesn't allow importation of theories in protecting mode, 
 all modules wil be imported with "including" but the intended semantics is that of protecting)
-
+in ../../../Tool/citp
 --- ---------------------------------------------
 --- ---------------------------------------------
 fmod SEQUENCE{X :: TRIV} is

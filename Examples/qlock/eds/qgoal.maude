@@ -1,4 +1,3 @@
-in citp
 in qlock
 
 mod GOAL{X :: PID} is

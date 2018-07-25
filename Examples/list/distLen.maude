@@ -1,5 +1,4 @@
 in list
-in CITP
 
 select #CITP# .
 loop init .

@@ -1,5 +1,4 @@
 in list
-in citp
 
 fmod LISTS-ASSOC{X :: ELT} is
  pr LISTS{X} .
