@@ -1,0 +1,11 @@
+in ../../../Tool/citp
+in ../gcd-assoc-prelude
+
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 1: \forall M : Nat . M <= M .
+(goal NAT-OPS-EXTRA |- eq M:Nat <= M:Nat = true ;)
+(ind on M:Nat)
+(red)
+---> QED

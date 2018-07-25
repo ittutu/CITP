@@ -1,0 +1,22 @@
+in ../../../Tool/citp
+in ../gcd-assoc-prelude
+
+fmod LEMMA-23-PRE is
+    protecting NAT-GCD .
+    protecting NAT-OPS-EXTRA .
+
+    vars M N L : Nat .
+
+    ceq gcd(M, N) divides M = true if M + N <= L [ metadata "Lemma-22" nonexec ] .
+    eq M <= M = true [ metadata "Lemma-1" ] .
+endfm
+		
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 23: \forall M, N : Nat . gcd(M, N) divides M .
+(goal LEMMA-23-PRE |- eq gcd(M:Nat, N:Nat) divides M:Nat = true ;)
+(tc)
+(init Lemma-22 by L:Nat <- M:Nat + N:Nat)
+(red)
+---> QED

@@ -1,0 +1,31 @@
+in ../../../Tool/citp
+in ../gcd-assoc-prelude
+
+fmod LEMMA-22-PRE is
+    protecting NAT-GCD .
+    protecting NAT-OPS-EXTRA .
+
+    vars M N P : Nat .
+
+    ceq M <= N = true if M <= P and P <= N [ metadata "Lemma-2" nonexec ] .
+    eq max(M, N) <= M + N = true [ metadata "Lemma-4" ] .
+    eq d(M, N) + min(M, N) = max(M, N) [ metadata "Lemma-8" ] .
+    eq M divides M = true [ metadata "Lemma-17" ] .
+
+endfm
+		
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 22: \forall M, N, L : Nat . gcd(M, N) divides M if M + N <= L .
+(goal LEMMA-22-PRE |- ceq gcd(M:Nat, N:Nat) divides M:Nat = true if (M:Nat + N:Nat <= L:Nat) = true ;)
+(ind on L:Nat)
+(ind on M:Nat N:Nat)
+(imp red)
+(select 2)
+(. init Divides by M:Nat <- s x#2 ; N:Nat <- 0 red)
+(select 1)
+(. init Lemma-2 by M:Nat <- s max(x#2,x#3) ; N:Nat <- x#1 ; P:Nat <- s(x#2 + x#3))
+(. init 1 by M:Nat <- d(x#2,x#3) ; N:Nat <- s min(x#2,x#3))
+(. init Lemma-22.1 by M:Nat <- d(x#2,x#3) ; N:Nat <- s min(x#2,x#3))
+eof

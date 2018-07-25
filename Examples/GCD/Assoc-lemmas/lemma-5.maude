@@ -1,0 +1,8 @@
+in ../../../Tool/citp
+in ../gcd-assoc-prelude
+
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 5: \forall M, N : Nat .  min(M, N) = M or min(M, N) = N .
+(goal NAT-OPS-EXTRA |- ceq ;)

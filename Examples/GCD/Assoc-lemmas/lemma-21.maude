@@ -1,0 +1,10 @@
+in ../../../Tool/citp
+in ../gcd-assoc-prelude
+
+select #CITP# .
+loop init .
+
+---> Proof score of Lemma 21: \forall M, N : Nat .  M = N if (M divides N) /\ (N divides M) .
+(goal NAT-OPS-EXTRA |- ceq M:Nat = N:Nat if (M:Nat divides N:Nat) = true /\ (N:Nat divides M:Nat) = true [ nonexec ] ;)
+(ind on M:Nat N:Nat)
+*** ---> QED
