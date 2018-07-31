@@ -21,53 +21,51 @@ fmod LABEL is
  ops rs cs : -> Label [ctor] .
  op _~_ : Label Label -> Bool [comm] .
  eq (L:Label ~ L:Label) = true .
- eq (rs ~ cs) = false .
+ ceq true = false if rs = cs .
 endfm
 
-fmod PROC is
+fmod LSET is
  pr LABEL .
- pr NAT .
 
- sort Proc .
- op [_,_] : Nat Label -> Proc [ctor] .
+ sort LSet .
+ subsort Label < LSet .
+
+ op empty : -> LSet [ctor] .
+ op __ : LSet LSet -> LSet [ctor assoc comm id: empty] .
+
+ var  LS : LSet .
+
+ op allRS : LSet -> Bool .
+ eq allRS(empty) = true .
+ eq allRS(rs LS) = allRS(LS) .
+ eq allRS(cs LS) = false .
 endfm
-
-view Proc from TRIV to PROC is
- sort Elt to Proc .
-endv
 
 fmod STATUS is
  sort Status .
  ops open close : -> Status [ctor] .
  op _~_ : Status Status -> Bool [comm] .
  eq (L:Status ~ L:Status) = true .
- eq (open ~ close) = false .
+ ceq true = false if open = close .
 endfm
 
 fmod TAS is
- pr SET{Proc} * (sort Set{Proc} to PSet, op _,_ to __) .
  pr STATUS .
+ pr LSET .
 
  sorts Reach Sys .
  subsort Reach < Sys .
 
- op <_,_> : Status PSet -> Sys [ctor] .
+ op <_,_> : Status LSet -> Sys [ctor] .
 
  var  S : Status .
  var  L : Label .
- var  PS : PSet .
- var  N : Nat .
+ var  LS : LSet .
 
- cmb < open, PS > : Reach
-  if allRS(PS) [nonexec metadata "ctor-init"] .
- cmb < close, [N, cs] PS > : Reach
-  if < open, [N, rs] PS > : Reach [nonexec metadata "ctor-enter"] .
- cmb < open, [N, rs] PS > : Reach
-  if < S, [N, cs] PS > : Reach [nonexec metadata "ctor-leave"] .
-
- op allRS : PSet -> Bool .
- eq allRS(empty) = true .
- eq allRS([N, rs] PS) = allRS(PS) .
- eq allRS([N, cs] PS) = false .
+ cmb < open, LS > : Reach
+  if allRS(LS) [nonexec metadata "ctor-init"] .
+ cmb < close, cs LS > : Reach
+  if < open, rs LS > : Reach [nonexec metadata "ctor-enter"] .
+ cmb < open, rs LS > : Reach
+  if < S, cs LS > : Reach [nonexec metadata "ctor-leave"] .
 endfm
-

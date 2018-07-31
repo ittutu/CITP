@@ -1,0 +1,16 @@
+in ../../../Tool/citp
+
+in tas_explicit.maude
+
+select #CITP# .
+
+loop init .
+
+(goal TAS |-
+ceq true = false if < open, (cs LS:LSet) > := R:Reach ;
+ceq true = false if < S:Status, (cs cs LS:LSet) > := R:Reach ;
+)
+
+(indx on R:Reach red cs red imp red)
+
+(init 1 by )

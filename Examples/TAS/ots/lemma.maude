@@ -1,0 +1,23 @@
+in ../../../Tool/citp
+
+in tas.maude
+
+select #CITP# .
+
+loop init .
+
+(goal TAS |-
+ceq lock(S:Sys)= close if pc(S:Sys,I:X$Pid)= cs[nonexec];
+ceq I:X$Pid = J:X$Pid if pc(S:Sys,I:X$Pid)= cs /\ pc(S:Sys,J:X$Pid)= cs[nonexec];)
+
+(ind on S:Sys red tc red ca-1 red ca red imp red)
+
+(init 2 by I:X$Pid <- I#3 red)
+
+(init 1 by I:X$Pid <- I#3 ; J:X$Pid <- z#2 red)
+
+(. cp-l 3 >< 7)
+
+(init 1 by I:X$Pid <- I#3 ; J:X$Pid <- J#4 red)
+
+(init 2 by I:X$Pid <- J#4)
