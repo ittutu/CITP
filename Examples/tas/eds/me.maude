@@ -1,6 +1,6 @@
 in ../../../Tool/citp
 
-in tas_explicit.maude
+in tas.maude
 
 select #CITP# .
 
