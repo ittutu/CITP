@@ -2195,9 +2195,9 @@ cs(< M, ceq T <<(Sx <- '__[Sa,Sb])= T' <<(Sx <- '__[Sa,Sb])
          if ECo <<(Sx <- '__[Sa,Sb])/\ '__[Sa,By] := GT /\ '__[Sb,Bx] := '__[NGTL] /\
 	    ECd <<(Sx <- '__[Sa,Sb])[ASet]; >)
 if Sx,Bx,By := order3(M, TL) /\
-   leastSort(M,Bx)= leastSort(M,By)/\
-   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\
-   leastSort(M,Bx)=/= leastSort(M,Sx) /\
+   leastSort(M,Bx)= leastSort(M,By)/\ *** Checked below
+   sortLeq(M,leastSort(M,Bx),leastSort(M,Sx))/\ *** Checked below
+   leastSort(M,Bx)=/= leastSort(M,Sx) /\ *** Checked below
    leastSort(M,Sx)= leastSort(M,GT) /\
    Sa := qid(string(getName(Sx)) + "#1:" + string(getType(Sx))) /\
    Sb := qid(string(getName(Sx)) + "#2:" + string(getType(Sx))).

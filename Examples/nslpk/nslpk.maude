@@ -1,0 +1,296 @@
+fmod PRIN is   *** Should be a theory
+  inc BOOL .
+
+  sort Prin .
+  op intr : -> Prin .
+
+  var P : Prin .
+
+  op _~_ : Prin Prin -> Bool [comm] .
+  eq P ~ P = true .
+endfm
+
+fmod RAND is   *** Should be a theory
+  inc BOOL .
+
+  sort Rand .
+
+  op seed : -> Rand .
+  op next : Rand -> Rand .
+
+  vars R R1 R2 : Rand .
+
+  op _~_ : Rand Rand -> Bool [comm] .
+
+  eq R ~ R = true .
+  eq (seed ~ next(R1)) = false .
+  eq (R1 ~ next(R1)) = false .
+  eq (next(R1) ~ next(R2)) = (R1 ~ R2) .
+endfm
+
+fmod NONCE is               *** Should be NONCE{P :: PRIN, R :: RAND} is
+  pr PRIN .
+  pr RAND .
+
+  sort Nonce .
+
+  op n : Prin Prin Rand -> Nonce [ctor] .
+
+  vars P P1 P2 P12 P22 : Prin .
+  vars R1 R2 : Rand .
+  var  N : Nonce .
+
+  op _~_ : Nonce Nonce -> Bool [comm] .
+  eq N ~ N = true .
+  ceq (n(P1,P2,R1) ~ n(P12,P22,R2)) = false
+   if (P1 ~ P12) = false .
+  ceq (n(P1,P2,R1) ~ n(P12,P22,R2)) = false
+   if (P2 ~ P22) = false .
+  ceq (n(P1,P2,R1) ~ n(P12,P22,R2)) = false
+   if (R1 ~ R2) = false .
+
+  eq p1(n(P1,P2,R1)) = P1 .
+  eq p2(n(P1,P2,R1)) = P2 .
+  eq r(n(P1,P2,R1))  = R1 .
+
+  op _\in_ : Prin Nonce -> Bool .
+  eq P1 \in n(P1, P2, R1) = true .
+  eq P2 \in n(P1, P2, R1) = true .
+  ceq P \in n(P1, P2, R1) = false
+   if (P ~ P1) = false /\
+      (P ~ P2) = false .
+endfm
+
+fmod CIPHER is             *** Should be CIPHER{P :: PRIN, R :: RAND} is
+  pr NONCE .               *** NONCE{P, R} .
+
+  sorts Cipher1 Cipher2 Cipher3 Cipher .
+  subsort Cipher1 Cipher2 Cipher3 < Cipher .
+
+  op enc1 : Prin Nonce Prin -> Cipher1 [ctor] .
+  op enc2 : Prin Nonce Nonce Prin -> Cipher2 [ctor] .
+  op enc3 : Prin Nonce -> Cipher3 [ctor] .
+
+  op k    : Cipher -> Prin .
+  op n1   : Cipher -> Nonce .
+  op n2   : Cipher2 -> Nonce .
+  op p    : Cipher1 -> Prin .
+  op p    : Cipher2 -> Prin .
+
+  vars N1 N2 N11 N21 N12 N22 : Nonce .
+  vars K1 K2 : Prin .
+  vars P1 P2 : Prin .
+
+  op _~_ : Cipher Cipher -> Bool [comm] .
+  eq (enc1(K1,N11,P1) ~ enc1(K2,N12,P2)) = (K1 ~ K2 and N11 ~ N12 and P1 ~ P2) .
+  eq (enc1(K1,N11,P1) ~ enc2(K2,N12,N22,P2)) = false .
+  eq (enc1(K1,N11,P1) ~ enc3(K2,N12)) = false .
+  eq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = (K1 ~ K2 and N11 ~ N12 and N21 ~ N22 and P1 ~ P2) .
+  eq (enc2(K1,N11,N21,P1) ~ enc3(K2,N12)) = false .
+  eq (enc3(K1,N11) ~ enc3(K2,N12)) = (K1 ~ K2 and N11 ~ N12) .
+
+  eq k(enc1(K1,N1,P1)) = K1 .
+  eq k(enc2(K1,N1,N2,P1)) = K1 .
+  eq k(enc3(K1,N1)) = K1 .
+  eq n1(enc1(K1,N1,P1)) = N1 .
+  eq n1(enc2(K1,N1,N2,P1)) = N1 .
+  eq n1(enc3(K1,N1)) = N1 .
+  eq n2(enc2(K1,N1,N2,P1)) = N2 .
+  eq p(enc1(K1,N1,P1)) = P1 .
+  eq p(enc2(K1,N1,N2,P1)) = P1 .
+endfm
+
+*** Adrian: Theory defined to require operator _~_
+fth TRIV-EQ is
+ inc BOOL .
+
+ sort Elt .
+
+ op _~_ : Elt Elt -> Bool .
+ eq E:Elt ~ E:Elt = true .
+endfth
+
+fmod BAG {T :: TRIV-EQ} is
+  sort Bag .
+  subsort T$Elt < Bag .
+
+  op empty : -> Bag [ctor] .
+  op __ : Bag Bag -> Bag [ctor assoc comm id: empty] .
+
+  vars X Y : T$Elt .
+  var  S : Bag .
+
+  op _\in_ : T$Elt Bag -> Bool .
+  eq X \in empty = false .
+  eq X \in (X S) = true .
+  ceq X \in (Y S) = X \in S
+   if (X ~ Y) = false .
+endfm
+
+view TRIV2NONCE from TRIV-EQ to NONCE is
+  sort Elt to Nonce .
+endv
+
+fmod NONCE-BAG is
+  pr BAG{TRIV2NONCE} * (sort Bag to NonceBag) .
+endfm
+
+view TRIV2CIPHER from TRIV-EQ to CIPHER is
+  sort Elt to Cipher .
+endv
+
+fmod NETWORK is
+  pr BAG{TRIV2CIPHER} * (sort Bag to Network) .
+endfm
+
+***(
+view Foo from TRIV to TRIV-EQ is
+endv
+
+mod FOO is
+ pr SET{Foo} .
+
+endm
+)
+
+fmod NSLPK is               *** Should be a theory
+  pr (NONCE-BAG + NETWORK) .
+  sort Sys .
+
+  --- an arbitrary initial state
+  op init : -> Sys [ctor] .
+  --- transitions
+  op send1 : Sys Prin Prin -> Sys [ctor] .
+  op send2 : Sys Prin Prin Nonce -> Sys [ctor] .
+  op send3 : Sys Prin Prin Nonce Nonce -> Sys [ctor] .
+  op fake1 : Sys Prin Prin Nonce -> Sys [ctor] .
+  op fake2 : Sys Prin Prin Nonce Nonce -> Sys [ctor] .
+  op fake3 : Sys Prin Nonce -> Sys [ctor] .
+
+  --- observers
+  op rand   : Sys -> Rand .       *** Next random number available in the system.
+  op nw     : Sys -> Network .    *** Ciphers in the system.
+  op nonces : Sys -> NonceBag .   *** Nonces addressed to the intruder in the system.
+
+  --- CafeOBJ variables
+  var S : Sys .
+  vars P1 P2 P3 Q1 P Q : Prin .
+  vars N1 N2 Np Nq : Nonce .
+
+  --- init
+  eq rand(init)   = seed .
+  eq nw(init)     = empty .
+  eq nonces(init) = empty .
+
+  --- send1
+  eq rand(send1(S,P,Q))    = next(rand(S)) .
+  eq nw(send1(S,P,Q))      = (enc1(Q,n(P,Q,rand(S)),P) nw(S)) .
+  ceq nonces(send1(S,P,Q)) = n(P,Q,rand(S)) nonces(S)
+   if Q ~ intr .
+  ceq nonces(send1(S,P,Q)) = nonces(S)
+   if not (Q ~ intr) .
+
+  --- send2
+  ceq rand(send2(S,Q,P,Np))   = next(rand(S))
+   if enc1(Q,Np,P) \in nw(S) .
+  ceq rand(send2(S,Q,P,Np))   = rand(S)
+   if (enc1(Q,Np,P) \in nw(S)) = false .
+  ceq nw(send2(S,Q,P,Np))     = (enc2(P,Np,n(Q,P,rand(S)),Q) nw(S))
+   if enc1(Q,Np,P) \in nw(S) .
+  ceq nw(send2(S,Q,P,Np))     = nw(S)
+   if (enc1(Q,Np,P) \in nw(S)) = false .
+  ceq nonces(send2(S,Q,P,Np)) = Np n(Q,P,rand(S)) nonces(S)
+   if enc1(Q,Np,P) \in nw(S) /\
+      P ~ intr .
+  ceq nonces(send2(S,Q,P,Np)) = nonces(S)
+   if (enc1(Q,Np,P) \in nw(S)) = false .
+  ceq nonces(send2(S,Q,P,Np)) = nonces(S)
+   if (P ~ intr) = false .
+
+  --- send3
+  eq  rand(send3(S,P,Q,Np,Nq))   = rand(S) .
+  ceq nw(send3(S,P,Q,Np,Nq))     = (enc3(Q,Nq) nw(S))
+   if enc2(P,Np,Nq,Q) \in nw(S) /\
+      enc1(Q,Np,P) \in nw(S) .
+  ceq nw(send3(S,P,Q,Np,Nq))     = nw(S)
+   if (enc2(P,Np,Nq,Q) \in nw(S)) = false .
+  ceq nw(send3(S,P,Q,Np,Nq))     = nw(S)
+   if (enc1(Q,Np,P) \in nw(S)) = false .
+  ceq nonces(send3(S,P,Q,Np,Nq)) = Nq nonces(S)
+   if enc2(P,Np,Nq,Q) \in nw(S) /\
+      enc1(Q,Np,P) \in nw(S) /\
+      Q ~ intr .
+  ceq nonces(send3(S,P,Q,Np,Nq)) = nonces(S)
+   if (enc2(P,Np,Nq,Q) \in nw(S)) = false .
+  ceq nonces(send3(S,P,Q,Np,Nq)) = nonces(S)
+   if (enc1(Q,Np,P) \in nw(S)) = false .
+  ceq nonces(send3(S,P,Q,Np,Nq)) = nonces(S)
+   if (Q ~ intr) = false .
+
+  --- fake1
+  eq  rand(fake1(S,P1,P2,Np))   = rand(S) .
+  ceq nw(fake1(S,P1,P2,Np))     = (enc1(P2,Np,P1) nw(S))
+   if Np \in nonces(S) .
+  ceq nw(fake1(S,P1,P2,Np))     = nw(S)
+   if (Np \in nonces(S)) = false .
+  eq  nonces(fake1(S,P1,P2,Np)) = nonces(S) .
+
+  --- fake2  P2 (intr) -> P1
+  eq  rand(fake2(S,P1,P2,Np,Nq))   = rand(S) .
+  ceq nw(fake2(S,P1,P2,Np,Nq))     = (enc2(P1,Np,Nq,P2) nw(S))
+   if Np \in nonces(S) /\
+      Nq \in nonces(S) .
+  ceq nw(fake2(S,P1,P2,Np,Nq))     = nw(S)
+   if (Np \in nonces(S)) = false .
+  ceq nw(fake2(S,P1,P2,Np,Nq))     = nw(S)
+   if (Nq \in nonces(S)) = false .
+  eq  nonces(fake2(S,P1,P2,Np,Nq)) = nonces(S) .
+
+  --- fake3
+  eq  rand(fake3(S,P1,Nq))   = rand(S) .
+  ceq nw(fake3(S,P1,Nq))     = (enc3(P1,Nq) nw(S))
+   if Nq \in nonces(S) .
+  ceq nw(fake3(S,P1,Nq))     = nw(S)
+   if (Nq \in nonces(S)) = false .
+  eq  nonces(fake3(S,P1,N1)) = nonces(S) .
+
+  *** Added
+  var NB : NonceBag .
+  var N : Nonce .
+  op prop : Prin Nonce Sys -> Bool .
+  ceq prop(P, N, S) = true
+   if P \in N [metadata "CAP-1" ] .
+  ceq prop(P, N, S) = true
+   if N \in nonces(S) [metadata "CAP-2" ] .
+  ceq prop(P, N, S) = false
+   if (P \in N) = false /\
+      (N \in nonces(S)) = false [metadata "CAP-3" ] .
+
+  ---
+  --- properties to be verified
+  ---
+  ***(
+  op inv1 : Sys Nonce -> Bool .
+  ceq inv1(S,N1) = intr \in N1
+   if (N1 \in nonces(S)) .
+  op inv2 : Sys Nonce Prin -> Bool .
+  ceq inv2(S,N1,Q1) = prop(intr, N1, nonces(S))
+   if (enc1(Q1,N1,intr) \in nw(S)) .
+  op inv3 : Sys Nonce Nonce Prin -> Bool .
+  ceq inv3(S,N1,N2,Q1) = prop(intr, N2, nonces(S))
+   if enc2(Q1,N1,N2,intr) \in nw(S) .
+  --
+  -- properties to be verified
+  --
+  op inv1 : Sys Nonce -> Bool
+  eq inv1(S,N1) = ((N1 \in nonces(S)) implies (p1(N1) = intr or p2(N1) = intr)) .
+  op inv2 : Sys Nonce Prin -> Bool
+  eq inv2(S,N1,Q1)
+     = ((enc1(Q1,N1,intr) \in nw(S))
+        implies (p1(N1) = intr or p2(N1) = intr or N1 \in nonces(S))) .
+  op inv3 : Sys Nonce Nonce Prin -> Bool
+  eq inv3(S,N1,N2,Q1)
+     = ((enc2(Q1,N1,N2,intr) \in nw(S))
+        implies (p1(N2) = intr or p2(N2) = intr or N2 \in nonces(S))) .
+   )
+endfm
