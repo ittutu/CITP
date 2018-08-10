@@ -160,17 +160,7 @@ fmod ADMISSIBLE-READINGS is
     sorts NeALR ALR .
     subsort NeALR < NeList{Reading} ALR < List{Reading} .
 
-    op _isAdmissible : List{Reading} -> Bool .
-    ceq LR isAdmissible = true if [] := LR [ metadata "CA-isA-0" ] .
-    ceq LR isAdmissible = true if [R] := LR [ metadata "CA-isA-1" ] .
-    ceq LR isAdmissible = true if [R R'] := LR /\ sd(R, R') <= 1 [ metadata "CA-isA-2" ] .
-    ceq LR isAdmissible = false if [R R'] := LR /\ sd(R, R') > 1 [ metadata "CA-isA-2-N" ] .
-    ceq LR isAdmissible = true if [R R' PL'] := LR /\ sd(R, R') <= 1 /\ [R' PL'] isAdmissible [ metadata "CA-isA-*" ] .
-    ceq LR isAdmissible = false if [R R' PL'] := LR /\ sd(R, R') > 1 [ metadata "CA-isA-*-N1" ] .
-    ceq LR isAdmissible = false if [R R' PL'] := LR /\ not [R' PL'] isAdmissible [ metadata "CA-isA-*-N2" ] .
-
     mb [] : ALR [ metadata "ctor-ALR-0" ] .
-    *** cmb NeLR : NeALR if NeLR isAdmissible [ metadata "ctor-ALR-*" ] .
     mb [R] : NeALR [ metadata "ctor-ALR-1" ] .
     cmb [R R'] : NeALR
       if sd(R, R') <= 1 [ metadata "ctor-ALR-2" ] .
@@ -197,3 +187,7 @@ fmod LOG-READINGS is
     eq log [R]    = (R ~ dose(R, empty)) .
     eq log [R PL] = (R ~ dose(R, log [PL])) log [PL] .
 endfm
+
+in ../../Tool/citp
+
+(goal CALC-PROOF |- ceq (dose(R:Reading, L:Log) < maxDose) = true if append([R:Reading], readings L:Log) : ALR ;)
