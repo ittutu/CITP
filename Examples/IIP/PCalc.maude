@@ -1,0 +1,199 @@
+fmod SUGAR-LEVEL is
+    sort SLevel .
+    ops low safe high : -> SLevel [ ctor ] .
+endfm
+
+fmod READING is *** should be a theory
+    protecting NAT * (
+    sort Nat to Reading,
+    sort Zero to ZReading,
+    sort NzNat to NzReading ) .
+    protecting SUGAR-LEVEL .
+
+    var R : Reading .
+    
+    ops safeMin safeMax : -> Reading .
+    eq safeMin <= safeMax = true .
+
+    *** test
+    eq safeMin = 6 .
+    eq safeMax = 14 .
+    *** end
+
+    op level_ : Reading -> SLevel .
+    ceq level R = low  if R < safeMin .
+    ceq level R = safe if R >= safeMin /\ R <= safeMax .
+    ceq level R = high if R >= safeMax .
+endfm
+
+view Reading from TRIV to READING is
+    sort Elt to Reading .
+endv
+
+fmod DOSE is *** should be a theory
+    protecting NAT * (
+    sort Nat to Dose,
+    sort Zero to ZDose,
+    sort NzNat to NzDose ) .
+
+    op minDose : -> Dose .
+    
+    *** test
+    eq minDose = 1 .
+    op maxDose : -> Dose .
+    eq maxDose = 4 .
+    *** end
+endfm
+
+fmod RECORDING is
+    protecting READING + DOSE .
+    sort Recording .
+
+    op (_~_) : Reading Dose -> Recording [ ctor ] .
+
+    var R : Reading .
+    var D : Dose .
+
+    op reading_ : Recording -> Reading .
+    eq reading (R ~ D) = R .
+
+    op dose_ : Recording -> Dose .
+    eq dose (R ~ D) = D .
+endfm
+
+view Recording from TRIV to RECORDING is
+    sort Elt to Recording .
+endv
+
+fmod LOG is
+    protecting LIST{Recording} * (
+    sort List{Recording} to Log,
+    sort NeList{Recording} to NeLog,
+    op nil to empty ).
+endfm
+
+fmod CALC is
+    protecting LOG .
+
+    vars R R' R'' : Reading .
+    vars D D' D'' : Dose .
+    vars RD RD' : Recording .
+    vars L L' : Log .
+
+    op valueOf : Reading -> Dose .
+    eq valueOf(0) = 0 .
+    eq valueOf(s R) = s valueOf(R) .
+
+    op relativeDose : Reading Reading -> Dose .
+    eq relativeDose(R, R') = valueOf(sd(R, R') quo 4) .
+
+    op dose : Reading Log -> Dose .
+
+    *** the measured sugar level falls below the minimum value
+    ceq dose(R, L) = 0
+      if level R = low [ metadata "CA-D-Low" ] .
+
+    *** the measured sugar level falls within the safe range
+    ceq dose(R, L) = 0
+      if level R = safe
+          /\ L := empty [ metadata "CA-D-Safe-Init" ] .
+
+    ceq dose(R, L) = 0
+      if level R = safe
+          /\ RD L' := L
+          /\ R <= reading RD [ metadata "CA-D-Safe-Dec" ] .
+
+    ceq dose(R, L) = minDose
+      if level R = safe
+          /\ RD empty := L
+          /\ R > reading RD [ metadata "CA-D-Safe-IInc" ] .
+
+    ceq dose(R, L) = 0
+      if level R = safe
+          /\ RD RD' L' := L
+          /\ R > reading RD
+          /\ R + reading RD' < 2 * reading RD [ metadata "CA-D-Safe-NAInc" ] .
+      ***    R - reading RD  < reading RD - reading RD'
+
+    ceq dose(R, L) = max(minDose, relativeDose(R, reading RD))
+      if level R = safe
+          /\ RD RD' L' := L
+          /\ R > reading RD
+          /\ R + reading RD' >= 2 * reading RD [ metadata "CA-D-Safe-AInc" ] .
+
+    *** the measured sugar level is above the maximum value
+    ceq dose(R, L) = minDose
+      if level R = high
+          /\ L := empty [ metadata "CA-D-High-Init" ] .
+
+    ceq dose(R, L) = max(minDose, relativeDose(R, reading RD))
+      if level R = high
+          /\ RD L' := L
+          /\ R >= reading RD [ metadata "CA-D-High-Inc" ] .
+
+    ceq dose(R, L) = 0
+      if level R = high
+          /\ RD empty := L
+          /\ R < reading RD [ metadata "CA-D-High-IDec" ] .
+
+    ceq dose(R, L) = minDose
+      if level R = high
+          /\ RD RD' L' := L
+          /\ R < reading RD
+          /\ R + reading RD' < 2 * reading RD [ metadata "CA-D-High-NADec" ] .
+
+    ceq dose(R, L) = 0
+      if level R = high
+          /\ RD RD' L' := L
+          /\ R < reading RD
+          /\ R + reading RD' >= 2 * reading RD [ metadata "CA-D-High-ADec" ] .
+endfm
+
+fmod ADMISSIBLE-READINGS is
+    protecting LIST*{Reading} .
+
+    vars R R' : Reading .
+    vars PL' : PreList{Reading} .
+    var LR : List{Reading} .
+    var NeLR : NeList{Reading} .
+
+    sorts NeALR ALR .
+    subsort NeALR < NeList{Reading} ALR < List{Reading} .
+
+    op _isAdmissible : List{Reading} -> Bool .
+    ceq LR isAdmissible = true if [] := LR [ metadata "CA-isA-0" ] .
+    ceq LR isAdmissible = true if [R] := LR [ metadata "CA-isA-1" ] .
+    ceq LR isAdmissible = true if [R R'] := LR /\ sd(R, R') <= 1 [ metadata "CA-isA-2" ] .
+    ceq LR isAdmissible = false if [R R'] := LR /\ sd(R, R') > 1 [ metadata "CA-isA-2-N" ] .
+    ceq LR isAdmissible = true if [R R' PL'] := LR /\ sd(R, R') <= 1 /\ [R' PL'] isAdmissible [ metadata "CA-isA-*" ] .
+    ceq LR isAdmissible = false if [R R' PL'] := LR /\ sd(R, R') > 1 [ metadata "CA-isA-*-N1" ] .
+    ceq LR isAdmissible = false if [R R' PL'] := LR /\ not [R' PL'] isAdmissible [ metadata "CA-isA-*-N2" ] .
+
+    mb [] : ALR [ metadata "ctor-ALR-0" ] .
+    *** cmb NeLR : NeALR if NeLR isAdmissible [ metadata "ctor-ALR-*" ] .
+    mb [R] : NeALR [ metadata "ctor-ALR-1" ] .
+    cmb [R R'] : NeALR
+      if sd(R, R') <= 1 [ metadata "ctor-ALR-2" ] .
+    cmb [R R' PL'] : NeALR
+      if sd(R, R') <= 1
+          /\ [R' PL'] : ALR [ metadata "ctor-ALR-*" ] .
+endfm
+
+fmod LOG-READINGS is
+    protecting CALC .
+    protecting ADMISSIBLE-READINGS .
+
+    var R : Reading .
+    var PL : PreList{Reading} .
+    var RD : Recording .
+    var L : Log .
+    
+    op readings_ : Log -> List{Reading} .
+    eq readings empty = [] .
+    eq readings (RD L) = append([reading RD], readings L) .
+
+    op log_ : ALR -> Log .
+    eq log []     = empty .
+    eq log [R]    = (R ~ dose(R, empty)) .
+    eq log [R PL] = (R ~ dose(R, log [PL])) log [PL] .
+endfm
