@@ -1,0 +1,7 @@
+in ../../Tool/citp
+in DoseComputer
+
+select #CITP# .
+loop init .
+
+(goal LOG-READINGS |- ceq (dose(R:Reading, L:Log) < maxDose) = true if (R:Reading, readings L:Log) : ALR ;)

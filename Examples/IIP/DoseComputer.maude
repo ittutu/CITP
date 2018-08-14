@@ -1,3 +1,16 @@
+*** Model of an Insulin-Pump Dose Computer
+*** 
+*** based on case study from Ian Sommerville's book on
+*** Software Engineering (10th edition)
+*** https://iansommerville.com/software-engineering-book/
+***
+*** The dose computer maintains a log of blood-sugar levels and of the
+*** corresponding insulin doses administered.  Based on the log, the
+*** computer determines, for a new reading of the blood-sugar level,
+*** an appropriate amount of insulin to be delivered to the user.
+
+in SimpleList
+
 fmod SUGAR-LEVEL is
     sort SLevel .
     ops low safe high : -> SLevel [ ctor ] .
@@ -15,7 +28,7 @@ fmod READING is *** should be a theory
     ops safeMin safeMax : -> Reading .
     eq safeMin <= safeMax = true .
 
-    *** test
+    *** test values
     eq safeMin = 6 .
     eq safeMax = 14 .
     *** end
@@ -38,7 +51,7 @@ fmod DOSE is *** should be a theory
 
     op minDose : -> Dose .
     
-    *** test
+    *** test values
     eq minDose = 1 .
     op maxDose : -> Dose .
     eq maxDose = 4 .
@@ -49,16 +62,16 @@ fmod RECORDING is
     protecting READING + DOSE .
     sort Recording .
 
-    op (_~_) : Reading Dose -> Recording [ ctor ] .
+    op [_~_] : Reading Dose -> Recording [ ctor ] .
 
     var R : Reading .
     var D : Dose .
 
     op reading_ : Recording -> Reading .
-    eq reading (R ~ D) = R .
+    eq reading [R ~ D] = R .
 
     op dose_ : Recording -> Dose .
-    eq dose (R ~ D) = D .
+    eq dose [R ~ D] = D .
 endfm
 
 view Recording from TRIV to RECORDING is
@@ -66,7 +79,7 @@ view Recording from TRIV to RECORDING is
 endv
 
 fmod LOG is
-    protecting LIST{Recording} * (
+    protecting SIMPLE-LIST{Recording} * (
     sort List{Recording} to Log,
     sort NeList{Recording} to NeLog,
     op nil to empty ).
@@ -89,84 +102,96 @@ fmod CALC is
 
     op dose : Reading Log -> Dose .
 
-    *** the measured sugar level falls below the minimum value
+    *** The measured sugar level falls below the minimum value
     ceq dose(R, L) = 0
       if level R = low [ metadata "CA-D-Low" ] .
 
-    *** the measured sugar level falls within the safe range
+    *** The measured sugar level falls within the safe range
+    *** -- the log is empty
     ceq dose(R, L) = 0
       if level R = safe
           /\ L := empty [ metadata "CA-D-Safe-Init" ] .
-
+    *** -- the log is not empty; the sugar level decreases
     ceq dose(R, L) = 0
       if level R = safe
-          /\ RD L' := L
+          /\ RD, L' := L
           /\ R <= reading RD [ metadata "CA-D-Safe-Dec" ] .
-
+    *** -- the log is not empty; the sugar level increases, but there
+    ***    is not enough data in the log to determine if the increase
+    ***    is accelerating or not
     ceq dose(R, L) = minDose
       if level R = safe
-          /\ RD empty := L
+          /\ RD, empty := L
           /\ R > reading RD [ metadata "CA-D-Safe-IInc" ] .
-
+    *** -- the log is not empty; the sugar level increases, but the
+    ***    rate of increase is decreasing
     ceq dose(R, L) = 0
       if level R = safe
-          /\ RD RD' L' := L
+          /\ RD, RD', L' := L
           /\ R > reading RD
-          /\ R + reading RD' < 2 * reading RD [ metadata "CA-D-Safe-NAInc" ] .
-      ***    R - reading RD  < reading RD - reading RD'
-
+          /\ sd(R, reading RD) < sd(reading RD, reading RD')
+          [ metadata "CA-D-Safe-NAInc" ] .
+    *** -- the log is not empty; the sugar level increases, and the
+    ***    rate of increase is stable or increasing
     ceq dose(R, L) = max(minDose, relativeDose(R, reading RD))
       if level R = safe
-          /\ RD RD' L' := L
+          /\ RD, RD', L' := L
           /\ R > reading RD
-          /\ R + reading RD' >= 2 * reading RD [ metadata "CA-D-Safe-AInc" ] .
-
-    *** the measured sugar level is above the maximum value
+          /\ sd(R, reading RD) >= sd(reading RD, reading RD')
+          [ metadata "CA-D-Safe-AInc" ] .
+    *** The measured sugar level is above the maximum value
+    *** -- the log is empty
     ceq dose(R, L) = minDose
       if level R = high
           /\ L := empty [ metadata "CA-D-High-Init" ] .
-
+    *** -- the log is not empty; the sugar level increases
     ceq dose(R, L) = max(minDose, relativeDose(R, reading RD))
       if level R = high
-          /\ RD L' := L
+          /\ RD, L' := L
           /\ R >= reading RD [ metadata "CA-D-High-Inc" ] .
-
+    *** -- the log is not empty; the sugar level decreases, but there
+    ***    is not enough data in the log to determine if the decrease
+    ***    is accelerating or not
     ceq dose(R, L) = 0
       if level R = high
-          /\ RD empty := L
+          /\ RD, empty := L
           /\ R < reading RD [ metadata "CA-D-High-IDec" ] .
-
+    *** -- the log is not empty; the sugar level decreases, but the
+    ***    rate of decrease is decreasing as well
     ceq dose(R, L) = minDose
       if level R = high
-          /\ RD RD' L' := L
+          /\ RD, RD', L' := L
           /\ R < reading RD
-          /\ R + reading RD' < 2 * reading RD [ metadata "CA-D-High-NADec" ] .
-
+          /\ sd(R, reading RD) < sd(reading RD, reading RD')
+          [ metadata "CA-D-High-NADec" ] .
+    *** -- the log is not empty; the sugar level decreases, and the
+    ***    rate of decrease is stable or increasing
     ceq dose(R, L) = 0
       if level R = high
-          /\ RD RD' L' := L
+          /\ RD, RD', L' := L
           /\ R < reading RD
-          /\ R + reading RD' >= 2 * reading RD [ metadata "CA-D-High-ADec" ] .
+          /\ sd(R, reading RD) >= sd(reading RD, reading RD')
+          [ metadata "CA-D-High-ADec" ] .
 endfm
 
+*** A list of blood-sugar readings is admissible if the difference
+*** between any two consecutive readings is at most 1 (for testing
+*** purposes; later to be replaced with a loose constant).
+
 fmod ADMISSIBLE-READINGS is
-    protecting LIST*{Reading} .
+    protecting SIMPLE-LIST{Reading} .
 
     vars R R' : Reading .
-    vars PL' : PreList{Reading} .
     var LR : List{Reading} .
-    var NeLR : NeList{Reading} .
 
     sorts NeALR ALR .
     subsort NeALR < NeList{Reading} ALR < List{Reading} .
 
-    mb [] : ALR [ metadata "ctor-ALR-0" ] .
-    mb [R] : NeALR [ metadata "ctor-ALR-1" ] .
-    cmb [R R'] : NeALR
-      if sd(R, R') <= 1 [ metadata "ctor-ALR-2" ] .
-    cmb [R R' PL'] : NeALR
+    mb nil : ALR [ metadata "ctor-ALR-0" ] .
+    mb R, nil : NeALR [ metadata "ctor-ALR-1" ] .
+    cmb R, R', LR : NeALR
       if sd(R, R') <= 1
-          /\ [R' PL'] : ALR [ metadata "ctor-ALR-*" ] .
+          /\ R', LR : ALR [ metadata "ctor-ALR-*" ] .
 endfm
 
 fmod LOG-READINGS is
@@ -174,20 +199,15 @@ fmod LOG-READINGS is
     protecting ADMISSIBLE-READINGS .
 
     var R : Reading .
-    var PL : PreList{Reading} .
+    var LR : List{Reading} .
     var RD : Recording .
     var L : Log .
     
     op readings_ : Log -> List{Reading} .
-    eq readings empty = [] .
-    eq readings (RD L) = append([reading RD], readings L) .
+    eq readings empty = nil .
+    eq readings (RD, L) = reading RD, readings L .
 
     op log_ : ALR -> Log .
-    eq log []     = empty .
-    eq log [R]    = (R ~ dose(R, empty)) .
-    eq log [R PL] = (R ~ dose(R, log [PL])) log [PL] .
+    eq log nil     = empty .
+    eq log (R, LR) = [R ~ dose(R, log LR)], log LR .
 endfm
-
-in ../../Tool/citp
-
-(goal CALC-PROOF |- ceq (dose(R:Reading, L:Log) < maxDose) = true if append([R:Reading], readings L:Log) : ALR ;)

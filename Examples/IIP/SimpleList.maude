@@ -1,0 +1,9 @@
+fmod SIMPLE-LIST{X :: TRIV} is
+    protecting NAT .
+
+    sorts NeList{X} List{X} .
+    subsort NeList{X} < List{X} .
+    
+    op nil : -> List{X} [ctor] .
+    op (_,_) : X$Elt List{X} -> NeList{X} [ctor] .
+endfm
