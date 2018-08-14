@@ -29,8 +29,8 @@ fmod READING is *** should be a theory
     eq safeMin <= safeMax = true .
 
     *** test values
-    eq safeMin = 6 .
-    eq safeMax = 14 .
+    *** eq safeMin = 6 .
+    *** eq safeMax = 14 .
     *** end
 
     op level_ : Reading -> SLevel .
@@ -49,13 +49,27 @@ fmod DOSE is *** should be a theory
     sort Zero to ZDose,
     sort NzNat to NzDose ) .
 
-    op minDose : -> Dose .
+    ops minDose maxDose : -> Dose .
+    eq minDose < maxDose = true .
     
     *** test values
-    eq minDose = 1 .
-    op maxDose : -> Dose .
-    eq maxDose = 4 .
+    *** eq minDose = 1 .
+    *** eq maxDose = 4 .
     *** end
+endfm
+
+fmod RELATIVE-DOSE is *** should be a theory
+    protecting READING .
+    protecting DOSE .
+    
+    vars R R' : Reading .
+    
+    op valueOf : Reading -> Dose .
+    eq valueOf(0) = 0 .
+    eq valueOf(s R) = s valueOf(R) .
+
+    op relativeDose : Reading Reading -> Dose .
+    *** eq relativeDose(R, R') = valueOf(sd(R, R') quo 4) .
 endfm
 
 fmod RECORDING is
@@ -87,18 +101,12 @@ endfm
 
 fmod CALC is
     protecting LOG .
+    protecting RELATIVE-DOSE .
 
     vars R R' R'' : Reading .
     vars D D' D'' : Dose .
     vars RD RD' : Recording .
     vars L L' : Log .
-
-    op valueOf : Reading -> Dose .
-    eq valueOf(0) = 0 .
-    eq valueOf(s R) = s valueOf(R) .
-
-    op relativeDose : Reading Reading -> Dose .
-    eq relativeDose(R, R') = valueOf(sd(R, R') quo 4) .
 
     op dose : Reading Log -> Dose .
 
@@ -139,6 +147,7 @@ fmod CALC is
           /\ R > reading RD
           /\ sd(R, reading RD) >= sd(reading RD, reading RD')
           [ metadata "CA-D-Safe-AInc" ] .
+      
     *** The measured sugar level is above the maximum value
     *** -- the log is empty
     ceq dose(R, L) = minDose
@@ -174,12 +183,12 @@ fmod CALC is
           [ metadata "CA-D-High-ADec" ] .
 endfm
 
-*** A list of blood-sugar readings is admissible if the difference
-*** between any two consecutive readings is at most 1 (for testing
-*** purposes; later to be replaced with a loose constant).
+*** A list of blood-sugar readings is admissible if the relative dose
+*** of any two consecutive readings is at most maxDose.
 
 fmod ADMISSIBLE-READINGS is
     protecting SIMPLE-LIST{Reading} .
+    protecting RELATIVE-DOSE .
 
     vars R R' : Reading .
     var LR : List{Reading} .
@@ -190,7 +199,7 @@ fmod ADMISSIBLE-READINGS is
     mb nil : ALR [ metadata "ctor-ALR-0" ] .
     mb R, nil : NeALR [ metadata "ctor-ALR-1" ] .
     cmb R, R', LR : NeALR
-      if sd(R, R') <= 1
+      if relativeDose(R, R') <= maxDose
           /\ R', LR : ALR [ metadata "ctor-ALR-*" ] .
 endfm
 
