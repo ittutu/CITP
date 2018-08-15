@@ -4,7 +4,7 @@ in DoseComputer
 fmod LOG-PROP is
     protecting LOG-READINGS .
 
-    ceq max(D1:Dose, D2:Dose) < D:Dose = true if D1:Dose < D:Dose = true /\ D2:Dose < D:Dose = true
+    ceq max(D1:Dose, D2:Dose) < D:Dose = true if D1:Dose < D:Dose /\ D2:Dose < D:Dose
           [metadata "max"] .
     ceq relativeDose(R1:Reading, R2:Reading) < maxDose = true if (R1:Reading, R2:Reading, LR:ALR) : ALR
           [metadata "RelDose-ALR" nonexec] .

@@ -1,0 +1,72 @@
+in ../../Tool/citp
+
+fth TRIV-EQ is
+    protecting BOOL .
+    sort  Elt .
+    op (_~_) : Elt Elt -> Bool .
+endfth
+
+fmod BASIC-NAT is
+    protecting BOOL .
+    sort Nat .
+    op 0 : -> Nat [ctor].
+    op s_ : Nat -> Nat [ctor].
+
+    op (_~_) : Nat Nat -> Bool [ comm ] .
+    eq N:Nat ~ N:Nat = true .
+    eq 0 ~ (s N:Nat) = false .
+    eq (s M:Nat) ~ (s N:Nat) = M:Nat ~ N:Nat .
+endfm
+
+view BasicNat from TRIV-EQ to BASIC-NAT is
+    sort Elt to Nat .
+endv
+
+fmod BAG {T :: TRIV-EQ} is
+    sort Bag .
+    subsort T$Elt < Bag .
+    
+    op empty : -> Bag [ctor] .
+    op __ : Bag Bag -> Bag [ctor assoc comm id: empty] .
+    
+    vars X Y : T$Elt .
+    vars B B' : Bag .
+
+    op _\in_ : T$Elt Bag -> Bool .
+    *** ceq X \in B = false   if B := empty                   [metadata "CA-empty"] .
+    *** ceq X \in B = true    if Y B' := B /\ (X ~ Y) = true  [metadata "CA-true" ] .
+    *** ceq X \in B = X \in B if Y B' := B /\ (X ~ Y) = false [metadata "CA-false"] .
+    eq  X \in empty = false                      [metadata "in-empty"] .
+    eq  X \in X B   = true                       [metadata "in-true" ] .
+    ceq X \in Y B   = X \in B if (X ~ Y) = false [metadata "in-false"] .
+endfm
+
+fmod BagOfNat is
+    protecting BAG{BasicNat} .
+
+    op f : Nat -> Nat .
+
+    *** Lemmas
+    ceq X:Nat ~ Y:Nat = true
+      if X:Nat \in Y:Nat B:Bag = true
+          /\ X:Nat \in B:Bag = false [metadata "setmb" nonexec] .
+    ceq X:Nat ~ Y:Nat = true
+      if f(X:Nat) ~ f(Y:Nat) [metadata "finj" nonexec] .
+
+    *** Premises
+    ops m n : -> Nat .
+    op b : -> Bag .
+
+    eq f(n) \in f(m) b = true .
+    eq f(n) \in b = false .
+endfm
+
+select #CITP# .
+loop init .
+
+---> Proof script of: m ~ n .
+(goal BagOfNat |- eq m ~ n = true ;)
+(init setmb by X:Nat <- f(n) ; Y:Nat <- f(m) ; B:Bag <- b ;)
+(init finj by X:Nat <- m ; Y:Nat <- n ;)
+(red)
+---> QED
