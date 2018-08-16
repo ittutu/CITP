@@ -70,3 +70,17 @@ loop init .
 (init finj by X:Nat <- m ; Y:Nat <- n ;)
 (red)
 ---> QED
+eof
+
+---> Proof script of setmb.
+(goal BagOfNat |- ceq X:Nat ~ Y:Nat = true
+                    if X:Nat \in Y:Nat B:Bag = true
+                        /\ X:Nat \in B:Bag = false ;)
+eof
+
+---> Proof script of: \forall X:Nat, Y:Nat . X ~ Y if f(X) ~ f(Y) .
+***  Assuming that f is defined as the successor function.
+(goal BagOfNat |- ceq X:Nat ~ Y:Nat = true if f(X:Nat) ~ f(Y:Nat) = true ;)
+(tc red)
+(imp red)
+---> QED

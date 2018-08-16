@@ -6,14 +6,14 @@ fmod LOG-PROP is
 
     ceq max(D1:Dose, D2:Dose) < D:Dose = true if D1:Dose < D:Dose /\ D2:Dose < D:Dose
           [metadata "max"] .
-    ceq relativeDose(R1:Reading, R2:Reading) < maxDose = true if (R1:Reading, R2:Reading, LR:ALR) : ALR
+    ceq relativeDose(R1:Reading, R2:Reading) < maxDose = true if (R1:Reading, R2:Reading, LR:ALR) : NeALR
           [metadata "RelDose-ALR" nonexec] .
 endfm
 
 select #CITP# .
 loop init .
 
-(goal LOG-PROP |- ceq (dose(R:Reading, L:Log) < maxDose) = true if (R:Reading, readings L:Log) : ALR ;)
+(goal LOG-PROP |- ceq (dose(R:Reading, L:Log) < maxDose) = true if (R:Reading, readings L:Log) : NeALR ;)
 (tc ca imp)
 (. init RelDose-ALR by
    R1:Reading <- R#1 ;
