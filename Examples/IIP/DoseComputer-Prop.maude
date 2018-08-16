@@ -1,11 +1,13 @@
 in ../../Tool/citp
 in DoseComputer
 
-fmod LOG-PROP is
+fmod DOSE-PROP is
     protecting LOG-READINGS .
 
     ceq max(D1:Dose, D2:Dose) < D:Dose = true if D1:Dose < D:Dose /\ D2:Dose < D:Dose
           [metadata "max"] .
+    eq 0 < maxDose = true
+          [metadata "maxDose"] .
     ceq relativeDose(R1:Reading, R2:Reading) < maxDose = true if (R1:Reading, R2:Reading, LR:ALR) : NeALR
           [metadata "RelDose-ALR" nonexec] .
 endfm
@@ -13,10 +15,17 @@ endfm
 select #CITP# .
 loop init .
 
-(goal LOG-PROP |- ceq (dose(R:Reading, L:Log) < maxDose) = true if (R:Reading, readings L:Log) : NeALR ;)
-(tc ca imp)
+---> Proof script of: \forall R:Reading, L:Log . dose(R, L) < maxDose if (R, readings L) : NeALR
+(goal DOSE-PROP |- ceq (dose(R:Reading, L:Log) < maxDose) = true if (R:Reading, readings L:Log) : NeALR ;)
+(tc ca imp red)
 (. init RelDose-ALR by
    R1:Reading <- R#1 ;
    R2:Reading <- reading RD#3 ;
    LR:ALR <- (reading RD'#4) , (readings L'#5) ;)
-(. red)
+(red)
+(. init RelDose-ALR by
+   R1:Reading <- R#1 ;
+   R2:Reading <- reading RD#3 ;
+   LR:ALR <- readings L'#4 ;)
+(red)
+---> QED
