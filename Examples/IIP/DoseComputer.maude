@@ -36,7 +36,7 @@ fmod READING is *** should be a theory
     op level_ : Reading -> SLevel .
     ceq level R = low  if R < safeMin .
     ceq level R = safe if R >= safeMin /\ R <= safeMax .
-    ceq level R = high if R >= safeMax .
+    ceq level R = high if R > safeMax .
 endfm
 
 view Reading from TRIV to READING is
