@@ -41,17 +41,13 @@ fmod NONCE is               *** Should be NONCE{P :: PRIN, R :: RAND} is
   var  N : Nonce .
 
   op _~_ : Nonce Nonce -> Bool [comm] .
-  eq N ~ N = true .
+  eq N ~ N = true [metadata "CA-eq-N-1"] .
   ceq (n(P1,P2,R1) ~ n(P12,P22,R2)) = false
-   if (P1 ~ P12) = false .
+   if (P1 ~ P12) = false [metadata "CA-eq-N-2"] .
   ceq (n(P1,P2,R1) ~ n(P12,P22,R2)) = false
-   if (P2 ~ P22) = false .
+   if (P2 ~ P22) = false [metadata "CA-eq-N-3"] .
   ceq (n(P1,P2,R1) ~ n(P12,P22,R2)) = false
-   if (R1 ~ R2) = false .
-
-  eq p1(n(P1,P2,R1)) = P1 .
-  eq p2(n(P1,P2,R1)) = P2 .
-  eq r(n(P1,P2,R1))  = R1 .
+   if (R1 ~ R2) = false [metadata "CA-eq-N-4"] .
 
   op _\in_ : Prin Nonce -> Bool .
   eq P1 \in n(P1, P2, R1) = true .
@@ -82,11 +78,32 @@ fmod CIPHER is             *** Should be CIPHER{P :: PRIN, R :: RAND} is
   vars P1 P2 : Prin .
 
   op _~_ : Cipher Cipher -> Bool [comm] .
-  eq (enc1(K1,N11,P1) ~ enc1(K2,N12,P2)) = (K1 ~ K2 and N11 ~ N12 and P1 ~ P2) .
-  eq (enc1(K1,N11,P1) ~ enc2(K2,N12,N22,P2)) = false .
-  eq (enc1(K1,N11,P1) ~ enc3(K2,N12)) = false .
-  eq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = (K1 ~ K2 and N11 ~ N12 and N21 ~ N22 and P1 ~ P2) .
-  eq (enc2(K1,N11,N21,P1) ~ enc3(K2,N12)) = false .
+  ceq (enc1(K1,N11,P1) ~ enc1(K2,N12,P2)) = true
+   if K1 ~ K2 /\
+      N11 ~ N12 /\
+      P1 ~ P2 [metadata "CA-eq-C-1"] .
+  ceq (enc1(K1,N11,P1) ~ enc1(K2,N12,P2)) = false
+   if (K1 ~ K2) = false [metadata "CA-eq-C-2"] .
+  ceq (enc1(K1,N11,P1) ~ enc1(K2,N12,P2)) = false
+   if (N11 ~ N12) = false [metadata "CA-eq-C-3"] .
+  ceq (enc1(K1,N11,P1) ~ enc1(K2,N12,P2)) = false
+   if (P1 ~ P2) = false [metadata "CA-eq-C-4"] .
+  eq (enc1(K1,N11,P1) ~ enc2(K2,N12,N22,P2)) = false [metadata "CA-eq-C-5"] .
+  eq (enc1(K1,N11,P1) ~ enc3(K2,N12)) = false [metadata "CA-eq-C-6"] .
+  ceq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = true
+   if K1 ~ K2 /\
+      N11 ~ N12 /\
+      N21 ~ N22 /\
+      P1 ~ P2 [metadata "CA-eq-C-7"] .
+  ceq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = false
+   if (K1 ~ K2) = false [metadata "CA-eq-C-8"] .
+  ceq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = false
+   if (N11 ~ N12) = false [metadata "CA-eq-C-9"] .
+  ceq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = false
+   if (N21 ~ N22) = false [metadata "CA-eq-C-10"] .
+  ceq (enc2(K1,N11,N21,P1) ~ enc2(K2,N12,N22,P2)) = false
+   if (P1 ~ P2) = false [metadata "CA-eq-C-11"] .
+  eq (enc2(K1,N11,N21,P1) ~ enc3(K2,N12)) = false [metadata "CA-eq-C-12"] .
   eq (enc3(K1,N11) ~ enc3(K2,N12)) = (K1 ~ K2 and N11 ~ N12) .
 
   eq k(enc1(K1,N1,P1)) = K1 .
@@ -100,7 +117,6 @@ fmod CIPHER is             *** Should be CIPHER{P :: PRIN, R :: RAND} is
   eq p(enc2(K1,N1,N2,P1)) = P1 .
 endfm
 
-*** Adrian: Theory defined to require operator _~_
 fth TRIV-EQ is
  inc BOOL .
 
@@ -121,10 +137,10 @@ fmod BAG {T :: TRIV-EQ} is
   var  S : Bag .
 
   op _\in_ : T$Elt Bag -> Bool .
-  eq X \in empty = false .
-  eq X \in (X S) = true .
+  eq X \in empty = false [metadata "CA-in-TB-1"] .
+  eq X \in (X S) = true [metadata "CA-in-TB-2"] .
   ceq X \in (Y S) = X \in S
-   if (X ~ Y) = false .
+   if (X ~ Y) = false [metadata "CA-in-TB-3"] .
 endfm
 
 view TRIV2NONCE from TRIV-EQ to NONCE is
@@ -142,16 +158,6 @@ endv
 fmod NETWORK is
   pr BAG{TRIV2CIPHER} * (sort Bag to Network) .
 endfm
-
-***(
-view Foo from TRIV to TRIV-EQ is
-endv
-
-mod FOO is
- pr SET{Foo} .
-
-endm
-)
 
 fmod NSLPK is               *** Should be a theory
   pr (NONCE-BAG + NETWORK) .
@@ -178,119 +184,91 @@ fmod NSLPK is               *** Should be a theory
   vars N1 N2 Np Nq : Nonce .
 
   --- init
-  eq rand(init)   = seed .
-  eq nw(init)     = empty .
-  eq nonces(init) = empty .
+  eq rand(init)   = seed [metadata "CA-R-I"] .
+  eq nw(init)     = empty [metadata "CA-NW-I"] .
+  eq nonces(init) = empty [metadata "CA-NN-I"] .
 
   --- send1
-  eq rand(send1(S,P,Q))    = next(rand(S)) .
-  eq nw(send1(S,P,Q))      = (enc1(Q,n(P,Q,rand(S)),P) nw(S)) .
+  eq rand(send1(S,P,Q))    = next(rand(S)) [metadata "CA-R-S1"] .
+  eq nw(send1(S,P,Q))      = (enc1(Q,n(P,Q,rand(S)),P) nw(S)) [metadata "CA-NW-S1"] .
   ceq nonces(send1(S,P,Q)) = n(P,Q,rand(S)) nonces(S)
-   if Q ~ intr .
+   if Q = intr [metadata "CA-NN-S1-1"] .
   ceq nonces(send1(S,P,Q)) = nonces(S)
-   if not (Q ~ intr) .
+   if (Q ~ intr) = false [metadata "CA-NN-S1-2"] .
 
   --- send2
   ceq rand(send2(S,Q,P,Np))   = next(rand(S))
-   if enc1(Q,Np,P) \in nw(S) .
+   if enc1(Q,Np,P) \in nw(S) [metadata "CA-R-S2-1"] .
   ceq rand(send2(S,Q,P,Np))   = rand(S)
-   if (enc1(Q,Np,P) \in nw(S)) = false .
+   if (enc1(Q,Np,P) \in nw(S)) = false [metadata "CA-R-S2-2"] .
   ceq nw(send2(S,Q,P,Np))     = (enc2(P,Np,n(Q,P,rand(S)),Q) nw(S))
-   if enc1(Q,Np,P) \in nw(S) .
+   if enc1(Q,Np,P) \in nw(S) [metadata "CA-NW-S2-1"] .
   ceq nw(send2(S,Q,P,Np))     = nw(S)
-   if (enc1(Q,Np,P) \in nw(S)) = false .
+   if (enc1(Q,Np,P) \in nw(S)) = false [metadata "CA-NW-S2-2"] .
   ceq nonces(send2(S,Q,P,Np)) = Np n(Q,P,rand(S)) nonces(S)
    if enc1(Q,Np,P) \in nw(S) /\
-      P ~ intr .
+      P = intr [metadata "CA-NN-S2-1"] .
   ceq nonces(send2(S,Q,P,Np)) = nonces(S)
-   if (enc1(Q,Np,P) \in nw(S)) = false .
+   if (enc1(Q,Np,P) \in nw(S)) = false [metadata "CA-NN-S2-2"] .
   ceq nonces(send2(S,Q,P,Np)) = nonces(S)
-   if (P ~ intr) = false .
+   if (P ~ intr) = false [metadata "CA-NN-S2-3"] .
 
   --- send3
-  eq  rand(send3(S,P,Q,Np,Nq))   = rand(S) .
+  eq  rand(send3(S,P,Q,Np,Nq))   = rand(S) [metadata "CA-R-S3"] .
   ceq nw(send3(S,P,Q,Np,Nq))     = (enc3(Q,Nq) nw(S))
    if enc2(P,Np,Nq,Q) \in nw(S) /\
-      enc1(Q,Np,P) \in nw(S) .
+      enc1(Q,Np,P) \in nw(S) [metadata "CA-NW-S3-1"] .
   ceq nw(send3(S,P,Q,Np,Nq))     = nw(S)
-   if (enc2(P,Np,Nq,Q) \in nw(S)) = false .
+   if (enc2(P,Np,Nq,Q) \in nw(S)) = false [metadata "CA-NW-S3-2"] .
   ceq nw(send3(S,P,Q,Np,Nq))     = nw(S)
-   if (enc1(Q,Np,P) \in nw(S)) = false .
+   if (enc1(Q,Np,P) \in nw(S)) = false [metadata "CA-NW-S3-3"] .
   ceq nonces(send3(S,P,Q,Np,Nq)) = Nq nonces(S)
    if enc2(P,Np,Nq,Q) \in nw(S) /\
       enc1(Q,Np,P) \in nw(S) /\
-      Q ~ intr .
+      Q = intr [metadata "CA-NN-S3-1"] .
   ceq nonces(send3(S,P,Q,Np,Nq)) = nonces(S)
-   if (enc2(P,Np,Nq,Q) \in nw(S)) = false .
+   if (enc2(P,Np,Nq,Q) \in nw(S)) = false [metadata "CA-NN-S3-2"] .
   ceq nonces(send3(S,P,Q,Np,Nq)) = nonces(S)
-   if (enc1(Q,Np,P) \in nw(S)) = false .
+   if (enc1(Q,Np,P) \in nw(S)) = false [metadata "CA-NN-S3-3"] .
   ceq nonces(send3(S,P,Q,Np,Nq)) = nonces(S)
-   if (Q ~ intr) = false .
+   if (Q ~ intr) = false [metadata "CA-NN-S3-4"] .
 
   --- fake1
-  eq  rand(fake1(S,P1,P2,Np))   = rand(S) .
+  eq  rand(fake1(S,P1,P2,Np))   = rand(S) [metadata "CA-R-F1"] .
   ceq nw(fake1(S,P1,P2,Np))     = (enc1(P2,Np,P1) nw(S))
-   if Np \in nonces(S) .
+   if Np \in nonces(S) [metadata "CA-NW-F1-1"] .
   ceq nw(fake1(S,P1,P2,Np))     = nw(S)
-   if (Np \in nonces(S)) = false .
-  eq  nonces(fake1(S,P1,P2,Np)) = nonces(S) .
+   if (Np \in nonces(S)) = false [metadata "CA-NW-F1-2"] .
+  eq  nonces(fake1(S,P1,P2,Np)) = nonces(S) [metadata "CA-NN-F1"] .
 
   --- fake2  P2 (intr) -> P1
-  eq  rand(fake2(S,P1,P2,Np,Nq))   = rand(S) .
+  eq  rand(fake2(S,P1,P2,Np,Nq))   = rand(S) [metadata "CA-R-F2"] .
   ceq nw(fake2(S,P1,P2,Np,Nq))     = (enc2(P1,Np,Nq,P2) nw(S))
    if Np \in nonces(S) /\
-      Nq \in nonces(S) .
+      Nq \in nonces(S) [metadata "CA-NW-F2-1"] .
   ceq nw(fake2(S,P1,P2,Np,Nq))     = nw(S)
-   if (Np \in nonces(S)) = false .
+   if (Np \in nonces(S)) = false [metadata "CA-NW-F2-2"] .
   ceq nw(fake2(S,P1,P2,Np,Nq))     = nw(S)
-   if (Nq \in nonces(S)) = false .
-  eq  nonces(fake2(S,P1,P2,Np,Nq)) = nonces(S) .
+   if (Nq \in nonces(S)) = false [metadata "CA-NW-F2-3"] .
+  eq  nonces(fake2(S,P1,P2,Np,Nq)) = nonces(S) [metadata "CA-NN-F2"] .
 
   --- fake3
-  eq  rand(fake3(S,P1,Nq))   = rand(S) .
+  eq  rand(fake3(S,P1,Nq))   = rand(S) [metadata "CA-R-F3"] .
   ceq nw(fake3(S,P1,Nq))     = (enc3(P1,Nq) nw(S))
-   if Nq \in nonces(S) .
+   if Nq \in nonces(S) [metadata "CA-NW-F3-1"] .
   ceq nw(fake3(S,P1,Nq))     = nw(S)
-   if (Nq \in nonces(S)) = false .
-  eq  nonces(fake3(S,P1,N1)) = nonces(S) .
+   if (Nq \in nonces(S)) = false [metadata "CA-NW-F3-2"] .
+  eq  nonces(fake3(S,P1,N1)) = nonces(S) [metadata "CA-NN-F3"] .
 
   *** Added
   var NB : NonceBag .
   var N : Nonce .
-  op prop : Prin Nonce Sys -> Bool .
-  ceq prop(P, N, S) = true
-   if P \in N [metadata "CAP-1" ] .
-  ceq prop(P, N, S) = true
-   if N \in nonces(S) [metadata "CAP-2" ] .
-  ceq prop(P, N, S) = false
-   if (P \in N) = false /\
-      (N \in nonces(S)) = false [metadata "CAP-3" ] .
-
-  ---
-  --- properties to be verified
-  ---
-  ***(
-  op inv1 : Sys Nonce -> Bool .
-  ceq inv1(S,N1) = intr \in N1
-   if (N1 \in nonces(S)) .
-  op inv2 : Sys Nonce Prin -> Bool .
-  ceq inv2(S,N1,Q1) = prop(intr, N1, nonces(S))
-   if (enc1(Q1,N1,intr) \in nw(S)) .
-  op inv3 : Sys Nonce Nonce Prin -> Bool .
-  ceq inv3(S,N1,N2,Q1) = prop(intr, N2, nonces(S))
-   if enc2(Q1,N1,N2,intr) \in nw(S) .
-  --
-  -- properties to be verified
-  --
-  op inv1 : Sys Nonce -> Bool
-  eq inv1(S,N1) = ((N1 \in nonces(S)) implies (p1(N1) = intr or p2(N1) = intr)) .
-  op inv2 : Sys Nonce Prin -> Bool
-  eq inv2(S,N1,Q1)
-     = ((enc1(Q1,N1,intr) \in nw(S))
-        implies (p1(N1) = intr or p2(N1) = intr or N1 \in nonces(S))) .
-  op inv3 : Sys Nonce Nonce Prin -> Bool
-  eq inv3(S,N1,N2,Q1)
-     = ((enc2(Q1,N1,N2,intr) \in nw(S))
-        implies (p1(N2) = intr or p2(N2) = intr or N2 \in nonces(S))) .
-   )
+  op prop : Nonce Sys -> Bool .
+  ceq prop(N, S) = true
+   if intr \in N [metadata "CA-PROP-1" ] .
+  ceq prop(N, S) = true
+   if N \in nonces(S) [metadata "CA-PROP-2" ] .
+  ceq prop(N, S) = false
+   if (intr \in N) = false /\
+      (N \in nonces(S)) = false [metadata "CA-PROP-3" ] .
 endfm
