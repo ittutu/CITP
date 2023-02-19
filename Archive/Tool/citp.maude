@@ -2204,17 +2204,17 @@ if Sx,Bx,By := order3(M, TL) /\
 
  var T'' : Term .
  op order3 : Module TermList ~> TermList .
- *** The first is the supersort
+ *** The first is the superset
  ceq order3(M, (T, T', T'')) = T, T', T''
   if leastSort(M,T') = leastSort(M,T'') /\
      leastSort(M,T) =/= leastSort(M,T') /\
      sortLeq(M,leastSort(M,T'),leastSort(M,T)) .
- *** The second is the supersort
+ *** The second is the superset
  ceq order3(M, (T, T', T'')) = T', T, T''
   if leastSort(M,T) = leastSort(M,T'') /\
      leastSort(M,T') =/= leastSort(M,T') /\
      sortLeq(M,leastSort(M,T),leastSort(M,T')) .
- *** The third is the supersort
+ *** The third is the superset
  ceq order3(M, (T, T', T'')) = T'', T, T'
   if leastSort(M,T) = leastSort(M,T') /\
      leastSort(M,T') =/= leastSort(M,T'') /\
