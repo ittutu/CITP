@@ -1,0 +1,68 @@
+***( REPL/Examples
+
+  This file is part of the REPL-examples suite.
+
+  Copyright : (C) 2020, 2021 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Echo.maude
+
+********************************************************************************
+
+mod ECHO-MULTILINE-INTERPRETER is
+  including BASIC-INTERPRETER { NIndex{Snippet/IO/Qid}, Echo } .
+  including QID-LIST/FORMATTING .
+
+  var  O : Oid .
+  var  QI : Qid .
+  var  QIL : QidList .
+  vars N K : Nat .
+  vars B : Int .
+  var  Atts : AttributeSet .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op Echo : -> Oid [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+
+  *** | The function 'balance' checks the balance of open and closed
+  *** | parentheses within a list of quoted identifiers.
+  *** |
+  *** | It evaluates to:
+  *** | - 0 if the list is balanced;
+  *** | - N > 0 if the list contains N more closed than open parentheses;
+  *** | - (- K) < 0 if the list cannot be balanced (by appending identifiers),
+  *** |   where K is the length of the line's shortest unbalanceable prefix.
+  op balance : QidList -> Int .
+  eq balance(QIL) = balance(QIL, 0, 0) .
+
+  op balance : QidList Nat Nat -> Int .
+  eq balance((nil).QidList, N, K) = N .
+  eq balance('`( QIL, N, K) = balance(QIL, s N, s K) .
+  eq balance('`) QIL, 0, K) = - s K .
+  eq balance('`) QIL, s N, K) = balance(QIL, N, s K) .
+  eq balance(QI QIL, N, K) = balance(QIL, N, s K) [owise] .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  crl < Echo : INT | running, Atts >
+    eval(Echo, O, QIL)
+   => < Echo : INT | running, Atts >
+    if B >= 0
+    then
+      if B == 0
+      then print(O, emph(QIL))
+      else read-more(O) fi
+    else
+      warn(O, "too many closed parentheses",
+        (at abs(B + 1), include context)) fi
+  if B := balance(QIL) .
+endm
+
+********************************************************************************
+
+*** erew in ECHO-MULTILINE-INTERPRETER : start Echo .
+*** quit

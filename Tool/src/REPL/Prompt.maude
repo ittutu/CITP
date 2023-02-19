@@ -1,0 +1,93 @@
+***( SpeX/REPL
+
+  This file is part of REPL, a generic Read-Eval-Print-Loop library
+  for Maude 3.
+
+  Copyright : (C) 2022 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../CommonLibs/Configuration.maude
+sload ../CommonLibs/String.maude
+
+********************************************************************************
+
+fmod PROMPT is
+  protecting STRING/OPS .
+
+  var  Pt : Prompt .
+  vars PB P> SB S> R : String .
+  var  QI : Qid .
+
+  *** Prompt  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  sort Prompt .
+  op [__/__] : String String String String -> Prompt [ctor] .
+
+  op empty : -> Prompt .
+  eq empty = ["" "" / "" ""] .
+
+  *** primary prompt  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op primary : Prompt -> String .
+  eq primary([PB P> / SB S>]) = PB +[" "]+ P> .
+
+  *** secondary prompt  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op secondary : Prompt -> String .
+  eq secondary([PB P> / SB S>]) = SB +[" "]+ S> .
+
+  *** basic prompt  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op [_>] : String -> Prompt .
+  eq [PB >] = [PB "> " / "" "> "] .
+
+  op [_>] : Qid -> Prompt .
+  eq [QI >] = [string(QI) >] .
+
+  op [>] : -> Prompt .
+  eq [>] = ["" "> " / "" "> "] .
+
+  *** prefixing  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _/_ : String Prompt -> Prompt .
+  eq R / [PB P> / SB S>] = [(R +["/"]+ PB) P> / SB S>] .
+
+  op _?_/_ : Prompt String Prompt -> Prompt .
+  eq Pt ? R / [PB P> / SB S>]
+   = if Pt == empty then empty else R / [PB P> / SB S>] fi .
+endfm
+
+********************************************************************************
+
+mod PROMPT/OPS is
+  protecting PROMPT .
+  including  CONFIGURATION/OPS .
+
+  var O : Oid .
+  var Pt : Prompt .
+  var V? : [AttrValue] .
+  var Atts : AttributeSet .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op prompt : -> AttrName [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op get-prompt : Oid Oid -> Msg [ctor message format (b o)] .
+  op got-prompt : Oid Prompt -> Msg [ctor message format (m o)] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op prompt : AttributeSet -> Prompt .
+  ceq prompt(Atts) = Pt if AttrValue(Pt) := (Atts).get(prompt) .
+  eq prompt(Atts) = empty [owise] .
+
+  op has-prompt : AttributeSet -> Bool .
+  eq has-prompt(Atts) = prompt(Atts) =/= empty .
+
+  op set-prompt : Prompt -> AttrModifier [ctor] .
+  eq subject(set-prompt(Pt)) = prompt .
+  eq set-prompt(Pt) V? = AttrValue(Pt) .
+
+  *** behaviour of the null object  - - - - - - - - - - - - - - - - - - - - - --
+  eq get-prompt(null, O) = got-prompt(O, empty) .
+endm
+
+********************************************************************************

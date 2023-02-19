@@ -1,0 +1,648 @@
+***( SpeX/Lang/CITP
+
+  This file is part of CITP.
+
+  License : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author  : Daniel Gaina <daniel@imi.kyushu-u.ac.jp>
+
+)
+
+********************************************************************************
+
+---> PREAMBLE <---
+fmod CITP/PREAMBLE is
+ inc META-LEVEL .
+ inc CONVERSION .
+ vars F Q : Qid .
+ var QL : QidList .
+ var TPL : TypeList .
+ var NTPL : NeTypeList .
+ vars AS AS1 AS2 : AttrSet .
+ var AT : Attr .
+ vars TP TP1 TP2 : Type .
+ vars SR SR1 SR2 : String .
+ vars ST ST1 ST2 : Sort .
+ vars N N1 N2 : Nat .
+ vars T T1 T2 T3 T4 : Term .
+ vars TL TL1 TL2 : TermList .
+ vars NTL NTL1 NTL2 : NeTermList .
+ vars E E1 E2 : Equation .
+ vars MB MB1 MB2 : MembAx .
+ vars R R1 R2 : Rule .
+ vars ES ES1 ES2 : EquationSet .
+ vars MS MS1 MS2 : MembAxSet .
+ vars RS RS1 RS2 : RuleSet .
+ vars SS SS1 SS2 : SortSet .
+ vars SDS SDS1 SDS2 : SubsortDeclSet .
+ var OD : OpDecl .
+ vars ODS ODS1 ODS2 : OpDeclSet .
+ var IL : ImportList .
+ vars EC EC1 EC2 : EqCondition .
+ vars CD CD1 CD2 : Condition .
+ var H : Header .
+ vars V V1 V2 : Variable .
+ vars CT CT1 CT2 : Constant .
+ vars SB SB1 SB2 : Substitution .
+ var ESB : [Substitution] .
+ vars VS VS1 VS2 : VariableSet .
+ vars NVS NVS1 NVS2 : NeVariableSet .
+ var M : Module .
+ var PDL : ParameterDeclList .
+*** top (NeQidList) ***
+ op top : NeQidList -> Qid .
+ eq top(Q QL) = Q . 
+*** reduce  ***
+ op red : Module Term -> Term .
+ eq red(M,T)=
+    if   metaReduce(M,T) :: ResultPair
+    then getTerm(metaReduce(M,T))
+    else T fi .
+--- --- ---
+ op red : Module Condition -> Condition .
+ eq red(M,(nil).EqCondition) = (nil).EqCondition .
+ eq red(M,T1 =  T2 /\ CD) = if red(M,T1) == red(M,T2) then red(M,CD) else red(M,T1) = red(M,T2)/\ red(M,CD) fi .
+ eq red(M,T1 := T2 /\ CD) = if red(M,T1) == red(M,T2) then red(M,CD) else red(M,T1):= red(M,T2)/\ red(M,CD) fi .
+ eq red(M,T1 => T2 /\ CD) = if red(M,T1) == red(M,T2) then red(M,CD) else red(M,T1)=> red(M,T2)/\ red(M,CD) fi .
+ eq red(M,T : ST /\ CD)   = red(M,T) : ST /\ red(M,CD).
+--- --- --- 
+ op red : Module EquationSet -> EquationSet .
+ eq red(M,(none).EquationSet)= (none).EquationSet .
+ eq red(M, eq T1 = T2 [AS]. ES) =
+    if   red(M,T1) == red(M,T2)
+    then red(M,ES)
+    else eq red(M,T1) = red(M,T2)[AS]. red(M,ES) fi . 
+ eq red(M,ceq T1 = T2 if EC[AS]. ES) =
+    if   red(M,T1) == red(M,T2)
+    then red(M,ES)
+    else if   red(M,EC) == (nil).EqCondition
+         then  eq red(M,T1) = red(M,T2)             [AS]. red(M,ES)
+	 else ceq red(M,T1) = red(M,T2) if red(M,EC)[AS]. red(M,ES) fi fi .
+--- --- ---
+ op red : Module RuleSet -> RuleSet .
+ eq red(M,(none).RuleSet)= (none).RuleSet .
+ eq red(M, rl T1 => T2 [AS]. RS) =
+    if   red(M,T1) == red(M,T2)
+    then red(M,RS)
+    else rl red(M,T1) => red(M,T2)[AS]. red(M,RS) fi . 
+ eq red(M,crl T1 => T2 if CD[AS]. RS) =
+    if   red(M,T1) == red(M,T2)
+    then red(M,RS)
+    else if   red(M,CD) == (nil).EqCondition
+         then  rl red(M,T1) => red(M,T2)             [AS]. red(M,RS)
+	 else crl red(M,T1) => red(M,T2) if red(M,CD)[AS]. red(M,RS) fi fi .
+--- --- ---
+ op red : Module MembAxSet -> MembAxSet .
+ eq red(M,(none).MembAxSet)= (none).MembAxSet .
+ eq red(M, mb T : ST [AS]. MS) =  mb red(M,T) : ST [AS]. red(M,MS).
+ eq red(M,cmb T : ST if EC[AS]. MS)=
+    if   red(M,EC) == (nil).EqCondition
+    then  mb red(M,T) : ST             [AS]. red(M,MS)
+    else cmb red(M,T) : ST if red(M,EC)[AS]. red(M,MS) fi .
+*** normalize *******************************
+ op norm : Module Term -> Term .
+ eq norm(M,T) =
+    if   metaNormalize(M,T) :: ResultPair
+    then getTerm(metaNormalize(M,T))
+    else T fi .
+--- --- ---
+ op norm : Module Condition -> Condition .
+ eq norm(M,(nil).EqCondition)= (nil).EqCondition .
+ eq norm(M,T1  = T2 /\ CD) = norm(M,T1) = norm(M,T2) /\ norm(M,CD).
+ eq norm(M,T1 := T2 /\ CD) = norm(M,T1):= norm(M,T2) /\ norm(M,CD).
+ eq norm(M,T : ST /\ CD)   = norm(M,T) : ST          /\ norm(M,CD).
+ eq norm(M,T1 => T2 /\ CD) = norm(M,T1)=> norm(M,T2) /\ norm(M,CD).
+--- --- --- 
+ op norm : Module EquationSet -> EquationSet .
+ eq norm(M,(none).EquationSet) = (none).EquationSet .
+ eq norm(M, eq T1 = T2      [AS]. ES)=  eq norm(M,T1)=  norm(M,T2)              [AS]. norm(M,ES).
+ eq norm(M,ceq T1 = T2 if EC[AS]. ES)= ceq norm(M,T1) = norm(M,T2) if norm(M,EC)[AS]. norm(M,ES).
+--- --- ---
+ op norm : Module MembAxSet -> MembAxSet .
+ eq norm(M,(none).MembAxSet) = (none).MembAxSet .
+ eq norm(M, mb T : ST      [AS]. MS)=  mb norm(M,T): ST              [AS]. norm(M,MS).
+ eq norm(M,cmb T : ST if EC[AS]. MS)= cmb norm(M,T): ST if norm(M,EC)[AS]. norm(M,MS).
+--- --- ---
+ op norm : Module RuleSet -> RuleSet .
+ eq norm(M,(none).RuleSet) = (none).RuleSet .
+ eq norm(M, rl T1 => T2      [AS]. RS)=  rl norm(M,T1)=> norm(M,T2)              [AS]. norm(M,RS).
+ eq norm(M,crl T1 => T2 if CD[AS]. RS)= crl norm(M,T1)=> norm(M,T2) if norm(M,CD)[AS]. norm(M,RS).
+--- --- ---
+ op norm : Module -> Module .
+ eq norm(M) = M [owise].
+ceq norm(M) = fmod Q is IL sorts SS . SDS ODS  norm(M,MS) norm(M,ES) endfm
+ if fmod Q is IL sorts SS . SDS ODS MS ES endfm := M .
+ceq norm(M) = fmod  Q{PDL} is IL sorts SS . SDS ODS norm(M,MS) norm(M,ES) endfm
+ if fmod Q{PDL} is IL sorts SS . SDS ODS MS ES endfm := M .
+ceq norm(M) = mod Q is IL sorts SS . SDS ODS  norm(M,MS) norm(M,ES) norm(M,RS) endm
+ if mod Q is IL sorts SS . SDS ODS MS ES RS endm := M .
+ceq norm(M) = mod Q{PDL} is IL sorts SS . SDS ODS norm(M,MS) norm(M,ES) norm(M,RS) endm
+ if mod Q{PDL} is IL sorts SS . SDS ODS MS ES RS endm := M .
+ceq norm(M) = fth Q is IL sorts SS . SDS ODS  norm(M,MS) norm(M,ES) endfth
+ if fth Q is IL sorts SS . SDS ODS MS ES endfth := M .
+ceq norm(M) = th Q is IL sorts SS . SDS ODS  norm(M,MS) norm(M,ES) norm(M,RS) endth
+ if th Q is IL sorts SS . SDS ODS MS ES RS endth := M .
+*** getLB *******************************
+ op getLB : VariableSet Nat -> Nat .
+ eq getLB((none).VariableSet,N) = N .
+ceq getLB(V ; VS,N)= getLB(VS,N2)
+ if SR  := string(getName(V)) /\
+    N1  := rfind(SR,"#",length(string(getName(V))))/\
+    SR1 := substr(SR,N1 + 1,length(SR))/\
+    N2  := rat(SR1,10) /\ N2 > N .
+ eq getLB(V ; VS,N) = getLB(VS,N)[owise].
+--- --- ---
+ op getLB : AttrSet -> Nat .
+ eq getLB(AS) = getLB(AS,0).
+ op getLB : AttrSet Nat -> Nat .
+ eq getLB((none).AttrSet,N) = N .  
+ eq getLB(metadata(SR) AS,N) =
+    if   rat(SR,10) :: Nat
+    then if   N < rat(SR,10)
+         then getLB(AS,rat(SR,10))
+         else getLB(AS,N) fi
+    else getLB(AS,N) fi .
+--- --- ---
+ eq getLB(AT AS,N) = getLB(AS,N)[owise].
+--- --- ---
+ op getLB : EquationSet -> Nat .
+ eq getLB(ES) = getLB(ES,0).
+--- --- ---
+ op getLB : EquationSet Nat -> Nat .
+ eq getLB((none).EquationSet,N) = N .
+ eq getLB(eq T1 = T2[AS]. ES,N) =
+    if   N < getLB(AS)
+    then getLB(ES,getLB(AS))
+    else getLB(ES,N) fi .
+ eq getLB(ceq T1 = T2 if EC[AS]. ES, N) =
+    if   N < getLB(AS)
+    then getLB(ES,getLB(AS))
+    else getLB(ES,N) fi .
+--- --- ---
+ op getLB : MembAxSet -> Nat .
+ eq getLB(MS) = getLB(MS,0).
+--- --- ---
+ op getLB : MembAxSet Nat -> Nat .
+ eq getLB((none).MembAxSet,N) = N .
+ eq getLB(mb T : ST [AS]. MS,N) =
+    if   N < getLB(AS)
+    then getLB(MS,getLB(AS))
+    else getLB(MS,N) fi .
+ eq getLB(cmb T : ST if EC[AS]. MS, N) =
+    if   N < getLB(AS)
+    then getLB(MS,getLB(AS))
+    else getLB(MS,N) fi .    
+--- --- ---
+ op getLB : RuleSet -> Nat .
+ eq getLB(RS) = getLB(RS,0).
+--- --- ---
+ op getLB : RuleSet Nat -> Nat .
+ eq getLB((none).RuleSet,N) = N .
+ eq getLB(rl T1 => T2[AS]. RS, N) =
+    if   N < getLB(AS)
+    then getLB(RS,getLB(AS))
+    else getLB(RS,N) fi .
+ eq getLB(crl T1 => T2 if CD[AS]. RS, N) =
+    if   N < getLB(AS)
+    then getLB(RS,getLB(AS))
+    else getLB(RS,N) fi .
+--- --- ---
+ op getLB : OpDeclSet -> Nat .
+ eq getLB(ODS) = getLB(ODS,0).
+--- --- ---
+ op getLB : OpDeclSet Nat -> Nat .
+ eq getLB((none).OpDeclSet,N) = N .
+ eq getLB(op F : TPL -> TP[AS]. ODS,N)=
+    if   N < getLB(AS)
+    then getLB(ODS,getLB(AS))
+    else getLB(ODS,N) fi .
+*** addLB *******************************
+ op addLB : String Equation -> Equation .
+ eq addLB(SR,eq T1 = T2 [AS].) = eq T1 = T2[AS metadata(SR)]. .
+ eq addLB(SR,ceq T1 = T2 if EC[AS].) = ceq T1 = T2 if EC[AS metadata(SR)]. .
+--- --- ---
+ op addLB : Nat EquationSet -> EquationSet .
+ eq addLB(N,(none).EquationSet) = (none).EquationSet .
+ eq addLB(N, eq T1 = T2      [AS]. ES) =  eq T1 = T2      [metadata(string(N,10)) AS]. addLB(N + 1,ES).
+ eq addLB(N,ceq T1 = T2 if EC[AS]. ES) = ceq T1 = T2 if EC[metadata(string(N,10)) AS]. addLB(N + 1,ES).
+--- --- ---
+ op addLB : String MembAx -> MembAx .
+ eq addLB(SR, mb T : ST      [AS].) =  mb T : ST      [AS metadata(SR)]. .
+ eq addLB(SR,cmb T : ST if EC[AS].) = cmb T : ST if EC[AS metadata(SR)]. .
+--- --- ---
+ op addLB : Nat MembAxSet -> MembAxSet .
+ eq addLB(N,(none).MembAxSet) = (none).MembAxSet .
+ eq addLB(N, mb T : ST      [AS]. MS) =  mb T : ST      [metadata(string(N,10)) AS]. addLB(N + 1,MS).
+ eq addLB(N,cmb T : ST if EC[AS]. MS) = cmb T : ST if EC[metadata(string(N,10)) AS]. addLB(N + 1,MS). 
+--- --- ---
+ op addLB : String Rule -> Rule .
+ eq addLB(SR, rl T1 => T2      [AS].) =  rl T1 => T2      [AS metadata(SR)]. .
+ eq addLB(SR,crl T1 => T2 if CD[AS].) = crl T1 => T2 if CD[AS metadata(SR)]. .
+--- --- ---
+ op addLB : Nat RuleSet -> RuleSet .
+ eq addLB(N,(none).RuleSet) = (none).RuleSet .
+ eq addLB(N, rl T1 => T2      [AS]. RS) =  rl T1 => T2      [metadata(string(N,10)) AS]. addLB(N + 1,RS).
+ eq addLB(N,crl T1 => T2 if CD[AS]. RS) = crl T1 => T2 if CD[metadata(string(N,10)) AS]. addLB(N + 1,RS).
+*** rmLB ********************************
+ op rmLB : EquationSet -> EquationSet .
+ eq rmLB((none).EquationSet) = (none).EquationSet .
+ eq rmLB( eq T1 = T2      [AS]. ES) =  eq T1 = T2      [none]. rmLB(ES).
+ eq rmLB(ceq T1 = T2 if EC[AS]. ES) = ceq T1 = T2 if EC[none]. rmLB(ES).
+--- --- ---
+ op rmLB : RuleSet -> RuleSet .
+ eq rmLB((none).RuleSet) = (none).RuleSet .
+ eq rmLB( rl T1 => T2      [AS]. RS) =  rl T1 => T2      [none]. rmLB(RS).
+ eq rmLB(crl T1 => T2 if CD[AS]. RS) = crl T1 => T2 if CD[none]. rmLB(RS).
+--- --- ---
+ op rmLB : MembAxSet -> MembAxSet .
+ eq rmLB((none).MembAxSet) = (none).MembAxSet .
+ eq rmLB( mb T : ST      [AS]. MS) =  mb T : ST      [none]. rmLB(MS).
+ eq rmLB(cmb T : ST if EC[AS]. MS) = cmb T : ST if EC[none]. rmLB(MS).
+*** addOP *******************************
+ op override : OpDeclSet OpDeclSet -> OpDeclSet .
+ eq override((none).OpDeclSet,ODS) = ODS .
+ eq override((op F : TPL -> TP [AS1] .) ODS1, (op F : TPL -> TP [AS2].) ODS2)=
+    if   getLB(AS1) < getLB(AS2)
+    then override(ODS1,(op F : TPL -> TP [AS1].) ODS2)
+    else override(ODS1,(op F : TPL -> TP [AS2].) ODS2) fi .
+ eq override(OD ODS,ODS2)= override(ODS,OD ODS2)[owise].
+--- --- ---
+ op addOP : OpDeclSet Module -> Module .
+ eq addOP(ODS2,fmod Q is IL sorts SS . SDS ODS1 MS1 ES1 endfm) =
+    fmod Q is IL sorts SS . SDS (ODS1 ODS2) MS1 ES1 endfm .
+ eq addOP(ODS2,fmod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 endfm) =
+    fmod Q{PDL} is IL sorts SS . SDS (ODS1 ODS2) MS1 ES1 endfm .   
+ eq addOP(ODS2, mod Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm)=
+    mod Q is IL sorts SS . SDS (ODS1 ODS2) MS1 ES1 RS1 endm .
+ eq addOP(ODS2, mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm)=
+    mod Q{PDL} is IL sorts SS . SDS (ODS1 ODS2) MS1 ES1 RS1 endm .
+ eq addOP(ODS2,fth Q is IL sorts SS . SDS ODS1 MS1 ES1 endfth) =
+    fth Q is IL sorts SS . SDS (ODS1 ODS2) MS1 ES1 endfth .   
+ eq addOP(ODS2, th Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endth)=
+    th Q is IL sorts SS . SDS (ODS1 ODS2) MS1 ES1 RS1 endth .
+*** match equations *******************************
+ op match? : Module Equation Equation -> Bool .
+ceq match?(M,eq T1 = T2[AS1]., eq T3 = T4[AS2].) = true
+ if TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T3)) /\ sameKind(M,TP1,TP2) /\
+    SB := metaMatch(M,T1,T3,nil,0) /\ T2 << SB = T4 .
+ceq match?(M,ceq T1 = T2 if EC1[AS1].,ceq T3 = T4 if EC2[AS2].) = true 
+ if TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T3)) /\ sameKind(M,TP1,TP2) /\
+    SB := metaMatch(M,T1,T3,nil,0) /\ T2 << SB = T4 /\ EC1 << SB == EC2 .
+ eq match?(M,E1,E2) = false [owise].
+--- --- ---
+ op match? : Module EquationSet Equation -> Bool .
+ eq match?(M,(none).EquationSet,E) = false .
+ eq match?(M,E1 E2 ES,E) = if match?(M,E1,E) then true else match?(M,E2 ES,E) fi . 
+*** add first set of eqs to the second set *******************************
+ op addEQ : Module EquationSet EquationSet -> EquationSet .
+ eq addEQ(M,(none).EquationSet,ES) = ES .
+ eq addEQ(M,E1 ES1,ES)= if match?(M,rmEQ(ES,nonexec),E1) then addEQ(M,ES1,ES) else addEQ(M,ES1,E1 ES) fi .
+*** add eqs *******************************
+ op addEQ : EquationSet Module -> Module .
+ceq addEQ(ES,fmod Q is IL sorts SS . SDS ODS1 MS1 ES1 endfm) =
+    fmod Q is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) endfm
+ if M := fmod Q is IL sorts SS . SDS ODS1 none none endfm .
+ceq addEQ(ES,fmod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 endfm) =
+    fmod Q{PDL} is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) endfm
+ if M := fmod Q{PDL} is IL sorts SS . SDS ODS1 none none endfm .
+ceq addEQ(ES,mod Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm) =
+    mod Q is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) RS1 endm
+ if M := mod Q is IL sorts SS . SDS ODS1 none none none endm .
+ceq addEQ(ES,mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm) =
+    mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) RS1 endm
+ if M := mod Q{PDL} is IL sorts SS . SDS ODS1 none none none endm .
+ceq addEQ(ES,fth Q is IL sorts SS . SDS ODS1 MS1 ES1 endfth) =
+    fth Q is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) endfth
+ if M := fth Q is IL sorts SS . SDS ODS1 none none endfth .
+ceq addEQ(ES,th Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endth) =
+    th Q is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) RS1 endth
+ if M := th Q is IL sorts SS . SDS ODS1 none none none endth .
+*** match membership axioms *******************************
+ op match? : Module MembAx MembAx -> Bool .
+ceq match?(M,mb T1 : ST1[AS1]., mb T2 : ST2[AS2].) = true
+ if TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T2)) /\ sameKind(M,TP1,TP2) /\
+    SB := metaMatch(M,T1,T2,nil,0).
+ceq match?(M,cmb T1 : ST1 if EC1[AS1].,cmb T2 : ST2 if EC2[AS2].) = true 
+ if TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T2)) /\ sameKind(M,TP1,TP2) /\
+    SB := metaMatch(M,T1,T2,nil,0) /\ EC1 << SB == EC2 .
+ eq match?(M,MB1,MB2) = false [owise].
+--- --- ---
+ op match? : Module MembAxSet MembAx -> Bool .
+ eq match?(M,(none).MembAxSet,MB) = false .
+ eq match?(M,MB1 MB2 MS,MB) = if match?(M,MB1,MB) then true else match?(M,MB2 MS,MB) fi . 
+*** add first set of mbs to the second set *******************************
+ op addMB : Module MembAxSet MembAxSet -> MembAxSet .
+ eq addMB(M,(none).MembAxSet,MS) = MS .
+ eq addMB(M,MB1 MS1,MS)= if match?(M,rmMB(MS,nonexec),MB1) then addMB(M,MS1,MS) else addMB(M,MS1,MB1 MS) fi .
+*** add mbs *******************************
+ op addMB : MembAxSet Module -> Module .
+ceq addMB(MS,fmod Q is IL sorts SS . SDS ODS1 MS1 ES1 endfm)=
+    fmod Q is IL sorts SS . SDS ODS1 addMB(M, MS,MS1) ES1 endfm
+ if M := fmod Q is IL sorts SS . SDS ODS1 none none endfm .
+ceq addMB(MS,fmod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 endfm)=
+    fmod Q{PDL} is IL sorts SS . SDS ODS1 addMB(M,MS,MS1) ES1 endfm
+ if M := fmod Q{PDL} is IL sorts SS . SDS ODS1 none none endfm .
+ceq addMB(MS, mod Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm)=
+    mod Q is IL sorts SS . SDS ODS1 addMB(M,MS,MS1) ES1 RS1 endm
+ if M := mod Q is IL sorts SS . SDS ODS1 none none none endm .
+ceq addMB(MS, mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm)=
+    mod Q{PDL} is IL sorts SS . SDS ODS1 addMB(M, MS,MS1) ES1 RS1 endm
+ if M := mod Q{PDL} is IL sorts SS . SDS ODS1 none none none endm .
+ceq addMB(MS, fth Q is IL sorts SS . SDS ODS1 MS1 ES1 endfth)=
+    fth Q is IL sorts SS . SDS ODS1 addMB(M,MS,MS1) ES1 endfth
+ if M := fth Q is IL sorts SS . SDS ODS1 none none endfth .
+ceq addMB(MS, th Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endth)=
+    th Q is IL sorts SS . SDS ODS1 addMB(M,MS,MS1) ES1 RS1 endth
+ if M := th Q is IL sorts SS . SDS ODS1 none none none endth .
+*** match rls *******************************
+ op match? : Module Rule Rule -> Bool .
+ceq match?(M,rl T1 => T2[AS1]., rl T3 => T4[AS2].) = true
+ if TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T3)) /\ sameKind(M,TP1,TP2) /\
+    SB := metaMatch(M,T1,T3,nil,0) /\ T2 << SB = T4 .
+ceq match?(M,crl T1 => T2 if CD1[AS1].,crl T3 => T4 if CD2[AS2].) = true 
+ if TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T3)) /\ sameKind(M,TP1,TP2) /\
+    SB := metaMatch(M,T1,T3,nil,0) /\ T2 << SB = T4 /\ CD1 << SB == CD2 .
+ eq match?(M,R1,R2) = false [owise].
+--- --- ---
+ op match? : Module RuleSet Rule -> Bool .
+ eq match?(M,(none).RuleSet,R) = false .
+ eq match?(M,R1 R2 RS,R) = if match?(M,R1,R) then true else match?(M,R2 RS,R) fi . 
+*** add first set of rls to the second set *******************************
+ op addRL : Module RuleSet RuleSet -> RuleSet .
+ eq addRL(M,(none).RuleSet,RS) = RS .
+ eq addRL(M,R1 RS1,RS)= if match?(M,RS,R1) then addRL(M,RS1,RS) else addRL(M,RS1,R1 RS) fi . 
+*** add rls *******************************
+ op addRL : RuleSet Module -> Module .
+ eq addRL((none).RuleSet,M) = M .
+ceq addRL(R RS,fmod Q is IL sorts SS . SDS ODS1 MS1 ES1 endfm)=
+    mod Q is IL sorts SS . SDS ODS1 MS1 ES1 addRL(M,RS,R) endm
+ if M := mod Q is IL sorts SS . SDS ODS1 none none none endm .
+ceq addRL(R RS,fmod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 endfm)=
+    mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 addRL(M,RS,R) endm
+ if M := mod Q{PDL} is IL sorts SS . SDS ODS1 none none none endm .
+ceq addRL(RS,mod Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm)=
+    mod Q is IL sorts SS . SDS ODS1 MS1 ES1 addRL(M,RS,RS1) endm
+ if M := mod Q is IL sorts SS . SDS ODS1 none none none endm .
+ceq addRL(RS,mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endm)=
+    mod Q{PDL} is IL sorts SS . SDS ODS1 MS1 ES1 addRL(M,RS,RS1) endm
+ if M := mod Q{PDL} is IL sorts SS . SDS ODS1 none none none endm .
+ceq addRL(RS,fth Q is IL sorts SS . SDS ODS1 MS1 ES1 endfth)=
+    th Q is IL sorts SS . SDS ODS1 MS1 ES1 addRL(M,RS,(none).RuleSet) endth
+ if M := th Q is IL sorts SS . SDS ODS1 none none none endth .
+ceq addRL(RS,th Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endth)=
+    th Q is IL sorts SS . SDS ODS1 MS1 ES1 addRL(M,RS,RS1) endth
+ if M := th Q is IL sorts SS . SDS ODS1 none none none endth .
+*** get substitution *******************************
+ op getLhs : UnificationTriple -> Substitution .
+ eq getLhs({LS:Substitution, RS:Substitution,Q}) = LS:Substitution .
+ eq getLhs({LS:Substitution, RS:Substitution,N}) = LS:Substitution .
+--- --- ---
+ op getRhs : UnificationTriple -> Substitution .
+ eq getRhs({LS:Substitution, RS:Substitution,Q}) = RS:Substitution .
+ eq getRhs({LS:Substitution, RS:Substitution,N}) = RS:Substitution .
+*** apply Substitution to Term *******************************
+ op _<<_ : Term Substitution -> Term .
+ eq TL << none = TL .
+ eq CT << SB = CT .
+ eq V << ((V <- T) ; SB) = T .
+ eq V << SB = V [owise] .
+ eq F[NTL] << SB = F[NTL << SB] .
+--- --- ---
+ op _<<_ : TermList Substitution -> TermList .
+ eq (T, NTL) << SB = (T << SB, NTL << SB) .
+ eq empty << SB = empty .
+--- Condition ---
+ op _<<_ : Condition Substitution -> Condition .
+  eq (nil).EqCondition << SB = (nil).EqCondition .
+  eq (T1 =  T2 /\ CD)  << SB = (T1 << SB =  T2 << SB) /\ (CD << SB).
+  eq (T1 := T2 /\ CD)  << SB = (T1 << SB := T2 << SB) /\ (CD << SB).
+  eq (T : ST   /\ CD)  << SB = (T  << SB : ST)        /\ (CD << SB).
+  eq (T1 => T2 /\ CD)  << SB = (T1 << SB => T2 << SB) /\ (CD << SB).
+--- Eqs ---
+ op _<<_ : EquationSet Substitution -> EquationSet .
+ eq (none).EquationSet << SB = (none).EquationSet .
+ eq (eq T1 = T2 [AS]. ES) << SB = (eq T1 << SB = T2 << SB[AS].) (ES << SB).
+ eq (ceq T1 = T2 if EC[AS]. ES) << SB = (ceq T1 << SB = T2 << SB if EC << SB[AS].)(ES << SB).
+--- Mbs ---
+ op _<<_ : MembAxSet Substitution -> MembAxSet .
+ eq (none).MembAxSet << SB = (none).MembAxSet . 
+ eq (mb T : ST [AS]. MS) << SB = (mb T << SB : ST[AS].) (MS << SB).
+ eq (cmb T : ST if EC [AS]. MS) << SB = (cmb T << SB : ST if EC << SB[AS].)(MS << SB). 
+--- Rls ---
+op _<<_ : RuleSet Substitution -> RuleSet .
+ eq (none).RuleSet << SB = (none).RuleSet .
+ eq (rl T1 => T2 [AS]. RS) << SB = (rl T1 << SB => T2 << SB [AS].) (RS << SB).
+ eq (crl T1 => T2 if CD [AS]. RS) << SB = (crl T1 << SB => T2 << SB if CD << SB [AS].)(RS << SB).
+*** VariableSet to Substitution *******************************
+ op v2s : VariableSet -> Substitution .
+ eq v2s((none).VariableSet)= (none).Substitution .
+ eq v2s(V ; VS) = V <- qid("X" + string(getName(V)) + ":" + string(getType(V))) ; v2s(VS).
+--- --- ---
+ op v2s : VariableSet Nat -> Substitution .
+ eq v2s(none,N) = none .
+ eq v2s(V ; VS,N) = 
+    (V <- qid(string(getName(V)) + "#" + string(N,10) + "." + string(getType(V)))); 
+    v2s(VS,N + 1).
+*** add Substitution (obtained above) to Module *******************************
+ op addSB : Substitution Module -> Module .
+ eq addSB(none,M) = M .
+ceq addSB(V <- CT ; SB,M) = addSB(SB,addOP(op Q : nil -> TP[metadata(SR1)].,M))
+ if Q := getName(CT) /\ TP := getType(CT) /\ SR := string(Q) /\ N := length(SR) /\
+    N1 := rfind(SR,"#",N) /\ SR1 := substr(SR,N1 + 1,N).
+ eq addSB(V <- T ; SB,M) = addSB(SB,M)[owise]. 
+*** free variables *******************************
+ op fv : TermList -> VariableSet .
+ eq fv(empty) = none .            *** 0 ***
+ eq fv(CT)= none .                *** 1 ***
+ eq fv(V) = V .
+ eq fv(Q[NTL]) = fv(NTL) .
+ eq fv((T,NTL))= fv(T) ; fv(NTL). *** >= 2 ***
+--- --- ---
+ op addX : Substitution -> Substitution .
+ eq addX(none) = none .
+ eq addX(V <- T ; SB) = V <- (T << v2s(fv(T))) ; addX(SB).
+*** set theoretic difference *******************************
+ op _-_ : VariableSet VariableSet -> VariableSet [gather (E e)].
+ eq (none).VariableSet - VS = (none).VariableSet .
+ eq NVS - (none).VariableSet = NVS . 
+ eq (V ; VS) - V1 = if V == V1 then VS - V1 else V ; (VS - V1) fi . 
+ eq NVS - (V1 ; NVS1) = (NVS - V1) - NVS1 .
+*** in *******************************
+ op _in_ : Variable VariableSet -> Bool .
+ eq V in (none).VariableSet = false .
+ eq V in (V1 ; VS1) = if V == V1 then true else V in VS1 fi .
+*** intersection *******************************
+ op _^_ : VariableSet VariableSet -> VariableSet [prec 42].
+ eq (none).VariableSet ^ VS2 = none .
+ eq (V1 ; VS1) ^ VS2 = if V1 in VS2 then V1 ; (VS1 ^ VS2) else VS1 ^ VS2 fi .
+*** subset ***************************************************
+ op _subset_ : VariableSet VariableSet -> Bool .
+ eq (none).VariableSet subset VS = true .
+ eq (V ; VS) subset VS1 = V in VS1 and-then VS subset VS1 .
+*** Substitution - VariableSet *******************************
+ op _-_ : Substitution VariableSet -> Substitution .
+ eq (none).Substitution - VS = (none).Substitution .
+ eq (V <- T ; SB) - VS = if V in VS then SB - VS else (V <- T) ; (SB - VS) fi .
+*** Substitution - VariableSet *******************************
+ op _^_ : Substitution VariableSet -> Substitution .
+ eq (none).Substitution ^ VS = (none).Substitution .
+ eq (V <- T ; SB) ^ VS = if V in VS then (V <- T) ; (SB ^ VS) else SB ^ VS  fi .
+*** vars-left ***
+ op vars-left : Substitution -> VariableSet .
+ eq vars-left((none).Substitution) = (none).VariableSet .
+ eq vars-left(V <- T ; SB) = V ; vars-left(SB).
+--- --- ---
+ op vars-right : Substitution -> VariableSet .
+ eq vars-right((none).Substitution) = (none).VariableSet .
+ eq vars-right(V <- T ; SB) = fv(T) ; vars-right(SB).
+*** get constructors for a given sort *******************************
+ op getCTR : Module Type -> OpDeclSet .
+ eq getCTR(M,TP) = getCTR(M,getOps(M),TP).
+--- --- ---
+ op getCTR : Module OpDeclSet Type -> OpDeclSet .
+ eq getCTR(M,none,TP) = none .
+ eq getCTR(M,(op Q : TPL -> TP [ctor AS].) ODS,TP1) =
+    if   sortLeq(M,TP,TP1) 
+    then (op Q : TPL -> TP[ctor AS].) getCTR(M,ODS,TP1)
+    else getCTR(M,ODS,TP1) fi .
+ eq getCTR(M,OD ODS,TP1) = getCTR(M,ODS,TP1)[owise].
+*** getEQ *******************************
+ op getEQ : EquationSet Attr -> EquationSet .
+ eq getEQ((none).EquationSet,AT) = (none).EquationSet .
+ eq getEQ( eq T1 = T2      [AT AS]. ES,AT)=  eq T1 = T2      [AT AS]. getEQ(ES,AT).
+ eq getEQ(ceq T1 = T2 if EC[AT AS]. ES,AT)= ceq T1 = T2 if EC[AT AS]. getEQ(ES,AT).
+ eq getEQ(E ES,AT) = getEQ(ES,AT)[owise].
+--- --- ---
+ op getEQ : EquationSet String -> EquationSet .
+ eq getEQ(ES,SR) = getEQ(ES,metadata(SR)).
+--- --- ---
+ op getEQ : Module Attr -> EquationSet .
+ eq getEQ(M,AT) = getEQ(getEqs(M),AT).
+--- --- ---
+ op getEQ : Module String -> EquationSet .
+ eq getEQ(M,SR) = getEQ(getEqs(M),SR).
+*** rmEQ *******************************
+ op rmEQ : EquationSet Attr -> EquationSet .
+ eq rmEQ((none).EquationSet,AT) = (none).EquationSet .
+ eq rmEQ( eq T1 = T2      [AT AS]. ES,AT)= rmEQ(ES,AT).
+ eq rmEQ(ceq T1 = T2 if EC[AT AS]. ES,AT)= rmEQ(ES,AT).
+ eq rmEQ(E ES,AT) = E rmEQ(ES,AT)[owise].
+--- --- ---
+ op rmEQ : EquationSet String -> EquationSet .
+ eq rmEQ(ES,SR) = rmEQ(ES,metadata(SR)).
+--- --- ---
+ op rmEQ : Module Attr -> Module .
+ eq rmEQ(fmod Q is IL sorts SS . SDS ODS MS ES endfm,AT)=
+    fmod Q is IL sorts SS . SDS ODS MS rmEQ(ES,AT) endfm .
+ eq rmEQ(fmod Q{PDL} is IL sorts SS . SDS ODS MS ES endfm,AT)=
+    fmod Q{PDL} is IL sorts SS . SDS ODS MS rmEQ(ES,AT) endfm .
+ eq rmEQ(mod Q is IL sorts SS . SDS ODS MS ES RS endm,AT)=
+    mod Q is IL sorts SS . SDS ODS MS rmEQ(ES,AT) RS endm .
+ eq rmEQ(mod Q{PDL} is IL sorts SS . SDS ODS MS ES RS endm,AT)=
+    mod Q{PDL} is IL sorts SS . SDS ODS MS rmEQ(ES,AT) RS endm .
+ eq rmEQ(fth Q is IL sorts SS . SDS ODS MS ES endfth,AT)=
+    fth Q is IL sorts SS . SDS ODS MS rmEQ(ES,AT) endfth .
+ eq rmEQ(th Q is IL sorts SS . SDS ODS MS ES RS endth,AT)=
+    th Q is IL sorts SS . SDS ODS MS rmEQ(ES,AT) RS endth .
+--- --- ---
+ op rmEQ : Module String -> Module .
+ eq rmEQ(M,SR)= rmEQ(M,metadata(SR)).
+*** getMB *******************************
+op getMB : MembAxSet Attr -> MembAxSet .
+ eq getMB((none).MembAxSet,AT) = (none).MembAxSet .
+ eq getMB( mb T : ST      [AT AS]. MS,AT)=  mb T : ST      [AT AS]. getMB(MS,AT).
+ eq getMB(cmb T : ST if EC[AT AS]. MS,AT)= cmb T : ST if EC[AT AS]. getMB(MS,AT).
+ eq getMB(MB MS,AT) = getMB(MS,AT)[owise].
+ --- --- ---
+ op getMB : MembAxSet String -> MembAxSet .
+ eq getMB(MS,SR) = getMB(MS,metadata(SR)).
+--- --- ---
+ op getMB : Module Attr -> MembAxSet .
+ eq getMB(M,AT) = getMB(getMbs(M),AT).
+--- --- ---
+ op getMB : Module String -> MembAxSet .
+ eq getMB(M,SR) = getMB(getMbs(M),SR).
+*** rmMB *******************************
+ op rmMB : MembAxSet Attr -> MembAxSet .
+ eq rmMB((none).MembAxSet,AT) = (none).MembAxSet .
+ eq rmMB( mb T : ST      [AT AS]. MS,AT)= rmMB(MS,AT).
+ eq rmMB(cmb T : ST if EC[AT AS]. MS,AT)= rmMB(MS,AT).
+ eq rmMB(MB MS,AT) = MB rmMB(MS,AT)[owise].
+--- --- ---
+ op rmMB : MembAxSet String -> MembAxSet .
+ eq rmMB(MS,SR) = rmMB(MS,metadata(SR)) .
+--- --- ---
+ op rmMB : Module Attr -> Module .
+ eq rmMB(fmod Q is IL sorts SS . SDS ODS MS ES endfm,AT)=
+    fmod Q is IL sorts SS . SDS ODS rmMB(MS,AT) ES endfm .
+ eq rmMB(fmod Q{PDL} is IL sorts SS . SDS ODS MS ES endfm,AT)=
+    fmod Q{PDL} is IL sorts SS . SDS ODS rmMB(MS,AT) ES endfm .
+ eq rmMB(mod Q is IL sorts SS . SDS ODS MS ES RS endm,AT)=
+    mod Q is IL sorts SS . SDS ODS rmMB(MS,AT) ES RS endm .
+ eq rmMB(mod Q{PDL} is IL sorts SS . SDS ODS MS ES RS endm,AT)=
+    mod Q{PDL} is IL sorts SS . SDS ODS rmMB(MS,AT) ES RS endm .
+ eq rmMB(fth Q is IL sorts SS . SDS ODS MS ES endfth,AT)=
+    fth Q is IL sorts SS . SDS ODS rmMB(MS,AT) ES endfth .
+ eq rmMB(th Q is IL sorts SS . SDS ODS MS ES RS endth,AT)=
+    th Q is IL sorts SS . SDS ODS rmMB(MS,AT) ES RS endth .
+--- --- ---
+ op rmMB : Module String -> Module .
+ eq rmMB(M,SR) = rmMB(M,metadata(SR)).
+*** getRL *******************************
+ op getRL : RuleSet Attr -> RuleSet .
+ eq getRL((none).RuleSet,AT) = (none).RuleSet .
+ eq getRL( rl T1 => T2      [AT AS]. RS,AT)=  rl T1 => T2      [AT AS]. getRL(RS,AT).
+ eq getRL(crl T1 => T2 if CD[AT AS]. RS,AT)= crl T1 => T2 if CD[AT AS]. getRL(RS,AT).
+ eq getRL(R RS,AT) = getRL(RS,AT)[owise].
+--- --- ---
+ op getRL : RuleSet String -> RuleSet .
+ eq getRL(RS,SR) = getRL(RS,metadata(SR)).
+--- --- ---
+ op getRL : Module Attr -> RuleSet .
+ eq getRL(M,AT) = getRL(getRls(M),AT).
+--- --- ---
+ op getRL : Module String -> RuleSet .
+ eq getRL(M,SR) = getRL(getRls(M),SR).
+*** rmRL *******************************
+ op rmRL : RuleSet Attr -> RuleSet .
+ eq rmRL((none).RuleSet,AT) = (none).RuleSet .
+ eq rmRL( rl T1 => T2      [AT AS]. RS,AT)= rmRL(RS,AT).
+ eq rmRL(crl T1 => T2 if CD[AT AS]. RS,AT)= rmRL(RS,AT).
+ eq rmRL(R RS,AT) = R rmRL(RS,AT)[owise].
+--- --- ---
+ op rmRL : RuleSet String -> RuleSet .
+ eq rmRL(RS,SR) = rmRL(RS,metadata(SR)).
+--- --- ---
+ op rmRL : Module Attr -> Module .
+ eq rmRL(fmod Q is IL sorts SS . SDS ODS MS ES endfm,AT)=
+    fmod Q is IL sorts SS . SDS ODS MS ES endfm .
+ eq rmRL(fmod Q{PDL} is IL sorts SS . SDS ODS MS ES endfm,AT)=
+    fmod Q{PDL} is IL sorts SS . SDS ODS MS ES endfm .
+ eq rmRL(mod Q is IL sorts SS . SDS ODS MS ES RS endm,AT)=
+    mod Q is IL sorts SS . SDS ODS MS ES rmRL(RS,AT) endm .
+ eq rmRL(mod Q{PDL} is IL sorts SS . SDS ODS MS ES RS endm,AT)=
+    mod Q{PDL} is IL sorts SS . SDS ODS MS ES rmRL(RS,AT) endm .
+ eq rmRL(fth Q is IL sorts SS . SDS ODS MS ES endfth,AT)=
+    fth Q is IL sorts SS . SDS ODS MS ES endfth .
+ eq rmRL(th Q is IL sorts SS . SDS ODS MS ES RS endth,AT)=
+    th Q is IL sorts SS . SDS ODS MS ES rmRL(RS,AT) endth .
+--- --- ---
+ op rmRL : Module String -> Module .
+ eq rmRL(M,SR) = rmRL(M,metadata(SR)).
+*** rev *******************************
+ op rev : TermList -> TermList .
+ eq rev((empty).TermList) = (empty).TermList .
+ eq rev((T,TL)) = rev(TL),T .
+*** getNE *******************************
+ op getNE : Module -> EquationSet .
+ eq getNE(M) = getNE(M,getEqs(M),getOps(M)).
+--- --- ---
+ op getNE : Module EquationSet OpDeclSet -> EquationSet .
+ eq getNE(M,(none).EquationSet,ODS) = (none).EquationSet .
+ eq getNE(M,eq Q[T1,T2] = 'false.Bool [AS]. ES, op Q : 'Universal 'Universal -> 'Bool [metadata("equality") AS1]. ODS) =
+    eq Q[T1,T2] = 'false.Bool [AS].  getNE(M,ES,op Q : 'Universal 'Universal -> 'Bool [metadata("equality") AS1]. ODS).
+ eq getNE(M,E ES,ODS) = getNE(M,ES,ODS)[owise].
+--- inconsistency ---
+ op consistent : Module -> Bool .
+ceq consistent(M) = false if eq Q[T1,T2] = 'false.Bool[AS]. ES := getNE(M) /\ red(M,T1) = red(M,T2).
+ eq consistent(M) = true [owise]. 
+endfm

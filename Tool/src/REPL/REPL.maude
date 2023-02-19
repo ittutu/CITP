@@ -1,0 +1,450 @@
+***( SpeX/REPL
+
+  This file is part of REPL, a generic Read-Eval-Print-Loop library
+  for Maude 3.
+
+  Copyright : (C) 2020-2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload file.maude
+sload ./IO.maude
+sload ./Prompt.maude
+sload ../CommonLibs/Path.maude
+
+********************************************************************************
+
+fmod REPL/PRINTING-OPTIONS is
+  sort PrintingOption .
+  op add`final`newline : -> PrintingOption [ctor] .
+
+  sort PrintingOptions .
+  subsort PrintingOption < PrintingOptions .
+  op none : -> PrintingOptions [ctor] .
+  op _,_ : PrintingOptions PrintingOptions -> PrintingOptions
+    [ctor assoc comm id: none prec 121] .
+endfm
+
+********************************************************************************
+
+mod REPL/BASE { IO :: REPL/IO } is
+  protecting REPL/PRINTING-OPTIONS .
+  including  PROMPT/OPS .
+  including  STD-STREAM .
+  including  FILE .
+
+  vars O IS OS : Oid .
+  var  OL : OidList .
+  var  Acc : IO$Accumulator .
+  var  I : IO$Input .
+  var  R : IO$Result .
+  var  N : Nat .
+  vars L P S : String .
+  var  Pt : Prompt .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+  var  PO : PrintingOptions .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op REPL : -> Cid [ctor] .
+  op repl : Nat -> Oid [ctor] .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  ops reading evaluating printing : -> Attribute [ctor] .
+
+  op name : -> AttrName [ctor] .
+  op accumulated`input : -> AttrName [ctor] .
+  op env : -> AttrName [ctor] .
+  op in : -> AttrName [ctor] .
+  op out : -> AttrName [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op start-repl : Oid -> Msg [ctor message format (b o)] .
+  op stop-repl : Oid -> Msg [ctor message format (b o)] .
+  op stopped-repl : Oid Oid Oid Oid -> Msg [ctor message format (m o)] .
+  op end-repl : Oid -> Msg [ctor msg format (m o)] .
+
+  op read : Oid -> Msg [ctor message format (b o)] .
+  op eval : Oid Oid IO$Input -> Msg [ctor message format (b o)] .
+  op read-more : Oid -> Msg [ctor message format (m o)] .
+  op print : Oid IO$Result PrintingOptions -> Msg [ctor message format (m o)] .
+  op continue : Oid -> Msg [ctor message format (m o)] .
+
+  *** derived messages  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op print : Oid IO$Result -> Msg .
+  eq print(O, R) = print(O, R, add final newline) .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op name : AttributeSet -> String .
+  ceq name(Atts) = S if AttrValue(S) := (Atts).get(name) .
+  eq name(Atts) = "" [owise] .
+
+  op acc : AttributeSet -> IO$Accumulator .
+  ceq acc(Atts) = Acc if AttrValue(Acc) := (Atts).get(accumulated input) .
+  eq acc(Atts) = (nil).IO$Accumulator [owise] .
+
+  op parent : AttributeSet -> Oid .
+  ceq parent(Atts) = O if AttrValue(O OL) := (Atts).get(env) .
+  eq parent(Atts) = null [owise] .
+
+  op interpreter : AttributeSet -> Oid .
+  ceq interpreter(Atts) = O if AttrValue(OL O) := (Atts).get(env) .
+  eq interpreter(Atts) = null [owise] .
+
+  op in : AttributeSet -> Oid .
+  ceq in(Atts) = IS if AttrValue(IS) := (Atts).get(in) .
+  eq in(Atts) = stdin [owise] .
+
+  op out : AttributeSet -> Oid .
+  ceq out(Atts) = OS if AttrValue(OS) := (Atts).get(out) .
+  eq out(Atts) = stdout [owise] .
+
+  op $get-line : Oid Oid String -> Msg .
+  eq $get-line(stdin, O, P) = getLine(stdin, O, P) .
+  eq $get-line(IS, O, P) = getLine(IS, O) [owise] .
+
+  op $write : Oid Oid String PrintingOptions -> Msg .
+  eq $write(OS, O, S, (add final newline, PO)) = $write-line(OS, O, S) .
+  eq $write(OS, O, S, PO) = write(OS, O, S) [owise] .
+
+  op $write-line : Oid Oid String -> Msg .
+  ceq $write-line(OS, O, S) = write(OS, O, S)
+   if substr(S, sd(length(S), 1), 1) = "\n" .
+  eq $write-line(OS, O, S) = write(OS, O, S + "\n") [owise] .
+
+  op append-input : String -> AttrModifier [ctor] .
+  eq subject(append-input(L)) = accumulated input .
+  eq append-input(L) AttrValue(Acc) = AttrValue(append(L, Acc)) .
+  eq append-input(L) V? = AttrValue(append(L, (nil).IO$Accumulator)) .
+
+  op flush-acc : -> AttrModifier [ctor] .
+  eq subject(flush-acc) = accumulated input .
+  eq flush-acc AttrValue(Acc) = AttrValue(flush(Acc)) .
+
+  *** behaviour of the null object  - - - - - - - - - - - - - - - - - - - - - --
+  eq eval(null, O, I) = continue(O) .
+  eq stop-repl(null) = none .
+  eq stopped-repl(null, O, IS, OS) = none .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [REPL:start] :
+    < O : REPL | Atts >
+    start-repl(O)
+   => < O : REPL | reading, Atts >
+    read(O) .
+
+  rl [REPL:get-prompt] :
+    < O : REPL | reading, Atts >
+    read(O)
+   => < O : REPL | reading, Atts >
+    get-prompt(interpreter(Atts), O) .
+
+  rl [REPL:read] :
+    < O : REPL | reading, Atts >
+    got-prompt(O, Pt)
+   => < O : REPL | reading, Atts >>= set-prompt(Pt) >
+    $get-line(in(Atts), O, primary(Pt)) .
+
+  rl [REPL:eval] :
+    < O : REPL | reading, Atts >
+    gotLine(O, IS, L)
+   => if L == ""
+    then stopped-repl(parent(Atts), O, in(Atts), out(Atts))
+    else < O : REPL | evaluating, Atts >>= append-input(L) >
+         eval(interpreter(Atts), O, input(append(L, acc(Atts)))) fi .
+
+  rl [REPL:read-more] :
+    < O : REPL | evaluating, Atts >
+    read-more(O)
+   => < O : REPL | reading, Atts >
+    $get-line(in(Atts), O, secondary(prompt(Atts))) .
+
+  rl [REPL:print] :
+    < O : REPL | evaluating, Atts >
+    print(O, R, PO)
+   => < O : REPL | printing, Atts >
+    $write(out(Atts), O, show(R), PO) .
+
+  rl [REPL:continue] :
+    < O : REPL | evaluating, Atts >
+    continue(O)
+   => < O : REPL | printing, Atts >
+    wrote(O, out(Atts)) .
+
+  rl [REPL:loop] :
+    < O : REPL | printing, Atts >
+    wrote(O, OS)
+   => < O : REPL | reading, Atts >>= flush-acc >
+    read(O) .
+
+  rl [REPL:stop] :
+    < O : REPL | Atts >
+    stop-repl(O)
+   => stopped-repl(parent(Atts), O, in(Atts), out(Atts)) .
+
+  rl [REPL:end] :
+    < O : REPL | Atts >
+    end-repl(O)
+   => closeFile(in(Atts), O) unless (in(Atts) == stdin)
+    closeFile(out(Atts), O) unless (out(Atts) == stdout) .
+endm
+
+********************************************************************************
+
+mod REPL/MANAGER { IO :: REPL/IO } is
+  including REPL/BASE { IO } .
+
+  vars O IS OS : Oid .
+  var  OL : OidList .
+  var  N : Nat .
+  var  V? : [AttrValue] .
+  vars Init Atts : AttributeSet .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op repl-manager : -> Oid [ctor] .
+  op < repl-manager > : -> Object .
+  eq < repl-manager > = < repl-manager | none > .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op next`repl : -> AttrName [ctor] .
+  *** op next`repl:_ : Nat -> Attribute [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op create-repl : Oid Oid AttributeSet -> Msg [ctor message format (b o)] .
+  op created-repl : Oid Oid -> Msg [ctor message format (m o)] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op next-repl : AttributeSet -> Nat .
+  ceq next-repl(Atts) = N if AttrValue(N) := (Atts).get(next repl) .
+  eq next-repl(Atts) = 0 [owise] .
+
+  op increment repl counter : -> AttrModifier .
+  eq subject(increment repl counter) = next repl .
+  eq increment repl counter AttrValue(N) = AttrValue(s N) .
+  eq increment repl counter V? = AttrValue(1) .
+
+  op _.add-stdio() : AttributeSet -> AttributeSet [prec 15] .
+  eq (Atts).add-stdio()
+   = (Atts).add(name, AttrValue("<standard input>"))
+           .add(in, AttrValue(stdin)).add(out, AttrValue(stdout)) .
+
+  op add-parent : Oid -> AttrModifier [ctor] .
+  eq subject(add-parent(O)) = env .
+  eq add-parent(O) AttrValue(OL) = AttrValue(O OL) .
+  eq add-parent(O) V? = AttrValue(O) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [REPL-manager:create-repl] :
+    < repl-manager | Atts >
+    create-repl(repl-manager, O, Init)
+   => < repl-manager | Atts >>= increment repl counter >
+    < repl(next-repl(Atts)) : REPL | (Init).add-stdio() >>= add-parent(O) >
+    created-repl(O, repl(next-repl(Atts))) .
+
+  rl [REPL-manager:end-manager] :
+    < repl-manager | Atts >
+    end-repl(repl-manager)
+   => none .
+endm
+
+********************************************************************************
+
+mod REPL/FILE-SUPPORT { IO :: REPL/IO } is
+  including  REPL/MANAGER { IO } .
+  protecting PATH/OPS { Unix-like } .
+
+  vars O O' IS OS FH : Oid .
+  vars FP WD D : String .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op  opening_ : String -> Attribute [ctor] .
+  ops suspended resuming : -> Attribute [ctor] .
+
+  op working`directory : -> AttrName [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op visit-file : Oid String -> Msg [ctor message format (b o)] .
+  op register-repl : Oid Oid -> Msg [ctor msg format (b o)] .
+  op remove-repl : Oid Oid -> Msg [ctor msg format (b o)] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op working-directory : AttributeSet -> String .
+  ceq working-directory(Atts) = WD
+   if AttrValue(WD) := (Atts).get(working directory) .
+  eq working-directory(Atts) = "" [owise] .
+
+  op change-directory : String -> AttrModifier .
+  eq subject(change-directory(D)) = working directory .
+  eq change-directory(D) AttrValue(WD) = AttrValue(join-path(WD, D)) .
+  eq change-directory(D) V? = AttrValue(D) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [REPL:visit-file:open-file] :
+    < O : REPL | evaluating, Atts >
+    visit-file(O, FP)
+   => < O : REPL | opening FP, Atts >
+    openFile(fileManager, O, join-path(working-directory(Atts), FP), "r") .
+
+  rl [REPL:visit-file:create-repl] :
+    < O : REPL | opening FP, Atts >
+    openedFile(O, fileManager, FH)
+   => < O : REPL | suspended, Atts >
+    create-repl(repl-manager, O,
+      (name : AttrValue(basename(FP)), (Atts).select(env),
+       in : AttrValue(FH), (Atts).select(out),
+       (Atts).select(working directory)) >>= change-directory(dirname(FP))) .
+
+  rl [REPL:visit-file:start-repl] :
+    < O : REPL | suspended, Atts >
+    created-repl(O, O')
+   => < O : REPL | suspended, Atts >
+    start-repl(O') register-repl(interpreter(Atts), O') .
+
+  rl [REPL:visit-file:close-file] :
+    < O : REPL | suspended, Atts >
+    stopped-repl(O, O', IS, OS)
+   => < O : REPL | resuming, Atts >
+    closeFile(IS, O) remove-repl(interpreter(Atts), O') .
+
+  rl [REPL:visit-file:return] :
+    < O : REPL | resuming, Atts >
+    closedFile(O, FH)
+   => < O : REPL | reading, Atts >>= flush-acc >
+    read(O) .
+endm
+
+********************************************************************************
+
+fth REPL/INDEX is
+  sort Index .
+endfth
+
+fmod REPL/WARNING-ARGS { I :: REPL/INDEX } is
+  sort WarningArg .
+  op at_ : I$Index -> WarningArg [ctor] .
+  op include`context : -> WarningArg [ctor] .
+
+  sort WarningArgs .
+  subsorts WarningArg < WarningArgs .
+  op none : -> WarningArgs [ctor] .
+  op _,_ : WarningArgs WarningArgs -> WarningArgs
+    [ctor assoc id: none gather (e E) prec 121] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+fmod REPL/IO-as-REPL/INDEX { IO :: REPL/IO } is
+endfm
+
+view REPL/Index { IO :: REPL/IO }
+from REPL/INDEX to REPL/IO-as-REPL/INDEX { IO } is
+  sort Index to IO$Index .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fth REPL/FORMATTING is
+  including STRING .
+
+  op emph : String -> String .
+  op alert : String -> String .
+  op warning :
+    String     *** name of the REPL object
+    Nat        *** index of problematic line within the accumulator
+    String     *** description of the problem
+    -> String .
+  op add-context :
+    String     *** description of the problem
+    String     *** context of the problem within the accumulator
+    -> String .
+endfth
+
+*** ----------------------------------------------------------------------------
+
+mod REPL/ERROR-HANDLING { IO :: REPL/IO, F :: REPL/FORMATTING } is
+  including  REPL/FILE-SUPPORT { IO } .
+  protecting REPL/WARNING-ARGS { REPL/Index{IO} } .
+
+  vars O OS : Oid .
+  var  Acc : IO$Accumulator .
+  var  IdxAcc : IO$IdxAccumulator .
+  var  N : Nat .
+  vars ON FP S C : String .
+  var  Atts : AttributeSet .
+  vars I J : IO$Index .
+  var  WA : WarningArgs .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op unrecoverable : -> Attribute [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op warn : Oid String WarningArgs -> Msg [ctor message format (b o)] .
+
+  *** derived messages  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
+  op warn : Oid String -> Msg .
+  eq warn(O, S) = warn(O, S, none) .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op write-warning : Oid Oid String String IO$Accumulator -> Msg .
+  eq write-warning(OS, O, ON, S, Acc) = write-warning(OS, O, ON, S, Acc, none) .
+
+  op write-warning : Oid Oid String String IO$Accumulator WarningArgs -> Msg .
+  ceq write-warning(OS, O, ON, S, Acc, WA)
+   = write-warning(OS, O, ON, S, IdxAcc, end-index(IdxAcc), WA)
+   if IdxAcc := index(Acc) .
+
+  op write-warning : Oid Oid String String IO$IdxAccumulator IO$Index
+    WarningArgs -> Msg .
+  eq write-warning(OS, O, ON, S, IdxAcc, I, (at J, WA))
+   = write-warning(OS, O, ON, S, IdxAcc, J, WA) .
+  ceq write-warning(OS, O, ON, S, IdxAcc, I, (include context, WA))
+   = write-warning(OS, O, ON, add-context(S, C), IdxAcc, I, WA)
+   if C := context(IdxAcc, I) .
+  eq write-warning(OS, O, ON, S, IdxAcc, I, WA)
+   = $write-line(OS, O, warning(ON, line-No(IdxAcc, I), S)) [owise] .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [REPL:warn] :
+    < O : REPL | evaluating, Atts >
+    warn(O, S, WA)
+   => < O : REPL | printing, Atts >
+    write-warning(out(Atts), O, name(Atts), S, acc(Atts), WA) .
+
+  rl [REPL:stream-error] :
+    < O : REPL | printing, Atts >
+    streamError(O, OS, S)
+   => < O : REPL | printing, Atts >
+    write-warning(out(Atts), O, name(Atts), "Stream error: " + S, acc(Atts)) .
+
+  rl [REPL:openFile-error] :
+    < O : REPL | opening FP, Atts >
+    fileError(O, fileManager, S)
+   => < O : REPL | printing, Atts >
+    write-warning(out(Atts), O, name(Atts), S + ": " + emph(FP), acc(Atts)) .
+
+  rl [REPL:rw-error] :
+    < O : REPL | reading, Atts >
+    fileError(O, file(N), S)
+   => < O : REPL | unrecoverable, Atts >
+    write-warning(stderr, O, name(Atts), S, acc(Atts)) .
+
+  rl [REPL:terminate] :
+    < O : REPL | unrecoverable, Atts >
+    wrote(O, stderr)
+   => stopped-repl(parent(Atts), O, in(Atts), out(Atts)) .
+endm
+
+********************************************************************************
+
+mod REPL { IO :: REPL/IO, F :: REPL/FORMATTING } is
+  including REPL/MANAGER { IO } .
+  including REPL/FILE-SUPPORT { IO } .
+  including REPL/ERROR-HANDLING { IO, F } .
+endm
+
+*******************************************************************************

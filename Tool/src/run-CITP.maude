@@ -1,0 +1,20 @@
+***( CITP
+
+  This file is part of CITP.
+
+  License : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors : Daniel Gaina <daniel@imi.kyushu-u.ac.jp>,
+            Ionut Tutu <Ionut.Tutu@imar.ro>,
+            Adrian Riesco <ariesco@fdi.ucm.es>
+
+)
+
+********************************************************************************
+
+set show command off .
+set show stats off .
+set show advisories off .
+popd
+load CITP.maude
+erew in CITP/INTERPRETER : start CITP .
+quit

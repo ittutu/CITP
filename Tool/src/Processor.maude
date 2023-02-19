@@ -1,0 +1,409 @@
+***( SpeX
+
+  This file is part of SpeX, a simple framework for working with
+  formal specifications based on SAP and REPL.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./REPL/Interpreter.maude
+sload ./Database.maude
+sload ./Formatting.maude
+
+********************************************************************************
+
+mod PROCESSOR/BASE is
+  extending  INTERPRETER/BASE .
+  protecting PARSING-OUTCOME .
+
+  vars P SP O I : Oid .
+  var  PT : OidList .
+  var  NPL : NeOidList .
+  var  Atts : AttributeSet .
+  var  PO? : [ParsingOutcome] .
+  var  T : ATerm .
+  var  QIL : QidList .
+  var  WA : WarningArgs .
+  var  M? : [Msg] .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op PROC : -> Cid [ctor] .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op reading_input : Oid -> Attribute [ctor] .
+  op parsing_input : Oid -> Attribute [ctor] .
+  op processing_input : Oid -> Attribute [ctor] .
+  op executing_command : Oid -> Attribute [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op parsed : Oid OidList ParsingOutcome -> Msg [ctor message format (m o)] .
+  op processed : Oid Oid QidList -> Msg [ctor message format (m o)] .
+  op processed : Oid Oid -> Msg [ctor message format (m o)] .
+
+  op relay : Oid ParsingOutcome -> Msg .
+  eq relay(O, PO?) = parsed(O, nil, PO?) .
+
+  op relay`(_`,_or-else_`) : Oid ParsingOutcome Msg -> Msg [strat (1 2 0 3 0)] .
+  eq relay(O, successful-parsing(T) or-else M?)
+   = parsed(O, nil, successful-parsing(T)) .
+  eq relay(O, incomplete input or-else M?)
+   = parsed(O, nil, incomplete input) .
+  ceq relay(O, parsing-error(QIL, WA) or-else M?)
+   = parsed(O, nil, parsing-error(QIL, WA)) if during-analysis(WA) .
+  eq relay(O, PO? or-else M?) = M? [owise] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op start-processor : Oid -> Configuration .
+  eq start-processor(P) = < P : PROC | starting up > start-up(P) .
+
+  op shut-down : OidList -> Configuration [ditto] .
+  eq shut-down(nil) = none .
+  eq shut-down(P NPL) = shut-down(P) shut-down(NPL) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Processor:parsed-input] :
+    < P : PROC | parsing I input, Atts >
+    parsed(P, PT, PO?)
+   => < P : PROC | running, Atts >
+    parsed(I, P PT, PO?) .
+
+  rl [Processor:processed-input] :
+    < P : PROC | processing I input, Atts >
+    processed(P, SP, QIL)
+   => < P : PROC | running, Atts >
+    processed(I, P, QIL) .
+
+  rl [Processor:processed-input] :
+    < P : PROC | processing I input, Atts >
+    processed(P, SP)
+   => < P : PROC | running, Atts >
+    processed(I, P) .
+
+  rl [Processor:quit] :
+    < P : PROC | shutting down, Atts >
+    quit(P)
+   => none .
+endm
+
+********************************************************************************
+
+mod PROCESSOR/IN-MESSAGES { I :: TRIV } is
+  extending PROCESSOR/BASE .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op parse : Oid Oid QidList I$Elt -> Msg [ctor message format (b o)] .
+  op process : Oid Oid ATerm I$Elt -> Msg [ctor message format (b o)] .
+  op process : Oid OidList Oid ATerm I$Elt -> Msg [ctor message format (b o)] .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/OUT-MESSAGES { O :: TRIV } is
+  extending PROCESSOR/BASE .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op processed : Oid Oid QidList O$Elt -> Msg [ctor message format (m o)] .
+  op processed : Oid Oid O$Elt -> Msg [ctor message format (m o)] .
+endm
+
+*** ----------------------------------------------------------------------------
+
+fth COMMAND is
+  protecting ATERM .
+
+  sort Command .
+  op command-annotations : -> QidSet .
+  op read-command : ATerm ~> Command .
+endfth
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/DO-MESSAGES { C :: COMMAND, I :: TRIV } is
+  extending PROCESSOR/BASE .
+  op do : Oid C$Command I$Elt -> Msg [ctor message format (b o)] .
+endm
+
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/MESSAGES { I :: TRIV, O :: TRIV, C :: COMMAND } is
+  extending PROCESSOR/IN-MESSAGES { I } .
+  extending PROCESSOR/OUT-MESSAGES { O } .
+  extending PROCESSOR/DO-MESSAGES { C, I } .
+endm
+
+********************************************************************************
+
+fth PID is
+  sort Pid .
+endfth
+
+*** ----------------------------------------------------------------------------
+
+view PID from TRIV to PID is
+  sort Elt to Pid .
+endv
+
+fmod PID-NAME { P :: PID } is
+  protecting NAME { PID } { P } .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/SELECTOR { P :: PID } is
+  extending PROCESSOR/BASE .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op $[_] : P$Pid -> Oid [ctor] .
+endm
+
+********************************************************************************
+
+mod PROCESSOR { P :: PID, I :: TRIV, O :: TRIV, C :: COMMAND } is
+  extending PROCESSOR/SELECTOR { P } .
+  extending PROCESSOR/MESSAGES { I, O, C } .
+
+  var P : P$Pid .
+  var I : Oid .
+  var Atts : AttributeSet .
+  var T : ATerm .
+  var ID : I$Elt .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Processor:process-input] :
+    < $[P] : PROC | running, Atts >
+    process($[P], nil, I, T, ID)
+  => if T :: command-annotations
+    then < $[P] : PROC | executing I command, Atts >
+         do($[P], read-command(T), ID)
+    else < $[P] : PROC | running, Atts >
+         process($[P], I, T, ID) fi .
+endm
+
+********************************************************************************
+
+mod PROCESSOR/BASIC-START-UP { P :: PID } is
+  including PROCESSOR/SELECTOR { P } .
+
+  var P : P$Pid .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Basic-processor:start-up] :
+    < $[P] : PROC | starting up, Atts >
+    start-up($[P])
+   => < $[P] : PROC | running, Atts > .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/BASIC-PROMPT-HANDLING { P :: PID } is
+  including PROCESSOR/SELECTOR { P } .
+
+  var P : P$Pid .
+  var I : Oid .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Basic-processor:get-prompt] :
+    < $[P] : PROC | running, Atts >
+    get-prompt($[P], I)
+   => < $[P] : PROC | running, Atts >
+    got-prompt(I, [>]) .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/BASIC-SHUT-DOWN { P :: PID } is
+  including PROCESSOR/SELECTOR { P } .
+
+  var P : P$Pid .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Basic-processor:shut-down] :
+    < $[P] : PROC | running, Atts >
+    shut-down($[P])
+   => < $[P] : PROC | shutting down, Atts >
+    quit($[P]) .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod BASIC-PROCESSOR { P :: PID, I :: TRIV, O :: TRIV, C :: COMMAND } is
+  including PROCESSOR { P, I, O, C } .
+  including PROCESSOR/BASIC-START-UP { P } .
+  including PROCESSOR/BASIC-PROMPT-HANDLING { P } .
+  including PROCESSOR/BASIC-SHUT-DOWN { P } .
+endm
+
+********************************************************************************
+
+mod PROCESSOR/NO-PARSE* { P :: PID, I :: TRIV,
+    PEF :: PARSING-ERROR-FORMATTING } is
+  including PROCESSOR/SELECTOR { P } .
+  including PROCESSOR/IN-MESSAGES { I } .
+
+  var P : P$Pid .
+  var I : Oid .
+  var Atts : AttributeSet .
+  var QIL : QidList .
+  var ID : I$Elt .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Processor:no-parse] :
+    < $[P] : PROC | running, Atts >
+    parse($[P], I, QIL, ID)
+   => < $[P] : PROC | running, Atts >
+    parsed(I, $[P], parsing-error(unexpected-token(take(1, QIL)),
+        (at take(1, QIL), include context))) .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod PROCESSOR/NO-PARSE { P :: PID, I :: TRIV } is
+  protecting PROCESSOR/NO-PARSE* { P, I, Basic-Parsing-Errors } .
+endm
+
+*** ----------------------------------------------------------------------------
+
+fmod PROCESSOR/NOC { P :: PID } is
+  protecting ATERM .
+
+  sort NoC{P} .
+  op noc : ~> NoC{P} [ctor] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view PROCESSOR/NoC { P :: PID } from COMMAND to PROCESSOR/NOC { P } is
+  sort Command to NoC{P} .
+  op command-annotations to none .
+  op read-command(T:ATerm) to term (noc).NoC{P} .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod NO-PARSE-PROCESSOR { P :: PID, I :: TRIV, O :: TRIV } is
+  including BASIC-PROCESSOR { P, I, O, PROCESSOR/NoC{P} } .
+  including PROCESSOR/NO-PARSE { P, I } .
+endm
+
+********************************************************************************
+
+mod SPEX/LANG-SELECTOR is
+  protecting SPEX/LANG/BASE .
+  protecting PROCESSOR/BASE .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op $[_] : SpeX/Lang ~> Oid .
+endm
+
+*** ----------------------------------------------------------------------------
+
+fmod LANGUAGE-as-PID { L :: LANGUAGE } is
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view Pid { L :: LANGUAGE } from PID to LANGUAGE-as-PID { L } is
+  sort Pid to L$Lid .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX-PROCESSOR/BASE is
+  extending SPEX/LANG-SELECTOR .
+  extending PROCESSOR/IN-MESSAGES { SpeX/DB } .
+  extending PROCESSOR/OUT-MESSAGES { SpeX/DB/Record } .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX-PROCESSOR { L :: LANGUAGE, D :: DATA, C :: COMMAND } is
+  including PROCESSOR { Pid{L}, SpeX/DB, SpeX/DB/Record, C } .
+  including SPEX-PROCESSOR/BASE .
+  including SPEX/DATA { L, D } .
+
+  var  SL : SpeX/Lang .
+  vars P I : Oid .
+  var  QIL : QidList .
+  var  D : D$Data .
+
+  *** proc  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  ceq $[SL] = $[Lid] if SL = lang(Lid) .
+
+  *** derived `processed' messages  - - - - - - - - - - - - - - - - - - - - - --
+  op processed : Oid Oid QidList D$Data -> Msg [message format (m o)] .
+  eq processed(P, I, QIL, D) = processed(P, I, QIL, record(D)) .
+
+  op processed : Oid Oid D$Data -> Msg [message format (m o)] .
+  eq processed(P, I, D) = processed(P, I, record(D)) .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX-PROCESSOR/BASIC-START-UP { L :: LANGUAGE } is
+  including SPEX-PROCESSOR/BASE .
+  including PROCESSOR/BASIC-START-UP { Pid{L} } .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX-PROCESSOR/BASIC-PROMPT-HANDLING { L :: LANGUAGE } is
+  including SPEX-PROCESSOR/BASE .
+  including PROCESSOR/BASIC-PROMPT-HANDLING { Pid{L} } .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX-PROCESSOR/BASIC-SHUT-DOWN { L :: LANGUAGE } is
+  including SPEX-PROCESSOR/BASE .
+  including PROCESSOR/BASIC-SHUT-DOWN { Pid{L} } .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod BASIC-SPEX-PROCESSOR { L :: LANGUAGE, D :: DATA, C :: COMMAND } is
+  including SPEX-PROCESSOR { L, D, C } .
+  including SPEX-PROCESSOR/BASIC-START-UP { L } .
+  including SPEX-PROCESSOR/BASIC-PROMPT-HANDLING { L } .
+  including SPEX-PROCESSOR/BASIC-SHUT-DOWN { L } .
+endm
+
+********************************************************************************
+
+fmod NO-DATA { L :: LANGUAGE } is
+  sort NoData{L} .
+  op [_]{no-data} : L$Lid -> NoData{L} [ctor] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view NoData { L :: LANGUAGE } from DATA to NO-DATA { L } is
+  sort Data to NoData{L} .
+  op nil to term [Lid]{no-data} .
+endv
+
+********************************************************************************
+
+fmod NO-COMMAND { L :: LANGUAGE } is
+  protecting ATERM .
+
+  sort NoCommand{L} .
+  op [_]{no-command} : L$Lid ~> NoCommand{L} [ctor] .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view NoCommand { L :: LANGUAGE } from COMMAND to NO-COMMAND { L } is
+  sort Command to NoCommand{L} .
+  op command-annotations to none .
+  op read-command(T:ATerm) to term [Lid]{no-command} .
+endv
+
+********************************************************************************

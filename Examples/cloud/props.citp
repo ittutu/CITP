@@ -1,0 +1,49 @@
+lang CITP
+
+`` -----------------------------------------------------------------------------
+
+import Maude module CLOUD
+
+goal INV is
+|-{CLOUD}
+fm forall {S:Sys, I:X$Client, J:X$Client}
+     (true = false
+      if statusp(S:Sys, I:X$Client) = updated
+         /\ statusc(S:Sys) = free)
+     /\
+     (true = false
+      if statusp(S:Sys, I:X$Client) = gotval
+         /\ statusc(S:Sys) = free)
+     /\
+     (true = false
+      if statusp(S:Sys, I:X$Client) = updated
+         /\ statusp(S:Sys, J:X$Client) = gotval)
+     /\
+     (true = false
+      if (I:X$Client =? J:X$Client) = false
+         /\ statusp(S:Sys, J:X$Client) = gotval
+         /\ statusp(S:Sys, I:X$Client)= gotval)
+     /\
+     (true = false
+      if (I:X$Client =? J:X$Client) = false
+         /\ statusp(S:Sys, J:X$Client) = updated
+         /\ statusp(S:Sys, I:X$Client) = updated)
+   [metadata "inv"] .
+endg
+
+begin proof P of INV
+  ind(S:Sys) conj red
+  tc ca red ca red
+  imp conj push-all red
+  init-all
+  ``
+  `` or we can initialize them one at a time
+  ``
+  `` init("inv/IH[x#1]/CL")
+  `` init("inv/IH[x#1]/CR/CL")
+  `` init("inv/IH[x#1]/CR/CR/CL")
+  `` init("inv/IH[x#1]/CR/CR/CR/CL")
+  `` init("inv/IH[x#1]/CR/CR/CR/CR")
+qed
+
+`` -----------------------------------------------------------------------------

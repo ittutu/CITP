@@ -1,0 +1,16 @@
+fmod LEQ is
+ sort Nat .
+ op 0 : -> Nat [ctor].
+ op s : Nat -> Nat [ctor iter] .
+ op _<=_ : Nat Nat -> Bool .
+ op F : Nat -> Nat .
+ op G : Nat -> Nat .
+ vars X Y Z : Nat .
+--- --- ---
+ eq s(X) <= 0 = false [metadata "R1"].
+ eq X <= s(X) = true [metadata "R2"].
+--- --- ---
+ eq 0 <= X = true [metadata "R3"].
+ eq s(X) <= s(Y) = (X <= Y)[metadata "R4"].
+--- --- ---
+endfm

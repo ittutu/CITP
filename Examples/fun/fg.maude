@@ -1,0 +1,18 @@
+in leq
+fmod FG is
+ pr LEQ .
+ op _+_ : Nat Nat -> Nat [assoc comm].
+ op _<=_ : Nat Nat -> Bool[metadata "transitive"].
+ op F : Nat -> Nat .
+ op G : Nat -> Nat .
+ vars X Y Z : Nat .
+---
+ eq X + 0 = X .
+ eq X + s(Y) = s(X + Y).
+---
+ ceq F(X) = s^5(0) if X <= s^7(0) [metadata "CA:1"].
+ ceq F(X) = s(0)   if s^8(0) <= X [metadata "CA:2"].
+---
+ ceq G(Y) = s^2(0) if Y <= s^4(0)[metadata "CA:a"].
+ ceq G(Y) = s^7(0) if s^5(0) <= Y [metadata "CA:b"]. 
+endfm

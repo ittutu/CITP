@@ -1,0 +1,18 @@
+in qlock
+
+mod RESET{X :: PRID} is
+ inc QLOCK{X} .
+ var S : Sys .
+ var I : X$Pid .
+ var Q : Sequence .
+ var N : Nat .
+--- --- ---
+ op reset : Sys -> Sys [iter] .
+ceq reset(S) = S if queue(S) = empty [metadata "CA:1"].
+ceq reset(S) = exit(try(S,I),I) if I,Q := queue(S) /\ pc(S,I) = wt [metadata "CA:2"].
+ceq reset(S) = exit(S,I)        if I,Q := queue(S) /\ pc(S,I) = cs [metadata "CA:3"].
+--- --- ---
+ op reset : Sys Nat -> Sys .
+ eq reset(S,0) = S .
+ eq reset(S,s N)= reset(reset(S),N).
+endm

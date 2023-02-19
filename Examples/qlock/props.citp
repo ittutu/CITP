@@ -1,0 +1,91 @@
+lang CITP
+
+`` -----------------------------------------------------------------------------
+
+import Maude module QLOCK
+
+goal INV1 is
+|-{QLOCK}
+  fm forall {S:Sys, I:X$Pid}
+     top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
+     [metadata("qinv1")] .
+endg
+
+begin proof P1 of INV1
+  ind(S:Sys) tc ca imp red push-all red
+  init("qinv1/IH[x#1]") push-all red
+  init("qinv1/IH[x#1]") push-all red
+  ``
+  `` Alternatively, the proof can also be finalized as follows, using
+  `` explicit substitutions.
+  ``
+  `` init("qinv1/IH[x#1]", I:X$Pid <- I#3) push-all red
+  `` init("qinv1/IH[x#1]", I:X$Pid <- z#2) push-all red
+qed
+
+`` -----------------------------------------------------------------------------
+
+goal INV2 is
+  fm forall {S:Sys, I:X$Pid}
+     top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
+     [metadata("qinv1")] .
+|-{QLOCK}
+  fm forall {S:Sys, I:X$Pid, J:X$Pid}
+     I:X$Pid = J:X$Pid if pc(S:Sys, I:X$Pid)= cs /\ pc(S:Sys, J:X$Pid) = cs
+     [metadata("mex")] .
+endg
+
+begin proof P2 of INV2
+  tc imp conj push-all
+  init("qinv1") push-all
+  init("qinv1")
+  ``
+  `` Alternatively, the proof can also be finalized as follows, using
+  `` explicit substitutions.
+  ``
+  `` init("qinv1", I:X$Pid <- J#2 ; S:Sys <- S#3) push("qinv1/init1")
+  `` init("qinv1", I:X$Pid <- I#1 ; S:Sys <- S#3) push("qinv1/init2") red
+qed
+
+`` -----------------------------------------------------------------------------
+
+import Maude module RESET
+
+goal INV3 is
+|-{RESET}
+  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv3")] .
+endg
+
+begin proof P3 of INV3
+  tc ca red
+qed
+
+`` -----------------------------------------------------------------------------
+
+goal INV4 is
+|-{RESET}
+  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv4")] .
+endg
+
+begin proof P4 of INV4
+  tc ca red
+qed
+
+`` -----------------------------------------------------------------------------
+
+goal LIVE is
+  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv3")] .
+  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv4")] .
+|-{RESET}
+  fm forall {N:Nat, S:Sys}
+     exists {R:Sys} R:Sys => S:Sys /\ queue(R:Sys) = get(queue(S:Sys), N:Nat) .
+endg
+
+begin proof PLIVE of LIVE
+  subst(R:Sys <- reset(S:Sys, N:Nat))
+  ind(N:Nat)
+  red conj push-all
+  tc red
+qed
+
+`` -----------------------------------------------------------------------------

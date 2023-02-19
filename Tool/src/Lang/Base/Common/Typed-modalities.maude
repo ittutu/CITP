@@ -1,0 +1,88 @@
+***( SpeX/Lang/Base/Common
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../CommonLibs/Term.maude
+sload ../../../CommonLibs/Read.maude
+
+********************************************************************************
+
+fmod TMOD-DECL is
+  protecting META-LEVEL .
+
+  sort TModDecl .
+  op (mod_:_><_[_].) : Qid TypeList TypeList AttrSet -> TModDecl
+    [ctor format (d d d d s d d d d s d)] .
+endfm
+
+view TModDecl from TRIV to TMOD-DECL is
+  sort Elt to TModDecl .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod TMOD-DECL-SET is
+  protecting READ { TModDecl } *
+    (sort BrList{TModDecl} to TModDeclList,
+     sort NeBrList{TModDecl} to NeTModDeclList,
+     op read-elt to read-tmod,
+     op read-list to read-tmods) .
+  protecting TERM/OPS .
+
+  *** TModDeclSet  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort TModDeclSet .
+  subsort TModDecl < TModDeclSet .
+  op none : -> TModDeclSet [ctor] .
+  op __ : TModDeclSet TModDeclSet -> TModDeclSet
+    [ctor assoc comm id: none format (d ni d)] .
+  eq MD:TModDecl MD:TModDecl = MD:TModDecl .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var  QI : Qid .
+  vars TPL ITP OTP : TypeList .
+  var  AtS : AttrSet .
+  var  MD : TModDecl .
+  var  MDS : TModDeclSet .
+
+  *** _in_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _in_ : TModDecl TModDeclSet -> Bool .
+  eq MD in (MD MDS) = true .
+  eq MD in MDS = false [owise] .
+
+  *** _not-in_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _not-in_ : TModDecl TModDeclSet -> Bool .
+  eq MD not-in MDS = not (MD in MDS) .
+
+  *** symbols (with a given rank)  - - - - - - - - - - - - - - - - - - - - - - -
+  op symbols : TModDeclSet TypeList -> QidSet .
+  eq symbols(none, TPL) = none .
+  eq symbols(mod QI : ITP >< OTP [AtS] . MDS, TPL)
+   = if ITP OTP == TPL
+     then QI ; symbols(MDS, TPL)
+     else symbols(MDS, TPL) fi .
+
+  *** inner/outer type  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op inner-type : TModDeclSet Qid TypeList -> TypeList .
+  ceq inner-type(mod QI : ITP >< OTP [AtS] . MDS, QI, TPL)
+   = ITP if TPL = ITP OTP .
+  eq inner-type(MDS, QI, TPL) = nil [owise] .
+
+  op outer-type : TModDeclSet Qid TypeList -> TypeList .
+  ceq outer-type(mod QI : ITP >< OTP [AtS] . MDS, QI, TPL)
+   = OTP if TPL = ITP OTP .
+  eq outer-type(MDS, QI, TPL) = nil [owise] .
+
+  *** list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : TModDeclSet -> TModDeclList .
+  eq list(none) = nil .
+  eq list(MDS) = read-tmods(unpack('__, upTerm(MDS))) [owise] .
+endfm
+
+********************************************************************************

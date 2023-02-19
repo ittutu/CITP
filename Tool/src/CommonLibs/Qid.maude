@@ -1,0 +1,120 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2020-2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./String.maude
+
+*** Basic support for reading Qids (via downTerm)  *****************************
+
+fmod QID/READ is
+  protecting META-LEVEL .
+  protecting QID-LIST .
+
+  var T : Term .
+  var TL : TermList .
+
+  *** undefined reading result  - - - - - - - - - - - - - - - - - - - - - - - --
+  op undef-read : -> [Qid] [ctor] .
+
+  *** read-qid  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-qid : Term ~> Qid .
+  eq read-qid(T) = downTerm(T, (undef-read).[Qid]) .
+
+  op read-qids : TermList ~> QidList .
+  eq read-qids(empty) = nil .
+  eq read-qids((T, TL)) = read-qid(T) read-qids(TL) .
+endfm
+
+*** Basic support for showing Qids  ********************************************
+
+fmod QID/SHOW is
+  protecting META-TERM .
+  protecting QID-LIST .
+
+  var QI : Qid .
+  var QIL : QidList .
+
+  *** show-qid  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op show-qid : Qid -> Term .
+  eq show-qid(QI) = qid("'" + string(QI) + ".Qid") .
+
+  op show-qids : QidList -> TermList .
+  eq show-qids(nil) = empty .
+  eq show-qids(QI QIL) = show-qid(QI), show-qids(QIL) .
+endfm
+
+********************************************************************************
+
+fmod QID/CONVERSION is
+  protecting LEXICAL .
+  protecting CONVERSION .
+  protecting STRING/OPS .
+
+  var QI : Qid .
+  var N : Nat .
+
+  *** mksord  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op mksord : Qid -> QidList .
+  eq mksord(QI) = tokenize(mksord(string(QI))) .
+
+  *** qid (converting natural numbers to qids)  - - - - - - - - - - - - - - - --
+  op qid : Nat -> Qid .
+  eq qid(N) = qid(string(N, 10)) .
+endfm
+
+********************************************************************************
+
+fmod QID/OPS is
+  protecting META-LEVEL .
+  protecting QID/CONVERSION .
+  protecting FIND-RESULT .
+
+  vars QI QI' : Qid .
+  var  QIL : QidList .
+  var  S : String .
+  var  FR : FindResult .
+
+  *** ordinary qids  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _is`ordinary : [Qid] -> Bool .
+  eq QI is ordinary = (mksord(QI) :: Qid) and not QI in special-qids .
+
+  op special-qids : -> QidSet .
+  eq special-qids = '`{ ; '`} ; '`( ; '`) ; '`[ ; '`] ; '`, .
+
+  *** ufree & mixfix (check whether a qid contains underscores)  - - - - - - - -
+  op _is`ufree : Qid -> Bool .
+  eq QI is ufree = find(string(QI), "_", 0) == notFound .
+
+  op mixfix : Qid -> Bool .
+  eq mixfix(QI) = find(string(QI), "_", 0) :: Nat .
+
+  *** unquote  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op unquote : Qid ~> Qid [memo] .
+  eq unquote(QI) = qid(unquote(string(QI))) .
+
+  *** basename  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op basename : Qid -> Qid [memo] .
+  ceq basename(QI)
+  = if FR :: Nat
+    then qid(unquote(substr(S, 0, FR)))
+    else qid(unquote(S)) fi
+  if S := string(QI) /\ FR := min(find(S, ".", 0), find(S, ":", 0)) .
+
+  op basenames : QidList -> QidList .
+  eq basenames(nil) = nil .
+  eq basenames(QI QIL) = basename(QI) basenames(QIL) .
+
+  *** _++_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _++_ : Qid Qid -> Qid [assoc] .
+  eq QI ++ QI' = qid(string(QI) + string(QI')) .
+endfm
+
+********************************************************************************
