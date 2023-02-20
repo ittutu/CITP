@@ -37,7 +37,7 @@ endv
 
 mod CITP/INTERPRETER is
   including SPEX/CORE { CITP/Preset, CITP/UI } *
-    (op SpeX : -> Oid to CITP) .
+    (op SpeX : -> Oid to citp) .
   including CITP/PROCESSOR .
 endm
 
