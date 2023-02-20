@@ -1,0 +1,48 @@
+lang CITP
+
+import Maude module LISTS
+
+`` -----------------------------------------------------------------------------
+
+goal ASSOC is
+|-{LISTS}
+  fm forall {L1:List, L2:List, L3:List}
+     L1:List @(L2:List @ L3:List)=(L1:List @ L2:List)@ L3:List
+     [metadata "assoc"] .
+endg
+
+begin proof P1 of ASSOC
+  ind(L1:List) tc ca push-all red
+qed
+
+`` -----------------------------------------------------------------------------
+
+goal DIST is
+|-{LISTS}
+  fm forall {L1:List, L2:List}
+     len(L1:List @ L2:List)= len(L1:List)+ len(L2:List)
+     [metadata "dist"] .
+endg
+
+begin proof P2 of DIST
+  ind(L1:List) tc ca push-all red
+qed
+
+`` -----------------------------------------------------------------------------
+
+goal AREV is
+  fm forall{L1:List, L2:List, L3:List}
+     (L1:List @ L2:List) @ L3:List = L1:List @ (L2:List @ L3:List)
+     [metadata "assoc" nonexec].
+|-{LISTS}
+  fm forall {L1:List, L2:List, L3:List}
+     rev(L1:List @ L2:List)= rev(L2:List)@ rev(L1:List)
+     [metadata "app"] .
+endg
+
+begin proof P3 of AREV
+  ind(L1:List) tc ca push-all red
+  init("assoc", L1:List <- rev(L2#3) ; L2:List <- rev(x#2) ; L3:List <- z#1 nil)
+qed
+
+`` -----------------------------------------------------------------------------

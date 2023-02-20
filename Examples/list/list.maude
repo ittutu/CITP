@@ -1,0 +1,51 @@
+fmod EQUAL is
+ op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
+endfm
+
+fth ELT is
+ inc EQUAL .
+ sorts Elt .
+ op vo : -> Elt .
+ vars E E' : Elt .
+---
+ eq E =? E = true .
+ ceq E = E' if E =? E' [nonexec].   
+endfth
+
+fmod PNAT is 
+ sorts PNat PNzNat .
+ subsorts PNzNat < PNat .
+ op 0 : -> PNat [ctor] .
+ op s_ : PNat -> PNzNat [ctor].
+ op _+_ : PNat PNat -> PNat [assoc comm].
+ vars M N P : PNat .
+---
+ eq 0 + N = N             [metadata "1"].
+ eq s M + N = s(M + N)    [metadata "2"].
+endfm
+
+fmod LISTS{X :: ELT} is
+  pr PNAT .
+  sorts List .
+  op nil : -> List [ctor] .
+  op __ : X$Elt List -> List [ctor] .
+ --- 
+  vars L L1 L2 : List .
+  vars E E' : X$Elt .
+ --- 
+  op _@_ : List List -> List .
+  eq nil @ L2  = L2 .
+  eq L2  @ nil = L2 .
+  ceq (E L1) @ L2 = E (L1 @ L2) if (E =? vo) = false[metadata "CA:a1"]. 
+  ceq (E L1) @ L2 = L1 @ L2     if E = vo           [metadata "CA:a2"].
+---
+ op len : List -> PNat .
+ eq len(nil) = 0 .
+ceq len(E L) = s len(L) if (E =? vo) = false[metadata "CA:l1"].
+ceq len(E L) = len(L)   if E = vo           [metadata "CA:l2"].
+---
+ op rev : List -> List .
+ eq rev(nil) = nil .
+ceq rev(E L) = rev(L) @ (E nil) if (E =? vo) = false[metadata "CA:r1"].
+ceq rev(E L) = rev(L)           if E = vo           [metadata "CA:r2"].
+endfm
