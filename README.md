@@ -68,7 +68,7 @@ If you decided to load CITP explicitly into Maude, then you could
 launch the tool by typing:
 
 ```shell
-maude -no-banner -allow-files [files] run-CITP
+maude -no-banner -allow-files [files] run-citp
 ```
 
 ### Using CITP

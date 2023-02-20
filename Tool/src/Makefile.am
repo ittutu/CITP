@@ -12,8 +12,8 @@ SpeX_data = CommonLibs \
 	Knowledge-base.maude \
 	Language.maude \
 	Processor.maude \
-	CITP.maude \
-	run-CITP.maude
+	citp.maude \
+	run-citp.maude
 EXTRA_DIST = $(SpeX_data)
 
 $(SpeX_archive): $(SpeX_data)
