@@ -83,9 +83,8 @@ endg
 
 begin proof PLIVE of LIVE
   subst(R:Sys <- reset(S:Sys, N:Nat))
-  ind(N:Nat)
-  red conj push-all
-  tc red
+  ind(N:Nat) red
+  tc conj push-all red
 qed
 
 `` -----------------------------------------------------------------------------

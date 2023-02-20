@@ -6,12 +6,11 @@ import Maude module FG
 
 goal INF is
 |-{FG}
-  fm forall {X:Nat} s^9(0) <= G(F(X:Nat)) + G(X:Nat) = true [metadata "geq9"] .
+  fm forall {M:Nat} s_^9(0) <= G(F(M:Nat)) + G(M:Nat) = true [metadata "geq9"] .
 endg
 
-begin proof P-INF of INF
+begin proof PI of INF
   tc ca red
-  show metadata
   pull("1") pull("2") trans red
 qed
 
@@ -21,13 +20,13 @@ import Maude module LEQ
 
 goal TOTAL is
 |-{LEQ}
-  fm forall {X:Nat, Y:Nat} X:Nat <= Y:Nat = true \/ Y:Nat <= X:Nat = true
+  fm forall {M:Nat, N:Nat} M:Nat <= N:Nat = true \/ N:Nat <= M:Nat = true
      [metadata "total"] .
 endg
 
-begin proof P-TOTAL of TOTAL
-  ind(X:Nat, Y:Nat) red
-  init("total/IH[x#1]", Y:Nat <- x#2) red
+begin proof PT of TOTAL
+  ind(M:Nat, N:Nat) red
+  init("total/IH[x#1]", N:Nat <- x#2)
 qed
 
 `` -----------------------------------------------------------------------------
