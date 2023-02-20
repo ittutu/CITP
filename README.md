@@ -117,6 +117,26 @@ qed
 
 Several more complex examples are available [here](https://github.com/ittutu/CITP/tree/master/Examples).
 
+## Commands
+
+CITP supports the following tactics:
+- `ind(V)` for induction on the variable `V`.
+- `red` or `reduce` for discharging the goals by applying the equations in the current specification.
+- `split` for transforming a goal with multiple conclusions into several goals with a single conclusion.
+- `simp` for simplyfiny the goals.
+- `push(N)` or `push(id)` for introducing premises into the current specification, where `N` stands for the index of the premise and `id` for its identifier (given by metadata). Alternatively, it is possible to use `push-all` to introduce all premises.
+- `imp` for the implication tactic.
+- `conj` for the conjunction tactic.
+- `disj(N)` or `disj(id)` for the disjunction tactic, where `N` stands for the index of the premise and `id` for its identifier (given by metadata).
+- `tc` for the theorem of constants.
+- `sk` for Skolemization.
+- `ca` for case analysis.
+- `ca-rev` for case analysis reversing the order of the terms.
+
+- `trans` for transitivity.
+- `@crt(T)` is used for appyling the tactic `T` only to the current goal.
+- `select(N)`, with `N` the index of a goal, for selection the `N`th goal.
+
 ## License
 
 The CITP source code is licensed under the [GNU General Public License v2.0 or later](https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html).
