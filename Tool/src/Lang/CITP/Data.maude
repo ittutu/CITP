@@ -952,22 +952,22 @@ fmod CITP/APPLY is
   var PN : Qid .
 
   *** apply  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op apply : TacticList{CITP} GoalList{CITP} -> GoalList{CITP} .
+  op apply : TacticList{CITP} GoalList{CITP} -> GoalList{CITP} [memo] .
   eq apply(Tt NTtL, GL) = apply(NTtL, apply(Tt, GL)) .
   eq apply(FTt, G NGL) = apply(FTt, G) apply(FTt, NGL) .
   eq apply(TtL, GL) = GL [owise] .
 
-  op apply : Seq{TacticList{CITP}} GoalList{CITP} -> GoalList{CITP} .
+  op apply : Seq{TacticList{CITP}} GoalList{CITP} -> GoalList{CITP} [memo] .
   eq apply(TtL . STtL, GL) = apply(STtL, apply(TtL, GL)) .
   eq apply(STtL, GL) = GL [owise] .
 
-  op apply : Seq{TacticList{CITP}} Seq{GoalList{CITP}} -> Seq{GoalList{CITP}} .
+  op apply : Seq{TacticList{CITP}} Seq{GoalList{CITP}} -> Seq{GoalList{CITP}} [memo] .
   eq apply(TtL . STtL, SGL GL .)
    = apply(STtL, SGL GL . apply(TtL, GL) .) .
   eq apply(STtL, SGL) = SGL [owise] .
 
   *** eval  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op eval : Proof{CITP} -> GoalList{CITP} .
+  op eval : Proof{CITP} -> GoalList{CITP} [memo] .
   eq eval(proof PN of G is STtL qed) = last-list(apply(STtL, G .)) .
 endfm
 
