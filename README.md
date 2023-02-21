@@ -125,20 +125,18 @@ CITP supports the following system-level commands:
 - `load F` reads the contents of a file named `F`; both relative and absolute paths are accepted.
 - `eof` causes the tool to stop reading from the current file.
 - `quit` terminates the execution of the tool.
-- `import Maude module M` loads the definition of a Maude module named M into the CITP database.
-- `list modules` lists the names of all Maude modules loaded into the CITP  database.
-- `show module M` displays the body of module `M`.
 - `list goals` lists the names of all goals loaded into the CITP database.
 - `show goal G` displays the definition of a goal named `G`.
+- `list proofs` lists the names of all proofs loaded into the CITP database.
+- `show proof P` displays tactics used within the proof `P`.
 - `begin proof P of G` starts a new proof, named `P` of the goal `G`.
 
 ### Proof commands
 
 Within proofs, i.e., after executing a `begin proof` command, CITP supports a different set of commands:
-- `show ongoing proof` displays the proof written so far.
+- `show ongoing proof` displays the tactics used so far in the proof.
 - `show goals` displays summaries of all open goals.
 - `show current goals` displays a summary of the curent open goal.
-- `show current module` displays the body of the Maude module used in the curent open goal.
 - `show metadata` displays all metadata declarations in the current module.
 - `rollback` reverses the effect of the last list of tactics applied.
 - `reduce term T` evaluates a term `T` w.r.t. the curent module.
