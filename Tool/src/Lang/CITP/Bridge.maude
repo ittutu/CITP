@@ -86,6 +86,16 @@ fmod CITP/BRIDGE/PREAMBLE is
    if AtS is metadata-free .
   eq md-ops(ODS) = ODS [owise] .
 
+  op md-ops* : OpDeclSet -> OpDeclSet .
+  ceq md-ops*(op QI : TPL -> TP [AtS] . ODS) = md-ops*(ODS)
+   if AtS is metadata-free or-else metadata(AtS) == "equality" .
+  eq md-ops*(ODS) = ODS [owise] .
+
+  op md-consts : OpDeclSet -> OpDeclSet .
+  ceq md-consts(op QI : nil -> TP [AtS] . ODS) = md-consts(ODS)
+   if AtS is metadata-free .
+  eq md-consts(ODS) = ODS [owise] .
+
   *** metadata mbs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op md-mbs : MembAxSet -> MembAxSet .
   ceq md-mbs(mb T : S [AtS] . MS) = md-mbs(MS)
@@ -101,6 +111,13 @@ fmod CITP/BRIDGE/PREAMBLE is
   ceq md-eqs(ceq LHS = RHS if EC [AtS] . ES) = md-eqs(ES)
    if AtS is metadata-free .
   eq md-eqs(ES) = ES [owise] .
+
+  op md-eqs* : EquationSet -> EquationSet .
+  ceq md-eqs*(eq LHS = RHS [AtS] . ES) = md-eqs*(ES)
+   if AtS is metadata-free or-else metadata(AtS) begins with "CA:" .
+  ceq md-eqs*(ceq LHS = RHS if EC [AtS] . ES) = md-eqs*(ES)
+   if AtS is metadata-free or-else metadata(AtS) begins with "CA:" .
+  eq md-eqs*(ES) = ES [owise] .
 
   *** metadata rls  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op md-rls : RuleSet -> RuleSet .
@@ -126,26 +143,6 @@ fmod CITP/BRIDGE/PREAMBLE is
    = md-update(
       md-update(AtS, "[" + string(V) + "<-" + string(list-terms(T, M)) + "]"),
       SB, M) .
-
-  *** header updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op header-update : Header QidList -> Header .
-  eq header-update(H, nil) = H .
-  eq header-update(MN, QI) = qid(MN '+ QI) .
-  eq header-update(MN{PDL}, QI) = qid(MN '+ QI) {PDL} .
-  eq header-update(H, QI NQIL) = header-update(header-update(H, QI), NQIL) .
-
-  op mh-update : Module QidList -> Module .
-  eq mh-update(fmod H is IL sorts SS . SDS ODS MS ES endfm, QIL)
-   = (fmod header-update(H, QIL) is IL sorts SS . SDS ODS MS ES endfm) .
-  eq mh-update(fth H is IL sorts SS . SDS ODS MS ES endfth, QIL)
-   = (fth header-update(H, QIL) is IL sorts SS . SDS ODS MS ES endfth) .
-  eq mh-update(mod H is IL sorts SS . SDS ODS MS ES RS endm, QIL)
-   = (mod header-update(H, QIL) is IL sorts SS . SDS ODS MS ES RS endm) .
-  eq mh-update(th H is IL sorts SS . SDS ODS MS ES RS endth, QIL)
-   = (th header-update(H, QIL) is IL sorts SS . SDS ODS MS ES RS endth) .
-
-  op mh-update : Module Substitution -> Module .
-  eq mh-update(M, SB) = mh-update(M, list-terms(terms(SB), M)) .
 
   *** getLB  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op getLB : AttrSet String -> Nat .
@@ -212,27 +209,6 @@ fmod CITP/BRIDGE/PREAMBLE is
    = (eq LHS = RHS [variant] .) variant-eqs(ES) .
   eq variant-eqs(ES) = none [owise] .
 
-  *** getMB  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op getMB : Module -> MembAxSet .
-  eq getMB(fmod H is IL sorts SS . SDS ODS MS ES endfm) = MS .
-  eq getMB(fth H is IL sorts SS . SDS ODS MS ES endfth) = MS .
-  eq getMB(mod H is IL sorts SS . SDS ODS MS ES RS endm) = MS .
-  eq getMB(th H is IL sorts SS . SDS ODS MS ES RS endth) = MS .
-
-  *** getEQ  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op getEQ : Module -> EquationSet .
-  eq getEQ(fmod H is IL sorts SS . SDS ODS MS ES endfm) = ES .
-  eq getEQ(fth H is IL sorts SS . SDS ODS MS ES endfth) = ES .
-  eq getEQ(mod H is IL sorts SS . SDS ODS MS ES RS endm) = ES .
-  eq getEQ(th H is IL sorts SS . SDS ODS MS ES RS endth) = ES .
-
-  *** getRL  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op getRL : Module -> RuleSet .
-  eq getRL(fmod H is IL sorts SS . SDS ODS MS ES endfm) = none .
-  eq getRL(fth H is IL sorts SS . SDS ODS MS ES endfth) = none .
-  eq getRL(mod H is IL sorts SS . SDS ODS MS ES RS endm) = RS .
-  eq getRL(th H is IL sorts SS . SDS ODS MS ES RS endth) = RS .
-
   *** set differences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op _\_ : MembAxSet MembAxSet -> MembAxSet .
   eq (mb T : S [AtS1] . MS1) \ (mb T : S [AtS2] . MS2)
@@ -268,10 +244,10 @@ fmod CITP/BRIDGE/PREAMBLE is
 
   *** additional module-consistency checks  - - - - - - - - - - - - - - - - - --
   ceq consistent(M) = false
-   if eq T = 'false.Bool [AtS] . ES := getEQ(M)
+   if eq T = 'false.Bool [AtS] . ES := getEqs(M)
       /\ red(M \ eq T = 'false.Bool [AtS] ., T) = 'true.Bool .
   ceq consistent(M) = false
-   if eq T = 'true.Bool [AtS] . ES := getEQ(M)
+   if eq T = 'true.Bool [AtS] . ES := getEqs(M)
       /\ red(M \ eq T = 'true.Bool [AtS] ., T) = 'false.Bool .
 endfm
 

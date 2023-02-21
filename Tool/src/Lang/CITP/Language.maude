@@ -33,7 +33,7 @@ fmod CITP/LANGUAGE is
        'GoalName
          ::= token "goalName"
        'ModuleName
-         ::= token "moduleName"
+         ::= bubble "moduleName" [exclude ("}")]
        'FormDeclList
          ::= just 'FormDecl
           |  "__" : 'FormDeclList 'FormDeclList [assoc format ('d 'ni 'd)]
@@ -256,8 +256,8 @@ fmod CITP/READ is
   eq read-goal-name(L, GN) = read-qid(GN) .
 
   *** read module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op read-module-name : CITP ATerm -> Qid .
-  eq read-module-name(L, MN) = read-qid(MN) .
+  op read-module-name : CITP ATerm -> QidList .
+  eq read-module-name(L, MN) = read-qids(MN) .
 
   *** read-formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op read-formulas : CITP ATerm ~> FormDeclList{CITP} .
@@ -297,7 +297,7 @@ fmod CITP/READ is
    = exists {set(read-varlist(L, VL))} read-formula(L, F) .
   eq read-formula(L, {FI : 'Formula})
    = fmvar(L, getName(FI)) .
-  
+
   *** read variable list  - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op read-varlist : CITP ATerm -> QidList .
   eq read-varlist(L, {'_`,_[VL1, VL2] : 'VarList})
@@ -457,6 +457,7 @@ fmod CITP/SHOW is
   protecting CITP/LANGUAGE .
   protecting PRINTING/GRAMMAR-BASED .
   protecting PRINTING/COMPAT .
+  protecting CITP/MODULE-DICT .
   protecting CITP/APPLY/ALL .
   protecting TERM/ASSIGNMENT-LIST .
   protecting STRING/SHOW .
@@ -491,13 +492,13 @@ fmod CITP/SHOW is
   eq show-goal(L, goal GN is no-fd |-{M} C endg)
    = 'goal_is`|-`{_`}_endg [
        show-goal-name(L, GN),
-       show-module-name(L, getName(M)),
+       show-module-name(L, M),
        pack('__, show-formulas(L, M, C)) ] .
   eq show-goal(L, goal GN is H |-{M} C endg)
    = 'goal_is_|-`{_`}_endg [
        show-goal-name(L, GN),
        pack('__, show-formulas(L, M, H)),
-       show-module-name(L, getName(M)),
+       show-module-name(L, M),
        pack('__, show-formulas(L, M, C)) ] [owise] .
 
   *** show goal name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -506,9 +507,9 @@ fmod CITP/SHOW is
    = mk-bubble('goalName, show-qid(GN)) .
 
   *** show module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op show-module-name : CITP Qid -> Term .
-  eq show-module-name(L, MN)
-   = mk-bubble('moduleName, show-qid(MN)) .
+  op show-module-name : CITP Module -> Term .
+  eq show-module-name(L, M)
+   = mk-bubble('moduleName, show-qids(ext-name(L, M))) .
 
   *** show formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op show-formulas : CITP Module FormDeclList{CITP} -> TermList .
@@ -535,7 +536,7 @@ fmod CITP/SHOW is
       mk-bubble('term, show-qids(print term (RHS) given (M & none))) ] .
   eq show-formula(L, M, T :[L]: S)
    = '_:_ [
-      mk-bubble('term, pack('__, show-qids(print term (T) given (M & none)))),
+      mk-bubble('term, show-qids(print term (T) given (M & none))),
       mk-bubble('sort, show-qid(S)) ] .
   eq show-formula(L, M, LHS :[L]= RHS)
    = '_:=_ [
@@ -563,7 +564,7 @@ fmod CITP/SHOW is
    = 'exists`{_`}_ [show-varlist(L, list(NVS)), show-formula(L, M, F) ] .
   eq show-formula(L, M, fmvar(L, FI))
    = var(FI, 'Formula) .
-  
+
   *** show variable list  - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op show-varlist : CITP NeQidList -> NeTermList .
   eq show-varlist(L, V)
@@ -909,12 +910,15 @@ fmod CITP/PARSING is
   *** check module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op check_module`name : CITP -> AnalysisAction{CITP} .
   ceq check L module name {$[MN] : 'ModuleName} in SAS
-   = check (QI in module-names(SAS)
-            or-else (QI :: Variable and-then getType(QI) == 'Module))
-     and-then return {MN : 'ModuleName}
-     or-else fail('syntax 'error: 'unknown 'module emph(QI),
-      (at L term ($[MN]), include context)) in SAS
-   if QI := read-module-name(L, MN) .
+   = (check (QIL :: Qid) or-else fail('syntax 'error:
+        spaced-emph(QIL) 'is 'not 'a 'valid 'module 'name))
+     and-then
+     (check (QIL in module-names(SAS)
+             or-else (QIL :: Variable and-then getType(QIL) == 'Module))
+      and-then return {MN : 'ModuleName}
+      or-else fail('syntax 'error: 'unknown 'module emph(QIL),
+       (at L term ($[MN]), include context))) in SAS
+   if QIL := read-module-name(L, MN) .
 
   *** analyse formula declarations  - - - - - - - - - - - - - - - - - - - - - --
   op analyse_formula`declarations : CITP -> AnalysisAction{CITP} .
@@ -1063,7 +1067,7 @@ fmod CITP/PARSING is
      in SAS .
   eq analyse L sort {SI : 'Sort}
    = return {SI : 'Sort} .
-  
+
   *** analyse variable list  - - - - - - - - - - - - - - - - - - - - - - - - - -
   op analyse_varlist : CITP -> AnalysisAction{CITP} .
 
@@ -1193,11 +1197,15 @@ fmod CITP/PARSING is
         analyse L tactics (TtL2)
       ] : 'TacticList } .
 
-  eq analyse L tactics {CT : 'Tactic}
-   = analyse L tactic {CT : 'Tactic} .
+  eq analyse L tactics {CT : 'Tactic} in SAS
+   = (check (goal-list(SAS) =/= no-goal)
+      or-else fail ('nothing 'to 'prove))
+     and-then analyse L tactic {CT : 'Tactic} in SAS .
 
-  eq analyse L tactics {T : 'Tactic}
-   = analyse L tactic {T : 'Tactic} .
+  eq analyse L tactics {T : 'Tactic} in SAS
+   = (check (goal-list(SAS) =/= no-goal)
+      or-else fail ('nothing 'to 'prove))
+     and-then analyse L tactic {T : 'Tactic} in SAS .
 
   *** analyse tactic  - -  - -  - -  - -  - -  - -  - -  - -  - -  - -  - - - --
   op analyse_tactic : CITP -> AnalysisAction{CITP} .
@@ -1371,6 +1379,7 @@ fmod CITP/PRINTING is
   var  R : Rule .
   vars RS MDRS : RuleSet .
   var  QI : Qid .
+  var  QIL : QidList .
   var  TPL : TypeList .
   var  TP : Type .
   vars T LHS RHS : Term .
@@ -1379,6 +1388,7 @@ fmod CITP/PRINTING is
   var  AtS : AttrSet .
   vars TR TR1 TR2 : Trace .
   vars TS TS1 TS2 : TraceStep .
+  var  N : Nat .
 
   *** print module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op print : CITP Module -> QidList .
@@ -1391,7 +1401,7 @@ fmod CITP/PRINTING is
 
   op print : CITP OpDeclSet -> QidList .
   eq print(L, ODS) = intercalate('\n, print2(L, ODS)) .
-  
+
   op print2 : CITP OpDeclSet -> QidList2 .
   eq print2(L, (none).OpDeclSet) = nil .
   eq print2(L, op QI : TPL -> TP [AtS] . ODS)
@@ -1417,7 +1427,7 @@ fmod CITP/PRINTING is
      print term RHS given (M & none) .
   ceq print(L, M, C1 /\ C2) = print(L, M, C1) '\s '/\ '\s print(L, M, C2)
    if C1 =/= nil /\ C2 =/= nil .
-  
+
   op print2 : CITP Module MembAxSet -> QidList2 .
   eq print2(L, M, (none).MembAxSet) = nil .
   eq print2(L, M, mb T : S [AtS] . MS)
@@ -1431,7 +1441,7 @@ fmod CITP/PRINTING is
 
   op print : CITP Module MembAxSet -> QidList .
   eq print(L, M, MS) = intercalate('\n, print2(L, M, MS)) .
-  
+
   op print2 : CITP Module EquationSet -> QidList2 .
   eq print2(L, M, (none).EquationSet) = nil .
   eq print2(L, M, eq LHS = RHS [AtS] . ES)
@@ -1442,7 +1452,7 @@ fmod CITP/PRINTING is
    = :['ceq '\s print(L, M, LHS = RHS) '\s 'if '\s print(L, M, EC) '\s
        '`[ print(L, AtS) '`] '\s '.]
      print2(L, M, ES) .
-  
+
   op print : CITP Module EquationSet -> QidList .
   eq print(L, M, ES) = intercalate('\n, print2(L, M, ES)) .
 
@@ -1459,44 +1469,31 @@ fmod CITP/PRINTING is
 
   op print : CITP Module RuleSet -> QidList .
   eq print(L, M, RS) = intercalate('\n, print2(L, M, RS)) .
-  
+
   op print-metadata : CITP Module -> QidList .
   ceq print-metadata(L, M)
    = if MDOS == none then nil else print(L, MDOS) '\n fi
      if MDMS == none then nil else print(L, M, MDMS) '\n fi
-     if MDES == none then nil else print(L, M, MDES) fi
-   if fmod H is IL sorts SS . SDS ODS MS ES endfm := M
-      /\ MDOS := md-ops(ODS)
-      /\ MDMS := md-mbs(MS)
-      /\ MDES := md-eqs(ES) .
-  ceq print-metadata(L, M)
-   = if MDOS == none then nil else print(L, MDOS) '\n fi
-     if MDMS == none then nil else print(L, M, MDMS) '\n fi
-     if MDES == none then nil else print(L, M, MDES) fi
-   if fth H is IL sorts SS . SDS ODS MS ES endfth := M
-      /\ MDOS := md-ops(ODS)
-      /\ MDMS := md-mbs(MS)
-      /\ MDES := md-eqs(ES) .
-  ceq print-metadata(L, M)
-   = if MDOS == none then nil else print(L, MDOS) '\n fi
-     if MDMS == none then nil else print(L, M, MDMS) '\n fi
      if MDES == none then nil else print(L, M, MDES) '\n fi
      if MDRS == none then nil else print(L, M, MDRS) fi
-   if mod H is IL sorts SS . SDS ODS MS ES RS endm := M
-      /\ MDOS := md-ops(ODS)
-      /\ MDMS := md-mbs(MS)
-      /\ MDES := md-eqs(ES)
-      /\ MDRS := md-rls(RS) .
-  ceq print-metadata(L, M)
-   = if MDOS == none then nil else print(L, MDOS) '\n fi
-     if MDMS == none then nil else print(L, M, MDMS) '\n fi
-     if MDES == none then nil else print(L, M, MDES) '\n fi
-     if MDRS == none then nil else print(L, M, MDRS) fi
-   if th H is IL sorts SS . SDS ODS MS ES RS endth := M
-      /\ MDOS := md-ops(ODS)
-      /\ MDMS := md-mbs(MS)
-      /\ MDES := md-eqs(ES)
-      /\ MDRS := md-rls(RS) .
+   if MDOS := md-ops*(getOps(M))
+      /\ MDMS := md-mbs(getMbs(M))
+      /\ MDES := md-eqs*(getEqs(M))
+      /\ MDRS := md-rls(getRls(M)) .
+
+  op has-printable-metadata : CITP Module -> Bool .
+  eq has-printable-metadata(L, M)
+   = md-ops*(getOps(M)) =/= none
+     or-else md-mbs(getMbs(M)) =/= none
+     or-else md-eqs*(getEqs(M)) =/= none
+     or-else md-rls(getRls(M)) =/= none .
+
+  op print-metadata* : CITP QidList Module -> QidList .
+  eq print-metadata*(L, QIL, M)
+   = if has-printable-metadata(CITP, M)
+     then QIL 'with 'the 'following 'metadata: '\n '\n
+          print-metadata(CITP, M)
+     else nil fi .
 
   *** print goal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op print : GoalList{CITP} -> QidList .
@@ -1504,15 +1501,24 @@ fmod CITP/PRINTING is
   eq print(G) = print CITP term (show-goal(CITP, G)) .
   eq print(G NGL) = print(G) '\n '\n print(NGL) .
 
+  op print : GoalList{CITP} Nat -> QidList .
+  eq print(no-goal, N) = 'QED .
+  eq print(G, N)
+   = '--- 'goal qid(N) '\n '\n
+     (print CITP term (show-goal(CITP, G))) .
+  eq print(G NGL, N) = print(G, N) '\n '\n print(NGL, s N) .
+
   op print-abridged : GoalList{CITP} -> QidList .
   eq print-abridged(no-goal) = 'QED .
   eq print-abridged(G)
    = 'One 'remaining 'goal 'to 'prove: '\n '\n
-     (print CITP term (show-goal(CITP, G))) .
+     (print CITP term (show-goal(CITP, G)))
+     print-metadata*(CITP, '\n '\n, module(G)) .
   eq print-abridged(G NGL)
    = qid(size(G NGL)) 'remaining 'goals 'to 'prove.
      'Here's 'the 'first 'one: '\n '\n
-     (print CITP term (show-goal(CITP, G))) .
+     (print CITP term (show-goal(CITP, G)))
+     print-metadata*(CITP, '\n '\n, module(G)) .
 
   *** print proof  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op print : Proof{CITP} -> QidList .

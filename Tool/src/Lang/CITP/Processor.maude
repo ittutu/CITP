@@ -1,4 +1,4 @@
-***( SpeX/Lang/CITP
+***( Spex/Lang/CITP
 
   This file is part of CITP.
 
@@ -290,29 +290,39 @@ mod CITP/PROCESSOR is
     do($[L], Cmd[L]{show goals}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'goals) '\n
-      mk-page(print(last-list(proof-run(L, Atts))))) .
+      mk-page(print(last-list(proof-run(L, Atts)), 0))) .
 
-  rl [CITP:show-current-goal] :
+  crl [CITP:show-current-goal] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show current goal}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'current 'goal) '\n
-      mk-page(print(head-goal(last-list(proof-run(L, Atts)))))) .
+      mk-page(if GL == no-goal
+        then 'Nothing 'to 'prove
+        else print(head-goal(GL)) fi))
+   if GL := last-list(proof-run(L, Atts)) .
 
-  rl [CITP:show-current-module] :
+  crl [CITP:show-current-module] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show current module}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'current 'module) '\n
-      mk-page(print(L, module(head-goal(last-list(proof-run(L, Atts))))))) .
+      mk-page(if GL == no-goal
+        then 'No 'module '\s '`( 'there's 'nothing 'to 'prove '`)
+        else print(L, module(head-goal(GL))) fi))
+   if GL := last-list(proof-run(L, Atts)) .
 
-  rl [CITP:show-metadata] :
+  crl [CITP:show-metadata] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show metadata}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'metadata) '\n
-      mk-page(print-metadata(L,
-          module(head-goal(last-list(proof-run(L, Atts))))))) .
+      mk-page(if GL == no-goal
+        then 'No 'metadata '\s '`( 'there's 'nothing 'to 'prove '`)
+        else if has-printable-metadata(L, module(head-goal(GL)))
+             then print-metadata(L, module(head-goal(GL)))
+             else 'No 'metadata fi fi))
+   if GL := last-list(proof-run(L, Atts)) .
 
   rl [CITP:rollback] :
     < $[L] : PROC | executing I command, Atts >
@@ -355,7 +365,6 @@ mod CITP/PROCESSOR is
                           nil, '*, unbounded, 0)
       /\ Tr := metaSearchPath(M, plain-term(T1), plain-term(T2),
                               nil, '*, unbounded, 0) .
-
 endm
 
 ********************************************************************************
