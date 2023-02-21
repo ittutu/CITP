@@ -1554,10 +1554,11 @@ fmod CITP/APPLY/TRANS is
   var  L : CITP .
   vars F F1 F2 : Formula{CITP} .
   vars FD FD1 FD2 : FormDecl{CITP} .
-  vars H C FDL FDL1 FDL2 : FormDeclList{CITP} .
+  vars H H' FDL FDL1 FDL2 : FormDeclList{CITP} .
+  vars C NFDL1 NFDL2 : NeFormDeclList{CITP} .
   var  G : Goal{CITP} .
   vars NGL NGL1 NGL2 : NeGoalList{CITP} .
-  vars M M1 M2 : Module .
+  vars M M' M1 M2 : Module .
   var  TL : TypeList .
   vars TP TP1 TP2 : Type .
   vars AtS AtS1 AtS2 : AttrSet .
@@ -1578,8 +1579,15 @@ fmod CITP/APPLY/TRANS is
 
   *** apply the transitivity tactic  - - - - - - - - - - - - - - - - - - - - - -
   ceq apply(Tactic[L]{trans}, goal GN is H |-{M} C endg)
-   = goal gn-update(GN, Tactic[L]{trans}) is addFD(M, H, FDL) |-{M} C endg
-   if ODS := getOPT(L, M) /\ FDL := comp(M, getFMT(H, ODS), getFMT(H, ODS)) .
+   = goal gn-update(GN, Tactic[L]{trans}) is
+       H'
+     |-{mh-update(M', qid(Tactic[L]{trans}))}
+       C
+     endg
+   if ODS := getOPT(L, M)
+      /\ H' := addFD(M, H, comp(M, getFMT(H, ODS), getFMT(H, ODS)))
+      /\ M' := addEQ(comp(L, M, getEQ(M), getEQ(M)), M)
+      /\ H =/= H' or-else M =/= M' .
 
   *** getOPT  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op getOPT : CITP Module -> OpDeclSet .
@@ -1593,10 +1601,7 @@ fmod CITP/APPLY/TRANS is
 
   *** comp  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op comp : Module FormDeclList{CITP} FormDeclList{CITP} -> FormDeclList{CITP} .
-  eq comp(M, no-fd, FDL) = no-fd . *** none,many ***
-  eq comp(M, FD, no-fd) = no-fd .  *** one,none  ***
-                                   *** one,one   ***
-  ceq comp(M, fm (Q[T1,T2] =[L]= 'true.Bool) [AtS1] ., *** lost attributes here
+  ceq comp(M, fm (Q[T1,T2] =[L]= 'true.Bool) [AtS1] .,
               fm (Q[T3,T4] =[L]= 'true.Bool) [AtS2] .)
    = if EUT :: UnificationTriple
      then fm Q[T1 << addX(getLhs(EUT)),
@@ -1606,12 +1611,27 @@ fmod CITP/APPLY/TRANS is
       /\ MD := "T<" + metadata(AtS1) + ";" + metadata(AtS2) + ">"
       /\ AtS := if metadata(AtS1) =/= "" and-then metadata(AtS2) =/= ""
                 then metadata(MD) else none fi .
-  eq comp(M, FD1, FD2)             *** one, one  ***
-   = no-fd [owise] .
-  eq comp(M, FD1, FD FD2 FDL2)     *** one, two ***
-   = comp(M, FD1, FD) comp(M, FD1, FD2 FDL2) .
-  eq comp(M, FD1 FD FDL1, FDL2)    *** two,many ***
-   = comp(M, FD1, FDL2) comp(M, FD FDL1, FDL2) .
+  eq comp(M, FD1 NFDL1, FD2 NFDL2)
+   = comp(M, FD1, FD2) comp(M, FD1, NFDL2)
+     comp(M, NFDL1, FD2) comp(M, NFDL1, NFDL2) .
+  eq comp(M, FDL1, FDL2) = no-fd [owise] .
+
+  op comp : CITP Module EquationSet EquationSet -> EquationSet .
+  ceq comp(L, M, eq Q[T1,T2] = 'true.Bool [AtS1] .,
+                 eq Q[T3,T4] = 'true.Bool [AtS2] .)
+   = if EUT :: UnificationTriple
+     then eq Q[T1 << addX(getLhs(EUT)),
+               T4 << addX(getRhs(EUT))] = 'true.Bool [AtS] .
+     else none fi
+   if EUT := metaDisjointUnify(M, T2 =? T3, 0, 0)
+      /\ MD := "T<" + metadata(AtS1) + ";" + metadata(AtS2) + ">"
+      /\ AtS := if metadata(AtS1) =/= "" and-then metadata(AtS2) =/= ""
+                then metadata(MD) else none fi .
+  ceq comp(L, M, E1 ES1, E2 ES2)
+   = comp(L, M, E1, E2) comp(L, M, E1, ES2)
+     comp(L, M, ES1, E2) comp(L, M, ES1, ES2)
+   if ES1 =/= none or-else ES2 =/= none .
+  eq comp(L, M, ES1, ES2) = none [owise] .
 
   *** getFMT  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op getFMT : FormDeclList{CITP} OpDeclSet -> FormDeclList{CITP} .

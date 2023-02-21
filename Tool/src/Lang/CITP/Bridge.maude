@@ -254,6 +254,25 @@ fmod CITP/BRIDGE/PREAMBLE is
   eq (crl LHS => RHS if EC [AtS1] . RS1) \ (crl LHS => RHS if EC [AtS2] . RS2)
    = RS1 \ (crl LHS => RHS if EC [AtS2] . RS2) .
   eq RS1 \ RS2 = RS1 [owise] .
+
+  *** removing equations from modules  - - - - - - - - - - - - - - - - - - - - -
+  op _\_ : Module EquationSet -> Module .
+  eq (fmod H is IL sorts SS . SDS ODS MS ES1 endfm) \ ES2
+   = (fmod H is IL sorts SS . SDS ODS MS (ES1 \ ES2) endfm) .
+  eq (fth H is IL sorts SS . SDS ODS MS ES1 endfth) \ ES2
+   = (fth H is IL sorts SS . SDS ODS MS (ES1 \ ES2) endfth) .
+  eq (mod H is IL sorts SS . SDS ODS MS ES1 RS endm) \ ES2
+   = (mod H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endm) .
+  eq (th H is IL sorts SS . SDS ODS MS ES1 RS endth) \ ES2
+   = (th H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endth) .
+
+  *** additional module-consistency checks  - - - - - - - - - - - - - - - - - --
+  ceq consistent(M) = false
+   if eq T = 'false.Bool [AtS] . ES := getEQ(M)
+      /\ red(M \ eq T = 'false.Bool [AtS] ., T) = 'true.Bool .
+  ceq consistent(M) = false
+   if eq T = 'true.Bool [AtS] . ES := getEQ(M)
+      /\ red(M \ eq T = 'true.Bool [AtS] ., T) = 'false.Bool .
 endfm
 
 ********************************************************************************
