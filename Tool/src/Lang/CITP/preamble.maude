@@ -19,7 +19,7 @@ fmod CITP/PREAMBLE is
  var NTPL : NeTypeList .
  vars AS AS1 AS2 : AttrSet .
  var AT : Attr .
- vars TP TP1 TP2 : Type .
+ vars TP TP1 TP2 TP3 TP4 : Type .
  vars SR SR1 SR2 : String .
  vars ST ST1 ST2 : Sort .
  vars N N1 N2 : Nat .
@@ -643,6 +643,19 @@ op getMB : MembAxSet Attr -> MembAxSet .
  eq getNE(M,E ES,ODS) = getNE(M,ES,ODS)[owise].
 --- inconsistency ---
  op consistent : Module -> Bool .
+ eq consistent(M) = true [owise].
+--- --- --- 
 ceq consistent(M) = false if eq Q[T1,T2] = 'false.Bool[AS]. ES := getNE(M) /\ red(M,T1) = red(M,T2).
- eq consistent(M) = true [owise]. 
+ceq consistent(M) = false if metaSearch(M,'true.Bool,'false.Bool,nil,'*,unbounded,0):: ResultTriple .
+ceq consistent(M) = false if metaSearch(M,'false.Bool,'true.Bool,nil,'*,unbounded,0):: ResultTriple .
+ceq consistent(M) = false
+ if eq Q[T1,T2] = 'false.Bool[AS]. ES := getNE(M) /\
+    eq T3 = T4[AS1]. ES1 := getEqs(M) /\
+    TP1 := getType(metaNormalize(M,T1)) /\ TP2 := getType(metaNormalize(M,T3)) /\ sameKind(M,TP1,TP2) /\
+    TP3 := getType(metaNormalize(M,T2)) /\ TP4 := getType(metaNormalize(M,T4)) /\ sameKind(M,TP3,TP4) /\
+    SB1 := metaMatch(M,T1,T3,nil,0) /\ SB2 := metaMatch(M,T2,T4,nil,0) /\ clash(SB1,SB2) = false .
+*** clash of subtsitutions ******************************************
+ op clash : Substitution Substitution -> Bool .
+ceq clash(V <- T1 ; SB1, V <- T2 ; SB2) = true if T1 =/= T2 .
+ eq clash(SB1, SB2) = false [owise] .
 endfm

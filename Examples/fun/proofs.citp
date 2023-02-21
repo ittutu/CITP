@@ -26,7 +26,10 @@ endg
 
 begin proof PT of TOTAL
   ind(M:Nat, N:Nat) red
-  init("total/IH[x#1]", N:Nat <- x#2)
+  ``
+  `` the following initialization is no longer necessary
+  ``
+  `` init("total/IH[x#1]", N:Nat <- x#2)
 qed
 
 `` -----------------------------------------------------------------------------

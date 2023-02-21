@@ -59,10 +59,11 @@ fmod CITP/FORMULA is
   protecting CITP/BRIDGE/PREAMBLE .
 
   var  L : CITP .
-  vars T LHS RHS : Term .
+  vars T LHS RHS T1 T2 T3 T4 : Term .
+  vars GT GT1 GT2 GT3 GT4 : GroundTerm .
   var  S : Sort .
   var  FI : Qid .
-  vars F F1 F2 : Formula{CITP} .
+  vars F F1 F2 F3 F4 : Formula{CITP} .
   vars FD FD1 FD2 D : FormDecl{CITP} .
   vars FDL FDL1 FDL2 : FormDeclList{CITP} .
   vars NFDL NFDL1 NFDL2 : NeFormDeclList{CITP} .
@@ -76,11 +77,14 @@ fmod CITP/FORMULA is
   vars RS RS1 RS2 : RuleSet .
   var  VS : VariableSet .
   var  NVS : NeVariableSet .
-  var  SB : Substitution .
+  vars SB SB1 SB2 : Substitution .
   vars AtS AtS1 AtS2 : AttrSet .
   var  N : Nat .
   var  NZ : NzNat .
   vars MD SR : String .
+  vars TP TP1 TP2 TP3 TP4 : Type .
+  vars ST ST1 ST2 : Sort .
+  var  M : Module .
 
   *** formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   sort Formula{CITP} .
@@ -451,6 +455,80 @@ fmod CITP/FORMULA is
   eq unif-problem(LHS :[L]= RHS) = LHS =? RHS .
   eq unif-problem(F1 /\ F2) = unif-problem(F1) /\ unif-problem(F2) .
   eq unif-problem(exists {VS} F) = unif-problem(F) .
+
+  *** match formulas (partially defined)  - - - - - - - - - - - - - - - - - - --
+  op match? : Module Formula{CITP} Formula{CITP} ~> Substitution .
+  *** for atoms
+  eq match?(M, true, true)  = (none).Substitution .
+  eq match?(M, false, false)= (none).Substitution .
+  ceq match?(M, T1 =[L]= T2, T3 =[L]= T4) = SB1 ; SB2
+   if TP1 := getType(metaNormalize(M, T1))
+      /\ TP2 := getType(metaNormalize(M, T3))
+      /\ sameKind(M, TP1, TP2)
+      /\ TP3 := getType(metaNormalize(M, T2))
+      /\ TP4 := getType(metaNormalize(M, T4))
+      /\ sameKind(M, TP3, TP4)
+      /\ SB1 := metaMatch(M, T1, T3, nil, 0)
+      /\ SB2 := metaMatch(M, T2, T4, nil, 0)
+      /\ clash(SB1, SB2) = false .
+  ceq match?(M, T1 =[L]= T2, T3 =[L]= T4) = SB1 ; SB2
+   if TP1 := getType(metaNormalize(M, T1))
+      /\ TP2 := getType(metaNormalize(M, T4))
+      /\ sameKind(M, TP1, TP2)
+      /\ TP3 := getType(metaNormalize(M, T2))
+      /\ TP4 := getType(metaNormalize(M, T3))
+      /\ sameKind(M, TP3, TP4)
+      /\ SB1 := metaMatch(M, T1, T4, nil, 0)
+      /\ SB2 := metaMatch(M, T2, T3, nil, 0)
+      /\ clash(SB1, SB2) = false .
+  ceq match?(M, T1 :[L]= T2, T3 :[L]= T4) = SB1 ; SB2
+   if TP1 := getType(metaNormalize(M, T1))
+      /\ TP2 := getType(metaNormalize(M, T3))
+      /\ sameKind(M, TP1, TP2)
+      /\ TP3 := getType(metaNormalize(M, T2))
+      /\ TP4 := getType(metaNormalize(M, T4))
+      /\ sameKind(M, TP3, TP4)
+      /\ SB1 := metaMatch(M, T1, T3, nil, 0)
+      /\ SB2 := metaMatch(M, T2, T4, nil, 0)
+      /\ clash(SB1, SB2) = false .
+  ceq match?(M, T1 =[L]> T2, T3 =[L]> T4) = SB1 ; SB2
+   if TP1 := getType(metaNormalize(M, T1))
+      /\ TP2 := getType(metaNormalize(M, T3))
+      /\ sameKind(M, TP1, TP2)
+      /\ TP3 := getType(metaNormalize(M, T2))
+      /\ TP4 := getType(metaNormalize(M, T4))
+      /\ sameKind(M, TP3, TP4)
+      /\ SB1 := metaMatch(M, T1, T3, nil, 0)
+      /\ SB2 := metaMatch(M, T2, T4, nil, 0)
+      /\ clash(SB1, SB2) = false .
+  ceq match?(M, T1 :[L]: ST1, T2 :[L]: ST2) = SB
+   if TP1 := getType(metaNormalize(M, T1))
+      /\ TP2 := getType(metaNormalize(M, T2))
+      /\ sameKind(M, TP1, TP2)
+      /\ sortLeq(M, ST2, ST1)
+      /\ SB := metaMatch(M, T1, T2, nil, 0) .
+  eq match?(M, T1 =[L]= T2, GT1 :[L]= GT2)
+   = match?(M, T1 =[L]= T2, GT1 =[L]= GT2) .
+  *** for negations
+  eq match?(M, ~ F1, ~ F2)= match?(M, F1, F2) .
+  *** for conjunctions
+  ceq match?(M, F1 /\ F2, F3 /\ F4)= SB1 ; SB2
+   if SB1 := match?(M, F1, F3)
+      /\ SB2 := match?(M, F2, F4)
+      /\ clash(SB1, SB2) = false .
+  *** for disjunctions
+  ceq match?(M, F1 \/ F2, F3 \/ F4)= SB1 ; SB2
+   if SB1 := match?(M, F1, F3)
+      /\ SB2 := match?(M, F2, F4)
+      /\ clash(SB1, SB2) = false .
+  *** for implications
+  ceq match?(M, F1 if F2, F3 if F4)= SB1 ; SB2
+   if SB1 := match?(M, F1, F3)
+      /\ SB2 := match?(M, F2, F4)
+      /\ clash(SB1, SB2) = false .
+  *** for universal quantification
+  eq match?(M, forall{NVS} F1, F2)= match?(M, F1, F2) .
+  eq match?(M, F1, forall{NVS} F2)= match?(M, F1, F2) .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -578,7 +656,7 @@ fmod CITP/GOAL/SIMP is
   vars LHS RHS T : Term .
   var  GT : GroundTerm .
   var  VS : VariableSet .
-  var  F : Formula{CITP} .
+  vars F F' : Formula{CITP} .
   var  EC : EqCondition .
   var  RC : Condition .
   vars AtS AtS' : AttrSet .
@@ -630,6 +708,18 @@ fmod CITP/GOAL/SIMP is
   eq goal GN is H1 fm false [AtS] . H2 |-{M} C endg
    = no-goal .
   eq goal GN is
+       H1 fm F [AtS] . H2
+     |-{M}
+       C1 fm F [AtS'] . C2
+     endg = goal GN is H1 fm F [AtS] . H2 |-{M} C1 C2 endg .
+  ceq goal GN is H |-{M} fm (T =[L]> GT) [AtS] . endg = no-goal
+   if metaSearchPath(M, T, GT, nil, '*, unbounded, 0) :: Trace .
+  ceq goal GN is H1 fm F [AtS] . H2 |-{M} C1 fm F' [AtS'] . C2 endg
+   = goal GN is H1 fm F [AtS] . H2 |-{M} C1 C2 endg
+   if match?(M, F, F') : Substitution .
+
+  *** contradictions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  eq goal GN is
        H1 fm ('true.Bool =[CITP]= 'false.Bool) [AtS] . H2
      |-{M}
        C
@@ -639,15 +729,8 @@ fmod CITP/GOAL/SIMP is
      |-{M}
        C
      endg = no-goal .
-  eq goal GN is
-       H1 fm F [AtS] . H2
-     |-{M}
-       C1 fm F [AtS'] . C2
-     endg = goal GN is H1 fm F [AtS] . H2 |-{M} C1 C2 endg .
   ceq goal GN is H |-{M} C endg = no-goal
    if consistent(M) = false .
-  ceq goal GN is H |-{M} fm (T =[L]> GT) [AtS] . endg = no-goal
-   if metaSearchPath(M, T, GT, nil, '*, unbounded, 0) :: Trace .
 endfm
 
 *** ----------------------------------------------------------------------------

@@ -1,7 +1,3 @@
-lang CITP
-
-`` -----------------------------------------------------------------------------
-
 import Maude module QLOCK
 
 goal INV1 is
@@ -13,8 +9,8 @@ endg
 
 begin proof P1 of INV1
   ind(S:Sys) tc ca imp red push-all red
-  init("qinv1/IH[x#1]") push-all red
-  init("qinv1/IH[x#1]") push-all red
+  init-all push-all red
+  init-all push-all red
   ``
   `` Alternatively, the proof can also be finalized as follows, using
   `` explicit substitutions.
