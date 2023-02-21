@@ -1,4 +1,4 @@
-import Maude module QLOCK
+`` -----------------------------------------------------------------------------
 
 goal INV1 is
 |-{QLOCK}
@@ -7,7 +7,7 @@ goal INV1 is
      [metadata("qinv1")] .
 endg
 
-begin proof P1 of INV1
+begin proof PI1 of INV1
   ind(S:Sys) tc ca imp red push-all red
   init-all push-all red
   init-all push-all red
@@ -31,10 +31,10 @@ goal INV2 is
      [metadata("mex")] .
 endg
 
-begin proof P2 of INV2
+begin proof PI2 of INV2
   tc imp conj push-all
-  init("qinv1") push-all
-  init("qinv1")
+  init-all push-all
+  init-all
   ``
   `` Alternatively, the proof can also be finalized as follows, using
   `` explicit substitutions.
@@ -45,14 +45,12 @@ qed
 
 `` -----------------------------------------------------------------------------
 
-import Maude module RESET
-
 goal INV3 is
 |-{RESET}
   fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv3")] .
 endg
 
-begin proof P3 of INV3
+begin proof PI3 of INV3
   tc ca red
 qed
 
@@ -63,7 +61,7 @@ goal INV4 is
   fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv4")] .
 endg
 
-begin proof P4 of INV4
+begin proof PI4 of INV4
   tc ca red
 qed
 
@@ -77,7 +75,7 @@ goal LIVE is
      exists {R:Sys} R:Sys => S:Sys /\ queue(R:Sys) = get(queue(S:Sys), N:Nat) .
 endg
 
-begin proof PLIVE of LIVE
+begin proof PL of LIVE
   subst(R:Sys <- reset(S:Sys, N:Nat))
   ind(N:Nat) red
   tc conj push-all red

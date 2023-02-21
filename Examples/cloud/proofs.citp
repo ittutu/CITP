@@ -1,8 +1,4 @@
-lang CITP
-
 `` -----------------------------------------------------------------------------
-
-import Maude module CLOUD
 
 goal INV is
 |-{CLOUD}
@@ -31,7 +27,7 @@ fm forall {S:Sys, I:X$Client, J:X$Client}
    [metadata "inv"] .
 endg
 
-begin proof P of INV
+begin proof PI of INV
   ind(S:Sys) conj red
   tc ca red ca red
   imp conj push-all red

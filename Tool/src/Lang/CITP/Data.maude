@@ -59,9 +59,11 @@ fmod CITP/MODULE-DICT is
       /\ RS := md-rls(getRls(M))
       /\ MA := MS =/= none or-else ES =/= none or-else RS =/= none .
 
-  *** lookup adjustments to allow for module variables  - - - - - - - - - - - --
-  ceq lookup(V, MD)
-   = (fmod V is nil sorts none . none none none none endfm)
+  *** lookup adjustments  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  ceq lookup(MN, MD) = M
+   if M := upModule(MN, true) .
+
+  ceq lookup(V, MD) = (fmod V is nil sorts none . none none none none endfm)
    if getType(V) = 'Module .
 
   *** module-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --

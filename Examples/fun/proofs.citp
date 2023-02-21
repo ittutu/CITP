@@ -1,8 +1,4 @@
-lang CITP
-
 `` -----------------------------------------------------------------------------
-
-import Maude module FG
 
 goal INF is
 |-{FG}
@@ -12,15 +8,9 @@ endg
 begin proof PI of INF
   tc ca red
   trans simp
-  ``
-  `` the following steps are no longer necessary
-  ``
-  `` pull("1") pull("2") trans red
 qed
 
 `` -----------------------------------------------------------------------------
-
-import Maude module LEQ
 
 goal TOTAL is
 |-{LEQ}
@@ -30,10 +20,6 @@ endg
 
 begin proof PT of TOTAL
   ind(M:Nat, N:Nat) red
-  ``
-  `` the following initialization is no longer necessary
-  ``
-  `` init("total/IH[x#1]", N:Nat <- x#2)
 qed
 
 `` -----------------------------------------------------------------------------

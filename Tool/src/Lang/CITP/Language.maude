@@ -913,7 +913,8 @@ fmod CITP/PARSING is
    = (check (QIL :: Qid) or-else fail('syntax 'error:
         spaced-emph(QIL) 'is 'not 'a 'valid 'module 'name))
      and-then
-     (check (QIL in module-names(SAS)
+     (check (upModule(QIL, false) :: Module
+             or-else QIL in module-names(SAS)
              or-else (QIL :: Variable and-then getType(QIL) == 'Module))
       and-then return {MN : 'ModuleName}
       or-else fail('syntax 'error: 'unknown 'module emph(QIL),
@@ -1017,7 +1018,7 @@ fmod CITP/PARSING is
 
   eq analyse L formula {FI : 'Formula}
    = return {FI : 'Formula} .
-  
+
   *** analyse term  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op analyse_term : CITP -> AnalysisAction{CITP} .
   eq analyse L term (T) in AnalysisState[L]{GL}
@@ -1472,10 +1473,11 @@ fmod CITP/PRINTING is
 
   op print-metadata : CITP Module -> QidList .
   ceq print-metadata(L, M)
-   = if MDOS == none then nil else print(L, MDOS) '\n fi
-     if MDMS == none then nil else print(L, M, MDMS) '\n fi
-     if MDES == none then nil else print(L, M, MDES) '\n fi
-     if MDRS == none then nil else print(L, M, MDRS) fi
+   = intercalate('\n,
+     if MDOS == none then nil else :[print(L, MDOS)] fi
+     if MDMS == none then nil else :[print(L, M, MDMS)] fi
+     if MDES == none then nil else :[print(L, M, MDES)] fi
+     if MDRS == none then nil else :[print(L, M, MDRS)] fi)
    if MDOS := md-ops*(getOps(M))
       /\ MDMS := md-mbs(getMbs(M))
       /\ MDES := md-eqs*(getEqs(M))
