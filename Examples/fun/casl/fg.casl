@@ -1,0 +1,140 @@
+spec NAT =
+  type Nat ::= 0 | s__(Nat)
+end
+
+%% -----------------------------------------------------------------------------
+
+spec LEQ =
+  NAT
+then
+  pred __<=__ : Nat * Nat
+
+  forall X, Y : Nat
+  . 0 <= Y %(0_leq_all)%
+  . not s X <= 0 %(no_s_leq_0)%
+  . s X <= s Y <=> X <= Y %(s_leq_s)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec LEQ_TRANS =
+  LEQ
+then
+  forall X, Y, Z : Nat
+  . X <= Y /\ Y <= Z => X <= Z
+  %(leq_trans)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec ADD =
+  NAT
+then
+  op __+__ : Nat * Nat -> Nat
+  forall X, Y : Nat
+  . 0 + Y = Y %(add_0)%
+  . (s X) + Y = s (X + Y) %(add_s)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec FG =
+  LEQ
+then
+  op F : Nat -> Nat
+  forall X : Nat
+  . F(X) = s s s s s 0 if X <= s s s s s s s 0 %(CA_F_a)%
+  . F(X) = s 0 if s s s s s s s s 0 <= X %(CA_F_b)%
+  op G : Nat -> Nat
+  forall Y : Nat
+  . G(Y) = s s 0 if Y <= s s s s 0 %(CA_G_a)%
+  . G(Y) = s s s s s s s 0 if s s s s s 0 <= Y %(CA_G_b)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec LEQ_4_7 =
+  LEQ
+then 
+  forall X : Nat
+  . X <= s s s s 0 => X <= s s s s s s s 0
+  %(leq_4_7)%
+end
+
+view L_4_7 : LEQ_4_7 to LEQ_TRANS =
+  Nat
+end
+
+spec FG_PROP_CASE_1 =
+  FG and ADD and LEQ_4_7
+then
+  forall X : Nat
+  . X <= s s s s 0
+    => s s s s s s s s s 0 <= (G(F(X)) + G(X))
+  %(Case_1)% %implied
+  %%
+  %% Proved using E in 1 second
+end
+
+%% -----------------------------------------------------------------------------
+
+spec FG_PROP_CASE_2 =
+  FG and ADD
+then
+  forall X : Nat
+  . s s s s s 0 <= X /\ X <= s s s s s s s 0
+    => s s s s s s s s s 0 <= (G(F(X)) + G(X))
+  %(Case_2)% %implied
+  %%
+  %% Proved using E in 1 second
+end
+
+%% -----------------------------------------------------------------------------
+
+spec LEQ_5_8 =
+  LEQ
+then
+  forall X : Nat
+  . s s s s s s s s 0 <= X => s s s s s 0 <= X
+  %(leq_5_8)%
+end
+
+view L_5_8 : LEQ_5_8 to LEQ_TRANS =
+  Nat
+end
+
+spec FG_PROP_CASE_3 =
+  FG and ADD and LEQ_5_8
+then
+  forall X : Nat
+  . s s s s s s s s 0 <= X
+    => s s s s s s s s s 0 <= (G(F(X)) + G(X))
+  %(Case_3)% %implied
+  %%
+  %% Proved using E in 1 second
+end
+
+%% -----------------------------------------------------------------------------
+
+spec FG_PROP =
+  FG_PROP_CASE_1 and FG_PROP_CASE_2 and FG_PROP_CASE_3
+then
+  forall X : Nat
+  . X <= s s s s s s s 0
+    \/ s s s s s s s s 0 <= X
+  %(case_completeness_F)%
+
+  forall X : Nat
+  . X <= s s s s 0
+    \/ s s s s s 0 <= X
+  %(case_completeness_G)%
+
+  forall X : Nat
+  . s s s s s s s s s 0 <= (G(F(X)) + G(X))
+  %%
+  %(FG_prop)% %implied
+  %%
+  %% Proved using E in 1 second
+end
+
+%% -----------------------------------------------------------------------------

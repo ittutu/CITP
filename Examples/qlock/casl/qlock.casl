@@ -1,0 +1,210 @@
+spec NAT =
+  free type Nat ::= 0 | s__(Nat)
+end
+
+%% -----------------------------------------------------------------------------
+
+spec LABELS =
+  free type Labels ::= rm | wt | cs
+end
+
+%% -----------------------------------------------------------------------------
+
+spec PID =
+  sort Pid < EPid
+  op noid : EPid
+end
+
+%% -----------------------------------------------------------------------------
+
+spec SEQUENCE [PID] =
+  generated type NeSequence ::= sort Pid | ____(NeSequence; NeSequence)
+  op ____ : NeSequence * NeSequence -> NeSequence, assoc
+
+  generated type Sequence ::= empty | sort NeSequence
+  op ____ : Sequence * Sequence -> Sequence, assoc, unit empty
+
+  op top : Sequence -> EPid
+  forall I : Pid; Q : Sequence
+  . top(I Q) = I %(top_juxt)%
+  . top(empty) = noid %(top_empty)%
+
+  op Get : Sequence -> Sequence
+  forall I : Pid; Q : Sequence
+  . Get(I Q) = Q %(get_juxt)%
+  . Get(empty) = empty %(get_empty)%
+
+  pred __In__ : Pid * Sequence
+  forall I, J : Pid; Q : Sequence
+  . not I In empty %(in_empty)%
+  . I In J Q <=> I = J \/ I In Q %(in_nonempty)%
+
+  forall Q : Sequence; I, J : Pid
+  . top(Q I) = J if top(Q) = J
+  %(top_lemma)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec QLOCK [PID] =
+  LABELS and SEQUENCE [PID]
+then
+  free type Sys ::= init | want(Sys; Pid) | try(Sys; Pid) | exit(Sys; Pid)
+
+  op pc : Sys * Pid -> Labels
+  op queue : Sys -> Sequence
+
+  forall S : Sys ; I, J, K : Pid; Q : Sequence
+  %% init
+  . pc(init, I) = rm %(pc_init)%
+  . queue(init) = empty %(queue_init)%
+  %% want
+  . pc(want(S, I), J) = wt if pc(S, I) = rm /\ J = I %(CA_w1)%
+  . pc(want(S, I), J) = pc(S, J) if pc(S, I) = rm /\ not J = I %(CA_w2)%
+  . pc(want(S, I), J) = pc(S, J) if not pc(S, I) = rm %(CA_w3)%
+  . queue(want(S, I)) = queue(S) I if pc(S, I) = rm %(queue_w1)%
+  . queue(want(S, I)) = queue(S) if not pc(S, I) = rm %(queue_w2)%
+  %% try
+  . pc(try(S, I), J) = cs if pc(S, I) = wt /\ I = top(queue(S)) /\ J = I %(CA_t1)%
+  . pc(try(S, I), J) = pc(S, J) if not J = I %(CA_t2)%
+  . pc(try(S, I), J) = pc(S, J) if not pc(S, I) = wt %(CA_t3)%
+  . pc(try(S, I), J) = pc(S, J) if not I = top(queue(S)) %(CA_t4)%
+  . queue(try(S, I)) = queue(S) %(queue_t)%
+  %% exit
+  . pc(exit(S, I), J) = rm if pc(S, I) = cs /\ J = I %(CA_e1)%
+  . pc(exit(S, I), J) = pc(S, J) if pc(S, I) = cs /\ not J = I %(CA_e2)%
+  . pc(exit(S, I), J) = pc(S, J) if not pc(S, I) = cs %(CA_e3)%
+  . queue(exit(S, I)) = Get(queue(S)) if pc(S, I) = cs %(queue_e1)%
+  . queue(exit(S, I)) = queue(S) if not pc(S, I) = cs %(queue_e2)%
+
+  pred __~>__ : Sys * Sys
+  forall S, S', S'' : Sys
+  . S ~> S %(ref)%
+  . S ~> S' /\ S' ~> S'' => S ~> S'' %(trans)%
+
+  forall S : Sys; I : Pid
+  . want(S, I) ~> S %(want)%
+  . try(S, I) ~> S %(try)%
+  . exit(S, I) ~> S %(exit)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec QLOCK_INV [PID] =
+  QLOCK [PID]
+then
+  forall S : Sys ; I, J: Pid
+  . (pc(S, I) = rm /\ J = I)
+    \/ (pc(S, I) = rm /\ not J = I)
+    \/ (not pc(S, I) = rm)
+  %(want_ca)%
+  . (pc(S, I) = wt /\ I = top(queue(S)) /\ J = I)
+    \/ (not J = I)
+    \/ (not pc(S, I) = wt)
+    \/ (not I = top(queue(S)))
+  %(try_ca)%
+  . (pc(S, I) = cs /\ J = I)
+    \/ (pc(S, I) = cs /\ not J = I)
+    \/ (not pc(S, I) = cs)
+  %(exit_ca)%
+
+  forall S : Sys; I : Pid
+  . top(queue(S)) = I if pc(S, I) = cs
+  %%
+  %(qinv1)% %implied
+  %%
+  %% proved by induction using SPASS
+  %% in less than 10 seconds
+
+  forall S : Sys; I, J : Pid
+  . I = J if pc(S, I) = cs /\ pc(S, J) = cs
+  %%
+  %(qinv2)% %implied
+  %%
+  %% proved by induction using SPASS
+  %% in less than 10 seconds
+end
+
+%% -----------------------------------------------------------------------------
+
+spec RESET [PID] =
+  QLOCK [PID] and NAT
+then
+  op reset : Sys -> Sys
+  forall S : Sys; I : Pid
+  . reset(S) = S if queue(S) = empty %(CA_r1)%
+  . reset(S) = exit(try(S, I), I) if I =e= top(queue(S)) /\ pc(S, I) = wt %(CA_r2)%
+  . reset(S) = exit(S, I) if I =e= top(queue(S)) /\ pc(S, I) = cs %(CA_r3)%
+
+  op reset : Sys * Nat -> Sys
+  forall S : Sys; N : Nat
+  . reset(S, 0) = S %(reset_0)%
+  . reset(S, s N) = reset(reset(S, N)) %(reset_s)%
+
+  op Get : Sequence * Nat -> Sequence
+  forall Q : Sequence; N : Nat
+  . Get(Q, 0) = Q %(Get_0)%
+  . Get(Q, s N) = Get(Get(Q, N)) %(Get_s)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec RESET_INV [PID] =
+  RESET [PID]
+then
+  forall S : Sys
+  . queue(S) = empty
+    \/ (exists I : Pid . I =e= top(queue(S)) /\ pc(S, I) = wt)
+    \/ (exists I : Pid . I =e= top(queue(S)) /\ pc(S, I) = cs)
+  %%
+  %(reset_ca)%
+
+  forall S : Sys
+  . reset(S) ~> S
+  %%
+  %(inv3)% %implied
+  %%
+  %% proved using SPASS
+  %% in less than 30 seconds
+
+  forall S : Sys
+  . queue(reset(S)) = Get(queue(S))
+  %%
+  %(inv4)% %implied
+  %%
+  %% proved using SPASS
+  %% in less than 10 seconds
+end
+
+%% -----------------------------------------------------------------------------
+
+spec RESET_LIVE [PID] =
+  RESET_INV [PID]
+then
+  forall S : Sys; N : Nat
+  . queue(reset(S, 0)) = Get(queue(S), 0)
+  %%
+  %(live_lemma_0)% %implied
+  %%
+  %% proved using SPASS
+  %% in less than 10 seconds
+
+  forall N : Nat
+  . (forall S : Sys . queue(reset(S, N)) = Get(queue(S), N))
+    => (forall S : Sys . queue(reset(S, s N)) = Get(queue(S), s N))
+  %%
+  %(live_lemma_s)% %implied
+  %%
+  %% proved using SPASS
+  %% in less than 10 seconds
+
+  forall S : Sys; N : Nat
+  . reset(S, N) ~> S /\ queue(reset(S, N)) = Get(queue(S), N)
+  %%
+  %(live)% %implied
+  %%
+  %% proved by induction using SPASS
+  %% in less than 40 seconds
+end
+
+%% -----------------------------------------------------------------------------

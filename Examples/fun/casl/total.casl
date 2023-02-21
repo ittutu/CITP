@@ -1,0 +1,57 @@
+spec NAT =
+  free type Nat ::= 0 | s__(Nat)
+end
+
+%% -----------------------------------------------------------------------------
+
+spec LEQ =
+  NAT
+then
+  pred __<=__ : Nat * Nat
+
+  forall X, Y : Nat
+  . 0 <= Y %(0_leq_all)%
+  . not s X <= 0 %(no_s_leq_0)%
+  . s X <= s Y <=> X <= Y %(s_leq_s)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec TOTAL_PROP =
+  LEQ
+then
+  forall X, Y : Nat
+  . X <= Y \/ Y <= X
+  %%
+  %(total_leq)% %implied
+end
+
+%% -----------------------------------------------------------------------------
+
+spec TOTAL_IND_SCHEMA =
+  LEQ
+then
+  . (0 <= 0 \/ 0 <= 0)
+    /\
+    (forall X : Nat . s X <= 0 \/ 0 <= s X)
+    /\
+    (forall X, Y : Nat . (X <= Y \/ Y <= X)
+      => (s X <= s Y \/ s Y <= s X))
+    =>
+    (forall X, Y : Nat . X <= Y \/ Y <= X)
+    %%
+    %(total_induction_schema)%
+end
+
+%% -----------------------------------------------------------------------------
+
+spec TOTAL_IND_PROP =
+  TOTAL_IND_SCHEMA
+then
+  forall X, Y : Nat
+  . X <= Y \/ Y <= X
+  %%
+  %(total_leq)% %implied
+end
+
+%% -----------------------------------------------------------------------------
