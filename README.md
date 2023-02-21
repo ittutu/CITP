@@ -148,21 +148,24 @@ Within proofs, i.e., after executing a `begin proof` command, CITP supports a di
 ## Tactics
 
 CITP supports the following tactics:
-- `ind(VL)` for induction on a list `VL` of variables.
-- `red` for reducing all terms occurring in a list of goals.
+- `ind(V)` for structural induction on the variable `V`.
+- `red` or `reduce` for discharging the goals by applying the equations in the current specification.
 - `split` for transforming a goal with multiple conclusions into several goals with a single conclusion.
-- `simp` for simplifying the goals.
-- `push(N)` or `push(id)` for introducing premises into the current specification, where `N` stands for the index of the premise and `id` for its identifier (given by metadata). Alternatively, it is possible to use `push-all` to introduce all premises.
+- `simp` for simplyfiny the goals.
+- `push(N)` or `push(ID)` for introducing premises into the current specification, where `N` stands for the index of the premise and `ID` for its identifier (given by metadata). Alternatively, it is possible to use `push-all` to introduce all premises.
+- `pull(ID)` for transforming a sentence in the specification into a premise.
 - `imp` for the implication tactic.
 - `conj` for the conjunction tactic.
-- `disj(N)` or `disj(id)` for the disjunction tactic, where `N` stands for the index of the premise and `id` for its identifier (given by metadata).
+- `disj(N)` or `disj(ID)` for the disjunction tactic, where `N` stands for the index of the premise and `ID` for its identifier (given by metadata).
 - `tc` for the theorem of constants.
 - `sk` for Skolemization.
 - `ca` for case analysis.
 - `ca-rev` for case analysis reversing the order of the terms.
+- `init(ID, SB)` or `init(N, SB)`, where `SB` stands for a substitution, `N` for the index of the premise, and `ID` for its identifier (given by metadata). When the substitution can be inferred from the context the `init(ID)` tactic can be used for a particular identifier and `init-all` for all premises.
+- `subst(SB)` for applying the substitution `SB`.
 - `trans` for transitivity.
-- `@crt(TL)` is used for applying a tactic list `TL` only to the current goal.
-- `select(N)`, where `N` the index of a goal, for selection the `N`th goal.
+- `@crt(T)` is used for appyling the tactic `T` only to the current goal.
+- `select(N)`, with `N` the index of a goal, for selection the `N`th goal.
 
 ## License
 
