@@ -73,23 +73,16 @@ maude -no-banner -allow-files [files] run-citp
 
 ### Using CITP
 
-Once CITP has started, you can load external files using the command
-`load file`, exit the tool using the command `quit`, or input goals
-and proofs directly from the command line.
+Once CITP has started, you can load external proof files using the
+command `load file`, exit the tool using the command `quit`, or input
+goals and proofs directly from the command line.
 
-To given an example, suppose we would like to prove that the
+To give an example, suppose we would like to prove that the
 multiplication of natural numbers distributes over addition.
-The first step is to let CITP know that we intend to use the
-(predefined) Maude module `NAT`:
-
-```
-import Maude module NAT
-```
-
-Next, we define the goal that we would like to prove. In our case,
-we prove the distributivity property based on two premises, which
-correspond to a standard axiomatization of the multiplication of
-natural numbers.
+The first step is define the goal that we would like to prove.
+In our case, we prove the distributivity property based on two
+premises, which correspond to a standard axiomatization of the
+multiplication of natural numbers.
 
 ```
 goal DIST is
