@@ -114,9 +114,9 @@ fmod CITP/BRIDGE/PREAMBLE is
 
   op md-eqs* : EquationSet -> EquationSet .
   ceq md-eqs*(eq LHS = RHS [AtS] . ES) = md-eqs*(ES)
-   if AtS is metadata-free or-else metadata(AtS) begins with "CA:" .
+   if AtS is metadata-free or-else metadata(AtS) begins with "ca:" .
   ceq md-eqs*(ceq LHS = RHS if EC [AtS] . ES) = md-eqs*(ES)
-   if AtS is metadata-free or-else metadata(AtS) begins with "CA:" .
+   if AtS is metadata-free or-else metadata(AtS) begins with "ca:" .
   eq md-eqs*(ES) = ES [owise] .
 
   *** metadata rls  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -280,7 +280,7 @@ fmod CITP/BRIDGE/CA is
 --- Attributes ---
  op CA? : AttrSet -> Bool .
  ceq CA?(metadata(SR) AS) = true
-  if N := rfind(SR,"CA:",length(SR) + -4) /\ substr(SR, N + 3, 1) =/= " " .
+  if N := rfind(SR,"ca:",length(SR) + -4) /\ substr(SR, N + 3, 1) =/= " " .
  eq CA?(AS) = false [owise] .
 --- Equation ---
  op CA? : Equation -> Bool .
@@ -304,7 +304,7 @@ fmod CITP/BRIDGE/CA is
     else substr(SR, N + 3, L) fi
   if CA?(metadata(SR)) /\ not CA?(AS)
      /\ L := length(SR)
-     /\ N := rfind(SR, "CA:", L)
+     /\ N := rfind(SR, "ca:", L)
      /\ FR := find(SR, " ", N + 3) .
  eq CA-md(AS) = "<>" [owise] .
 --- -------------------------------------------------------------------------

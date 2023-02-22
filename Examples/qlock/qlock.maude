@@ -65,21 +65,21 @@ ops want try exit : Sys X$Pid -> Sys [ctor].
  eq pc(init,I) = rm  .
  eq queue(init) = empty .
 --- want ---
-ceq pc(want(S,I),J) = wt      if pc(S,I) = rm /\ J = I          [metadata "CA:w1"].
-ceq pc(want(S,I),J) = pc(S,J) if pc(S,I) = rm /\ J =? I = false [metadata "CA:w2"].
-ceq pc(want(S,I),J) = pc(S,J) if pc(S,I) =? rm = false          [metadata "CA:w3"].
+ceq pc(want(S,I),J) = wt      if pc(S,I) = rm /\ J = I          [metadata "ca:w1"].
+ceq pc(want(S,I),J) = pc(S,J) if pc(S,I) = rm /\ J =? I = false [metadata "ca:w2"].
+ceq pc(want(S,I),J) = pc(S,J) if pc(S,I) =? rm = false          [metadata "ca:w3"].
 ceq queue(want(S,I)) = queue(S),I if pc(S,I) = rm .
 ceq queue(want(S,I)) = queue(S)   if pc(S,I) =? rm = false .
 --- try ---
-ceq pc(try(S,I),J) = cs      if pc(S,I) = wt /\ I,Q := queue(S) /\ J = I [metadata "CA:t1"].
-ceq pc(try(S,I),J) = pc(S,J) if (J =? I) = false                      [metadata "CA:t2"].
-ceq pc(try(S,I),J) = pc(S,J) if pc(S,I) =? wt = false                 [metadata "CA:t3"].
-ceq pc(try(S,I),J) = pc(S,J) if top(queue(S)) =? I = false               [metadata "CA:t4"].
+ceq pc(try(S,I),J) = cs      if pc(S,I) = wt /\ I,Q := queue(S) /\ J = I [metadata "ca:t1"].
+ceq pc(try(S,I),J) = pc(S,J) if (J =? I) = false                      [metadata "ca:t2"].
+ceq pc(try(S,I),J) = pc(S,J) if pc(S,I) =? wt = false                 [metadata "ca:t3"].
+ceq pc(try(S,I),J) = pc(S,J) if top(queue(S)) =? I = false               [metadata "ca:t4"].
  eq queue(try(S,I)) = queue(S) . 
 --- exit ---
-ceq pc(exit(S,I),J) = rm       if pc(S,I) = cs /\ J = I          [metadata "CA:e1"].
-ceq pc(exit(S,I),J) = pc(S,J)  if pc(S,I) = cs /\ I =? J = false [metadata "CA:e2"].
-ceq pc(exit(S,I),J) = pc(S,J)  if pc(S,I) =? cs = false          [metadata "CA:e3"].
+ceq pc(exit(S,I),J) = rm       if pc(S,I) = cs /\ J = I          [metadata "ca:e1"].
+ceq pc(exit(S,I),J) = pc(S,J)  if pc(S,I) = cs /\ I =? J = false [metadata "ca:e2"].
+ceq pc(exit(S,I),J) = pc(S,J)  if pc(S,I) =? cs = false          [metadata "ca:e3"].
 ceq queue(exit(S,I)) = get(queue(S)) if pc(S,I) = cs .
 ceq queue(exit(S,I)) = queue(S)      if pc(S,I) =? cs = false .
 --- --- ---
