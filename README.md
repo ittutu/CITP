@@ -117,7 +117,7 @@ Several more complex examples are available [here](https://github.com/ittutu/CIT
 CITP supports the following system-level commands:
 - `load F` reads the contents of a file named `F`; both relative and absolute paths are accepted.
 - `eof` causes the tool to stop reading from the current file.
-- `quit` terminates the execution of the tool.
+- `quit` or `q` terminates the execution of the tool.
 - `list goals` lists the names of all goals loaded into the CITP database.
 - `show goal G` displays the definition of a goal named `G`.
 - `list proofs` lists the names of all proofs loaded into the CITP database.
@@ -127,10 +127,10 @@ CITP supports the following system-level commands:
 ### Proof commands
 
 Within proofs, i.e., after executing a `begin proof` command, CITP supports a different set of commands:
-- `show ongoing proof` displays the tactics used so far in the proof.
-- `show goals` displays summaries of all open goals.
-- `show current goals` displays a summary of the curent open goal.
-- `show metadata` displays all metadata declarations in the current module.
+- `show proof` displays the tactics used so far in the proof.
+- `show [full] goals` displays summaries of all open goals.
+- `show [full] goal` displays a summary of the curent open goal.
+- `show additions` displays all additional declarations generated during the proof.
 - `rollback` reverses the effect of the last list of tactics applied.
 - `reduce term T` evaluates a term `T` w.r.t. the curent module.
 - `search path from S to T` searches for a rewrite path from a source term `S` to a target term `T` w.r.t. the current module.
