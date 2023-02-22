@@ -199,7 +199,7 @@ fmod CITP/LANGUAGE is
           |  "begin proof_of_" : 'ProofName 'GoalName [none]
        'ProofCommand
          ::= lit "qed"
-          |  lit "show ongoing proof"
+          |  lit "show proof"
           |  lit "show goals"
           |  lit "show full goals"
           |  lit "show goal"
@@ -442,7 +442,7 @@ fmod CITP/READ is
    = Cmd[L]{begin proof read-proof-name(L, PN) of read-goal-name(L, GN)} .
   eq read-cmd(L, {'qed.ProofCommand : 'ProofCommand})
    = Cmd[L]{qed} .
-  eq read-cmd(L, {'show`ongoing`proof.ProofCommand : 'ProofCommand})
+  eq read-cmd(L, {'show`proof.ProofCommand : 'ProofCommand})
    = Cmd[L]{show ongoing proof} .
   eq read-cmd(L, {'show`goals.ProofCommand : 'ProofCommand})
    = Cmd[L]{show goals} .
