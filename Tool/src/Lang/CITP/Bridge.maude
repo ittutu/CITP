@@ -31,7 +31,7 @@ fmod CITP/BRIDGE/PREAMBLE is
   var  S : Sort .
   var  SS : SortSet .
   var  SDS : SubsortDeclSet .
-  var  ODS : OpDeclSet .
+  vars ODS ODS1 ODS2 : OpDeclSet .
   vars MS MS1 MS2 : MembAxSet .
   var  MS? : [MembAxSet] .
   var  EC : EqCondition .
@@ -210,6 +210,11 @@ fmod CITP/BRIDGE/PREAMBLE is
   eq variant-eqs(ES) = none [owise] .
 
   *** set differences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _\_ : OpDeclSet OpDeclSet -> OpDeclSet .
+  eq (op QI : TPL -> TP [AtS1] . ODS1) \ (op QI : TPL -> TP [AtS2] . ODS2)
+   = ODS1 \ (op QI : TPL -> TP [AtS2] . ODS2) .
+  eq ODS1 \ ODS2 = ODS1 [owise] .
+
   op _\_ : MembAxSet MembAxSet -> MembAxSet .
   eq (mb T : S [AtS1] . MS1) \ (mb T : S [AtS2] . MS2)
    = MS1 \ (mb T : S [AtS2] . MS2) .

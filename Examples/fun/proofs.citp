@@ -2,20 +2,19 @@
 
 goal INF is
 |-{FG}
-  fm forall {M:Nat} s_^9(0) <= G(F(M:Nat)) + G(M:Nat) = true [metadata "geq9"] .
+  fm forall {M:Nat, N:Nat, Z:Nat} s_^9(0) <= G(F(M:Nat)) + G(M:Nat) = true .
 endg
 
 begin proof PI of INF
   tc ca red
-  trans simp
+  trans red
 qed
 
 `` -----------------------------------------------------------------------------
 
 goal TOTAL is
 |-{LEQ}
-  fm forall {M:Nat, N:Nat} M:Nat <= N:Nat = true \/ N:Nat <= M:Nat = true
-     [metadata "total"] .
+  fm forall {M:Nat, N:Nat} M:Nat <= N:Nat = true \/ N:Nat <= M:Nat = true .
 endg
 
 begin proof PT of TOTAL

@@ -34,30 +34,13 @@ fmod CITP/MODULE-DICT is
   including  DICTIONARY { Qid, CITP/Module } *
     (sort KeyValuePair{Qid,CITP/Module} to MDEntry{CITP},
      sort Dict{Qid,CITP/Module} to ModuleDict{CITP}) .
-  protecting OP-DECL-SET .
   protecting CITP/BRIDGE/PREAMBLE .
 
   var L : CITP .
   var MD : ModuleDict{CITP} .
   var M : Module .
   var MN : Qid .
-  var QIL : QidList .
   var V : Variable .
-  var MS : MembAxSet .
-  var ES : EquationSet .
-  var RS : RuleSet .
-  var MA : Bool .
-
-  op ext-name : CITP Module -> QidList .
-  ceq ext-name(L, M)
-   = getName(M)
-     if QIL :: NeQidList then '\s '`[ intersperse('`,, QIL) '`] else nil fi
-     if MA then '\s '... else nil fi
-   if QIL := list(symbols(md-consts(getOps(M)), nil))
-      /\ MS := md-mbs(getMbs(M))
-      /\ ES := md-eqs(getEqs(M))
-      /\ RS := md-rls(getRls(M))
-      /\ MA := MS =/= none or-else ES =/= none or-else RS =/= none .
 
   *** lookup adjustments  - - - - - - - - - - - - - - - - - - - - - - - - - - --
   ceq lookup(MN, MD) = M
@@ -565,6 +548,7 @@ fmod CITP/GOAL is
   var  SGL : Seq{GoalList{CITP}} .
   var  NSGL : NeSeq{GoalList{CITP}} .
   vars GN GN' : Qid .
+  vars  GA MA : QidList .
   vars M M' : Module .
   vars H H1 H2 H' C C1 C2 C' : FormDeclList{CITP} .
   var  F : Formula{CITP} .
@@ -577,9 +561,9 @@ fmod CITP/GOAL is
   *** Goal{CITP} and GoalList{CITP}  - - - - - - - - - - - - - - - - - - - - - -
   sorts Goal{CITP} NeGoalList{CITP} GoalList{CITP} .
   subsorts Goal{CITP} < NeGoalList{CITP} < GoalList{CITP} .
-  op goal_is_|-{_}_endg : Qid
-    FormDeclList{CITP} Module FormDeclList{CITP} -> Goal{CITP}
-    [format (d s s n++i n--i d d d n++i n--i d)] .
+  op goal_[_]is_|-{_[_]}_endg : Qid QidList
+    FormDeclList{CITP} Module QidList  FormDeclList{CITP} -> Goal{CITP}
+    [format (d s d d d s n++i n--i d d d d d d n++i n--i d)] .
   op no-goal : -> GoalList{CITP} [ctor] .
   op __ : GoalList{CITP} GoalList{CITP} -> GoalList{CITP}
     [ctor assoc id: no-goal format (d ni d)] .
@@ -597,20 +581,13 @@ fmod CITP/GOAL is
   op __ : Seq{GoalList{CITP}} NeSeq{GoalList{CITP}} -> NeSeq{GoalList{CITP}}
     [ctor ditto] .
 
-  *** =?=  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op _=?=_ : GoalList{CITP} GoalList{CITP} -> Bool .
-  eq (goal GN is H |-{M} C endg) =?= (goal GN' is H' |-{M'} C' endg)
-   = M == M' and-then H == H' and-then C == C' .
-  eq (G1 NGL1) =?= (G2 NGL2) = G1 =?= G2 and-then NGL1 =?= NGL2 .
-  eq GL1 =?= GL2 = false [owise] .
-
   *** name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op name : Goal{CITP} -> Qid .
-  eq name(goal GN is H |-{M} C endg) = GN .
+  eq name(goal GN[GA] is H |-{M[MA]} C endg) = GN .
 
   *** module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op module : Goal{CITP} -> Module .
-  eq module(goal GN is H |-{M} C endg) = M .
+  eq module(goal GN[GA] is H |-{M[MA]} C endg) = M .
 
   op current-module : GoalList{CITP} -> Module .
   eq current-module(G GL) = module(G) .
@@ -623,7 +600,7 @@ fmod CITP/GOAL is
 
   *** premises  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op premises : Goal{CITP} -> FormDeclList{CITP} .
-  eq premises(goal GN is H |-{M} C endg) = H .
+  eq premises(goal GN[GA] is H |-{M[MA]} C endg) = H .
 
   op current-premises : GoalList{CITP} -> FormDeclList{CITP} .
   eq current-premises(G GL) = premises(G) .
@@ -673,6 +650,7 @@ fmod CITP/GOAL/SIMP is
 
   var  L : CITP .
   var  GN : Qid .
+  vars GA MA : QidList .
   vars H H1 H2 C C1 C2 : FormDeclList{CITP} .
   var  M : Module .
   vars LHS RHS T : Term .
@@ -719,39 +697,39 @@ fmod CITP/GOAL/SIMP is
   eq exists {none} F = F .
 
   *** goal simplifications  - - - - - - - - - - - - - - - - - - - - - - - - - --
-  eq goal GN is H |-{M} no-fd endg = no-goal .
-  eq goal GN is H |-{M} C1 fm true [AtS] . C2 endg
-   = goal GN is H |-{M} C1 C2 endg .
-  ceq goal GN is H |-{M} C1 fm false [AtS] . C2 endg
-   = goal GN is H |-{M} fm false [AtS] . endg
+  eq goal GN[GA] is H |-{M[MA]} no-fd endg = no-goal .
+  eq goal GN[GA] is H |-{M[MA]} C1 fm true [AtS] . C2 endg
+   = goal GN[GA] is H |-{M[MA]} C1 C2 endg .
+  ceq goal GN[GA] is H |-{M[MA]} C1 fm false [AtS] . C2 endg
+   = goal GN[GA] is H |-{M[MA]} fm false [AtS] . endg
    if C1 C2 =/= no-fd .
-  eq goal GN is H1 fm true [AtS] . H2 |-{M} C endg
-   = goal GN is H1 H2 |-{M} C endg .
-  eq goal GN is H1 fm false [AtS] . H2 |-{M} C endg
+  eq goal GN[GA] is H1 fm true [AtS] . H2 |-{M[MA]} C endg
+   = goal GN[GA] is H1 H2 |-{M[MA]} C endg .
+  eq goal GN[GA] is H1 fm false [AtS] . H2 |-{M[MA]} C endg
    = no-goal .
-  eq goal GN is
+  eq goal GN[GA] is
        H1 fm F [AtS] . H2
-     |-{M}
+     |-{M[MA]}
        C1 fm F [AtS'] . C2
-     endg = goal GN is H1 fm F [AtS] . H2 |-{M} C1 C2 endg .
-  ceq goal GN is H |-{M} fm (T =[L]> GT) [AtS] . endg = no-goal
+     endg = goal GN[GA] is H1 fm F [AtS] . H2 |-{M[MA]} C1 C2 endg .
+  ceq goal GN[GA] is H |-{M[MA]} fm (T =[L]> GT) [AtS] . endg = no-goal
    if metaSearchPath(M, T, GT, nil, '*, unbounded, 0) :: Trace .
-  ceq goal GN is H1 fm F [AtS] . H2 |-{M} C1 fm F' [AtS'] . C2 endg
-   = goal GN is H1 fm F [AtS] . H2 |-{M} C1 C2 endg
+  ceq goal GN[GA] is H1 fm F [AtS] . H2 |-{M[MA]} C1 fm F' [AtS'] . C2 endg
+   = goal GN[GA] is H1 fm F [AtS] . H2 |-{M[MA]} C1 C2 endg
    if match?(M, F, F') : Substitution .
 
   *** contradictions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  eq goal GN is
+  eq goal GN[GA] is
        H1 fm ('true.Bool =[CITP]= 'false.Bool) [AtS] . H2
-     |-{M}
+     |-{M[MA]}
        C
      endg = no-goal .
-  eq goal GN is
+  eq goal GN[GA] is
        H1 fm ('false.Bool =[CITP]= 'true.Bool) [AtS] . H2
-     |-{M}
+     |-{M[MA]}
        C
      endg = no-goal .
-  ceq goal GN is H |-{M} C endg = no-goal
+  ceq goal GN[GA] is H |-{M[MA]} C endg = no-goal
    if consistent(M) = false .
 endfm
 
@@ -859,43 +837,6 @@ fmod CITP/TACTIC is
   op size : Seq{TacticList{CITP}} -> Nat .
   eq size(no-tl) = 0 .
   eq size(TtL . STtL) = s size(STtL) .
-
-  *** qid  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op qid : Tactic{CITP} -> Qid .
-  eq qid(Tactic[L]{split}) = 'split .
-  eq qid(Tactic[L]{@crt TtL}) = '@crt .
-  eq qid(Tactic[L]{reduce}) = 'red .
-  eq qid(Tactic[L]{simp}) = 'simp .
-  eq qid(Tactic[L]{red}) = 'red .
-  eq qid(Tactic[L]{imp}) = 'imp .
-  eq qid(Tactic[L]{conj}) = 'conj .
-  eq qid(Tactic[L]{disj N}) = qid('disj< qid(N) '>) .
-  eq qid(Tactic[L]{disj SR}) = qid('disj< qid(SR) '>) .
-  eq qid(Tactic[L]{tc}) = 'tc .
-  eq qid(Tactic[L]{sk}) = 'sk .
-  eq qid(Tactic[L]{ca}) = 'ca .
-  eq qid(Tactic[L]{ca-rev}) = 'ca-rev .
-  eq qid(Tactic[L]{cs}) = 'cs .
-  eq qid(Tactic[L]{trans}) = 'trans .
-  eq qid(Tactic[L]{ind V}) = qid('ind< V '>) .
-  eq qid(Tactic[L]{ind NVL}) = 'ind* [owise] .
-  eq qid(Tactic[L]{ind-schema V}) = qid('ind-schema< V '>) .
-  eq qid(Tactic[L]{ind-schema NVL}) = 'ind-schema* [owise] .
-  eq qid(Tactic[L]{init SR, SB}) = qid('init< qid(SR) '>) .
-  eq qid(Tactic[L]{init N, SB}) = qid('init< qid(N) '>) .
-  eq qid(Tactic[L]{init SR}) = qid('init< qid(SR) '>) .
-  eq qid(Tactic[L]{init-all}) = 'init-all .
-  eq qid(Tactic[L]{subst SB}) = 'subst .
-  eq qid(Tactic[L]{pull SR}) = qid('pull. qid(SR)) .
-  eq qid(Tactic[L]{push SR}) = qid('push< qid(SR) '>) .
-  eq qid(Tactic[L]{push N}) = qid('push< qid(N) '>) .
-  eq qid(Tactic[L]{push-all}) = 'push-all .
-  eq qid(Tactic[L]{select N}) = 'select .
-  eq qid(Tactic[L]{pass}) = 'pass .
-
-  *** goal-name updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op [_/_] : Qid Tactic{CITP} -> Qid .
-  eq [GN / Tt] = qid(GN '/ qid(Tt)) .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -1031,9 +972,11 @@ fmod CITP/CMD is
   op Cmd[_]{qed} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`ongoing`proof} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`goals} : CITP -> Cmd{CITP} [ctor] .
+  op Cmd[_]{show`goals`in`full} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`current`goal} : CITP -> Cmd{CITP} [ctor] .
+  op Cmd[_]{show`current`goal`in`full} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`current`module} : CITP -> Cmd{CITP} [ctor] .
-  op Cmd[_]{show`metadata} : CITP -> Cmd{CITP} [ctor] .
+  op Cmd[_]{show`additions} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{rollback} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{reduce`term_} : CITP ATerm -> Cmd{CITP} [ctor] .
   op Cmd[_]{search`path`from_to_} : CITP ATerm ATerm -> Cmd{CITP} [ctor] .
@@ -1083,27 +1026,28 @@ endfm
 fmod CITP/APPLY/SPLIT is
   including CITP/APPLY .
 
-  var L : CITP .
-  var GN : Qid .
-  var M : Module .
-  var H : FormDeclList{CITP} .
-  var FD : FormDecl{CITP} .
-  var C : NeFormDeclList{CITP} .
-  var N : Nat .
+  var  L : CITP .
+  vars GN QI : Qid .
+  vars GA MA : QidList .
+  var  M : Module .
+  var  H : FormDeclList{CITP} .
+  var  FD : FormDecl{CITP} .
+  var  C : NeFormDeclList{CITP} .
+  var  N : Nat .
 
   *** split a goal with multiple conclusions into an equivalent bunch
   *** of multiple goals with one conclusion each
-  eq apply(Tactic[L]{split}, goal GN is H |-{M} FD C endg)
-   = split(goal [GN / Tactic[L]{split}] is H |-{M} FD C endg, 1) .
+  eq apply(Tactic[L]{split}, goal GN[GA] is H |-{M[MA]} FD C endg)
+   = split(goal GN[GA 'split] is H |-{M[MA]} FD C endg, 1) .
 
   op split : Goal{CITP} Nat -> GoalList{CITP} .
-  eq split(goal GN is H |-{M} FD C endg, N)
-   = split(goal GN is H |-{M} FD endg, N)
-     split(goal GN is H |-{M} C endg, s N) .
-  eq split(goal GN is H |-{M} FD endg, N)
-   = goal qid(GN '. qid(N)) is H |-{M} FD endg .
-  eq split(goal GN is H |-{M} no-fd endg, N)
-   = goal GN is H |-{M} no-fd endg .
+  eq split(goal GN[GA] is H |-{M[MA]} FD C endg, N)
+   = split(goal GN[GA] is H |-{M[MA]} FD endg, N)
+     split(goal GN[GA] is H |-{M[MA]} C endg, s N) .
+  eq split(goal GN[GA QI] is H |-{M[MA]} FD endg, N)
+   = goal GN[GA qid(QI '`( qid(N) '`))] is H |-{M[MA]} FD endg .
+  eq split(goal GN[GA] is H |-{M[MA]} no-fd endg, N)
+   = goal GN[GA] is H |-{M[MA]} no-fd endg .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -1155,6 +1099,7 @@ fmod CITP/APPLY/REDUCE is
   var  L : CITP .
   var  G : Goal{CITP} .
   vars GN FI : Qid .
+  vars GA MA : QidList .
   var  M : Module .
   vars H H' : FormDeclList{CITP} .
   vars C C' NFDL1 NFDL2 : NeFormDeclList{CITP} .
@@ -1166,8 +1111,8 @@ fmod CITP/APPLY/REDUCE is
   var  AtS : AttrSet .
 
   *** apply the term-reduction tactic  - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{reduce}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{reduce}] is H' |-{M} C' endg
+  ceq apply(Tactic[L]{reduce}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA 'red] is H' |-{M[MA]} C' endg
    if H' := red(M, H)
       /\ C' := red(M, C)
       /\ H' =/= H or-else C' =/= C .
@@ -1219,16 +1164,17 @@ fmod CITP/APPLY/IMP is
 
   var  L : CITP .
   var  GN : Qid .
+  vars GA MA : QidList .
   var  M : Module .
   var  H : FormDeclList{CITP} .
   vars F1 F2 : Formula{CITP} .
   var  AtS : AttrSet .
 
   *** apply the implication tactic  - - - - - - - - - - - - - - - - - - - - - --
-  ceq apply(Tactic[L]{imp}, goal GN is H |-{M} fm F1 if F2 [AtS] . endg)
-   = goal [GN / Tactic[L]{imp}] is
+  ceq apply(Tactic[L]{imp}, goal GN[GA] is H |-{M[MA]} fm F1 if F2 [AtS] . endg)
+   = goal GN[GA 'imp] is
        H fm F2 [md-update(metadata-attrs(AtS), "/H")] .
-     |-{M}
+     |-{M[MA]}
        fm F1 [md-update(AtS, "/C")] .
      endg
    if fv(F1 if F2) = none .
@@ -1241,6 +1187,7 @@ fmod CITP/APPLY/CONJ is
 
   var  L : CITP .
   var  GN : Qid .
+  vars GA MA : QidList .
   var  M : Module .
   vars FD FD' : FormDecl{CITP} .
   vars H H' H1 H2 FDL : FormDeclList{CITP} .
@@ -1250,8 +1197,8 @@ fmod CITP/APPLY/CONJ is
   var  AtS : AttrSet .
 
   *** apply the conjunction tactic  - - - - - - - - - - - - - - - - - - - - - --
-  ceq apply(Tactic[L]{conj}, goal GN is H |-{M} FD endg)
-   = apply(Tactic[L]{split}, goal [GN / Tactic[L]{conj}] is H' |-{M} NFD' endg)
+  ceq apply(Tactic[L]{conj}, goal GN[GA] is H |-{M[MA]} FD endg)
+   = apply(Tactic[L]{split}, goal GN[GA 'conj] is H' |-{M[MA]} NFD' endg)
    if H' := conjuncts(H)
       /\ NFD' := conjuncts(FD)
       /\ H' =/= H or-else NFD' =/= FD .
@@ -1276,6 +1223,7 @@ fmod CITP/APPLY/DISJ is
   var  L : CITP .
   var  G : Goal{CITP} .
   var  GN : Qid .
+  vars GA MA : QidList .
   var  M : Module .
   vars FD FD' : FormDecl{CITP} .
   vars H FDL H1 H2 : FormDeclList{CITP} .
@@ -1286,25 +1234,25 @@ fmod CITP/APPLY/DISJ is
   var  N : Nat .
 
   *** apply the discjunction tactic  - - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{disj N}, goal GN is H |-{M} FD endg)
-   = goal [GN / Tactic[L]{disj N}] is H |-{M} FD' endg
+  ceq apply(Tactic[L]{disj N}, goal GN[GA] is H |-{M[MA]} FD endg)
+   = goal GN[GA qid('disj '`( qid(N) '`))] is H |-{M[MA]} FD' endg
    if FD' := md-update(split-disj(FD)[N], "." + string(N, 10)) .
 
-  ceq apply(Tactic[L]{disj SR}, goal GN is H |-{M} C endg)
-   = disj(NFDL, 1, goal [GN / Tactic[L]{disj SR}] is H |-{M} C endg)
+  ceq apply(Tactic[L]{disj SR}, goal GN[GA] is H |-{M[MA]} C endg)
+   = disj(NFDL, 1, goal GN[GA qid('disj '`( qid(SR) '`))] is H |-{M[MA]} C endg)
    if FD := H[SR]
       /\ NFDL := split-disj(FD) .
 
   op disj : FormDeclList{CITP} Nat Goal{CITP} -> GoalList{CITP} .
   eq disj(no-fd, N, G) = no-goal .
-  eq disj(FD FDL, N, goal GN is H |-{M} C endg)
+  eq disj(FD FDL, N, goal GN[GA] is H |-{M[MA]} C endg)
    = if occurs(FD, H) then no-goal
-     else goal qid(GN '. qid(N)) is
+     else goal GN[GA] is
             H md-update(FD, "." + string(N, 10))
-          |-{M}
+          |-{M[MA]}
             C
           endg fi
-     disj(FDL, s N, goal GN is H |-{M} C endg) .
+     disj(FDL, s N, goal GN[GA] is H |-{M[MA]} C endg) .
 
   op split-disj : FormDecl{CITP} -> NeFormDeclList{CITP} .
   eq split-disj(fm F1 \/ F2 [AtS] .)
@@ -1319,6 +1267,7 @@ fmod CITP/APPLY/TC is
 
   var  L : CITP .
   var  GN : Qid .
+  vars GA MA : QidList .
   vars M M' : Module .
   var  H : FormDeclList{CITP} .
   var  F : Formula{CITP} .
@@ -1327,10 +1276,10 @@ fmod CITP/APPLY/TC is
   var  AtS : AttrSet .
 
   *** apply the theorem-of-constants  - - - - - - - - - - - - - - - - - - - - --
-  ceq apply(Tactic[L]{tc}, goal GN is H |-{M} fm forall {NVS} F [AtS] . endg)
-   = goal [GN / Tactic[L]{tc}] is
+  ceq apply(Tactic[L]{tc}, goal GN[GA] is H |-{M[MA]} fm forall {NVS} F [AtS] . endg)
+   = goal GN[GA 'tc] is
        H
-     |-{M'}
+     |-{M'[MA qid('`[ intersperse(';, list-terms(terms(SB), M')) '`])]}
        fm F << SB [md-update(AtS, SB, M')] .
      endg
    if SB := v2s(NVS, s getLB(getOps(M)))
@@ -1344,6 +1293,7 @@ fmod CITP/APPLY/SK is
 
   var  L : CITP .
   var  GN : Qid .
+  vars GA MA : QidList .
   vars M M' : Module .
   vars H H1 H2 : FormDeclList{CITP} .
   var  C : NeFormDeclList{CITP} .
@@ -1353,11 +1303,11 @@ fmod CITP/APPLY/SK is
   var  AtS : AttrSet .
 
   *** apply Skolemization  - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{sk}, goal GN is H |-{M} C endg)
+  ceq apply(Tactic[L]{sk}, goal GN[GA] is H |-{M[MA]} C endg)
    = apply(Tactic[L]{sk},
-       goal [GN / Tactic[L]{sk}] is
+       goal GN[GA 'sk] is
          H1 fm F << SB [md-update(AtS, SB, M')] . H2
-       |-{M'}
+       |-{M'[MA qid('`[ intersperse(';, list-terms(terms(SB), M')) '`])]}
          C
        endg)
    if H1 fm exists {NVS} F [AtS] . H2 := H
@@ -1375,7 +1325,8 @@ fmod CITP/APPLY/CA is
   var  L : CITP .
   vars G G' : Goal{CITP} .
   var  NGL : NeGoalList{CITP} .
-  var  GN : Qid .
+  vars GN QI : Qid .
+  vars GA MA : QidList .
   vars F F' F1 F2 : Formula{CITP} .
   var  FD : FormDecl{CITP} .
   vars H H' C C' FDL FDL1 FDL2 : FormDeclList{CITP} .
@@ -1401,22 +1352,20 @@ fmod CITP/APPLY/CA is
   var  N : Nat .
 
   *** apply the case analysis tactics  - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{ca}, goal GN is H |-{M} FD endg) = NGL
-   if NGL := ca(goal [GN / Tactic[L]{ca}] is H |-{M} FD endg,
-                getGT(FD))
+  ceq apply(Tactic[L]{ca}, goal GN[GA] is H |-{M[MA]} FD endg) = NGL
+   if NGL := ca(goal GN[GA 'ca] is H |-{M[MA]} FD endg, getGT(FD))
       /\ size(NGL) > 1 .
-  ceq apply(Tactic[L]{ca-rev}, goal GN is H |-{M} FD endg) = NGL
-   if NGL := ca(goal [GN / Tactic[L]{ca-rev}] is H |-{M} FD endg,
-                rev(getGT(FD)))
+  ceq apply(Tactic[L]{ca-rev}, goal GN[GA] is H |-{M[MA]} FD endg) = NGL
+   if NGL := ca(goal GN[GA 'ca-rev] is H |-{M[MA]} FD endg, rev(getGT(FD)))
       /\ size(NGL) > 1 .
 
   op ca : Goal{CITP} GroundTermList ~> GoalList{CITP} .
   eq ca(G, empty) = G .
-  eq ca(goal GN is H |-{M} FD endg, (GT, GTL))
+  eq ca(goal GN[GA] is H |-{M[MA]} FD endg, (GT, GTL))
    = if match?(M, getCA(CITP, M), GT)
-     then split(goal GN is H |-{M} FD endg,
+     then split(goal GN[GA] is H |-{M[MA]} FD endg,
                 getCA(CITP, M), 0, GT, getCA(CITP, M))
-     else ca(goal GN is H |-{M} FD endg, GTL) fi .
+     else ca(goal GN[GA] is H |-{M[MA]} FD endg, GTL) fi .
 
   *** get equations for case analysis  - - - - - - - - - - - - - - - - - - - - -
   op getCA : CITP EquationSet -> FormDeclList{CITP} .
@@ -1470,7 +1419,7 @@ fmod CITP/APPLY/CA is
                     getFD(NFDL1, T) << getSubstitution(MP))
        else split(G, NFDL1, s N, GT, NFDL2) fi
      else split(G, rmFD(NFDL1, T), 0, GT, NFDL2) fi
-   if goal GN is H |-{M} FD endg := G
+   if goal GN[GA] is H |-{M[MA]} FD endg := G
       /\ T, TL := getTM(NFDL1)
       /\ MP := metaXmatch(M, T, GT, nil, 0, unbounded, N) .
 
@@ -1479,9 +1428,10 @@ fmod CITP/APPLY/CA is
   eq split-h(G, NFDL1, N, GT, NFDL2, no-fd) = no-goal .
   ceq split-h(G, NFDL1, N, GT, NFDL2, (fm F1 if F2 [AtS] .) FDL1)
    = split(G', NFDL1, s N, GT, NFDL2) split-h(G, NFDL1, N, GT, NFDL2, FDL1)
-   if goal GN is H |-{M} FD endg := G
+   if goal GN[GA QI] is H |-{M[MA]} FD endg := G
       /\ M' := addCD(F2, M)
-      /\ G' := goal qid(GN '. qid(CA-md(AtS))) is H |-{M'} FD endg .
+      /\ G' := goal GN[GA qid(QI ': qid(CA-md(AtS)))] is
+               H |-{M'[MA qid('`[ 'ca: qid(CA-md(AtS)) '`])]} FD endg .
 
   *** addCD  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op addCD : Formula{CITP} Module -> Module .
@@ -1525,12 +1475,13 @@ fmod CITP/APPLY/CS is
   var  L : CITP .
   var  G : Goal{CITP} .
   var  GN : Qid .
+  vars GA MA : QidList .
   var  M : Module .
   var  H : FormDeclList{CITP} .
   var  C : NeFormDeclList{CITP} .
 
   *** apply the cs tactic  - - - - - - - - - - - - - - - - - - - - - -
-  eq apply(Tactic[L]{cs}, goal GN is H |-{M} C endg)
+  eq apply(Tactic[L]{cs}, goal GN[GA] is H |-{M[MA]} C endg)
    = no-goal .
 endfm
 
@@ -1551,6 +1502,7 @@ fmod CITP/APPLY/TRANS is
   vars TP TP1 TP2 : Type .
   vars AtS AtS1 AtS2 : AttrSet .
   vars Q GN : Qid .
+  vars GA MA : QidList .
   var  ODS : OpDeclSet .
   var  OD : OpDecl .
   vars T T1 T2 T3 T4 : Term .
@@ -1566,8 +1518,8 @@ fmod CITP/APPLY/TRANS is
   var  MD : String .
 
   *** apply the transitivity tactic  - - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{trans}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{trans}] is H' |-{M'} C endg
+  ceq apply(Tactic[L]{trans}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA 'trans] is H' |-{M'[MA]} C endg
    if ODS := getOPT(L, M)
       /\ H' := addFD(M, H, comp(M, getFMT(H, ODS), getFMT(H, ODS)))
       /\ M' := addEQ(comp(L, M, getEqs(M), getEqs(M)), M)
@@ -1665,7 +1617,8 @@ fmod CITP/APPLY/IND is
   var  G : Goal{CITP} .
   var  NGL : NeGoalList{CITP} .
   var  GL : GoalList{CITP} .
-  vars Q GN : Qid .
+  vars Q GN QI : Qid .
+  vars GA MA : QidList .
   vars M MOP M' : Module .
   vars FD FD' : FormDecl{CITP} .
   var  H : FormDeclList{CITP} .
@@ -1690,20 +1643,20 @@ fmod CITP/APPLY/IND is
   eq apply(Tactic[L]{ind V NVL}, G)
    = apply(Tactic[L]{ind NVL}, apply(Tactic[L]{ind V}, G)) .
   ceq apply(Tactic[L]{ind V},
-      goal GN is H |-{M} fm forall {V ; VS} F [AtS] . endg)
+      goal GN[GA] is H |-{M[MA]} fm forall {V ; VS} F [AtS] . endg)
    = ind-case(V, getCTR(M, getType(V)),
-      goal [GN / Tactic[L]{ind V}] is
-        H |-{M} fm forall {VS} F [AtS] .
+      goal GN[GA qid('ind '`( getName(V))] is
+        H |-{M[MA]} fm forall {VS} F [AtS] .
       endg)
    if V in fv(F) /\ getCTR(M, getType(V)) =/= none .
 
   eq apply(Tactic[L]{ind-schema V NVL}, G)
    = apply(Tactic[L]{ind-schema NVL}, apply(Tactic[L]{ind-schema V}, G)) .
   ceq apply(Tactic[L]{ind-schema V},
-      goal GN is H |-{M} fm forall {V ; VS} F [AtS] . endg)
+      goal GN[GA] is H |-{M[MA]} fm forall {V ; VS} F [AtS] . endg)
    = ind-schema-case(V, getCTR(M, getType(V)),
-      goal [GN / Tactic[L]{ind-schema V}] is
-        H |-{M} fm forall {VS} F [AtS] .
+      goal GN[GA qid('ind-schema '`( getName(V))] is
+        H |-{M[MA]} fm forall {VS} F [AtS] .
       endg)
    if V in fv(F) /\ getCTR(M, getType(V)) =/= none .
 
@@ -1711,15 +1664,19 @@ fmod CITP/APPLY/IND is
   op ind-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .
   eq ind-case(V, none, G) = no-goal .
   ceq ind-case(V, op Q : nil -> TP [AtS] . ODS, G)
-   = goal qid(GN '. Q) is H |-{M} FD' endg
+   = goal GN[GA qid(QI '-> Q '`))] is H |-{M[MA]} FD' endg
      ind-case(V, ODS, G)
-   if goal GN is H |-{M} FD endg := G
+   if goal GN[GA QI] is H |-{M[MA]} FD endg := G
       /\ MD  := "[" + string(V) + "<-" + string(Q) + "]"
       /\ FD' := md-update(FD << (V <- const(Q, TP)), MD) .
   ceq ind-case(V, op Q : NTPL -> TP [AtS] . ODS, G)
-   = goal qid(GN '. Q) is H makeIH(V, GTL, M', FD) |-{M'} FD' endg
+   = goal GN[GA qid(QI '-> Q '`))] is
+       H makeIH(V, GTL, M', FD)
+     |-{M'[MA qid('`[ intersperse(';, list-terms(NGTL, M')) '`])]}
+       FD'
+     endg
      ind-case(V, ODS, G)
-   if goal GN is H |-{M} FD endg := G
+   if goal GN[GA QI] is H |-{M[MA]} FD endg := G
       /\ NGTL := TP2C(M, s getLB(getOps(M)), getType(V), NTPL)
       /\ GTL  := TP2C-V(M, s getLB(getOps(M)), getType(V), NTPL)
       /\ GT   := Q[NGTL]
@@ -1730,15 +1687,19 @@ fmod CITP/APPLY/IND is
   op ind-schema-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .
   eq ind-schema-case(V, none, G) = no-goal .
   ceq ind-schema-case(V, op Q : nil -> TP [AtS] . ODS, G)
-   = goal qid(GN '. Q) is H |-{M} FD' endg
+   = goal GN[GA qid(QI '-> Q '`))] is H |-{M[MA]} FD' endg
      ind-schema-case(V, ODS, G)
-   if goal GN is H |-{M} FD endg := G
+   if goal GN[GA QI] is H |-{M[MA]} FD endg := G
       /\ MD  := "[" + string(V) + "<-" + string(Q) + "]"
       /\ FD' := md-update(FD << (V <- const(Q, TP)), MD) .
   ceq ind-schema-case(V, op Q : NTPL -> TP [OAS] . ODS, G)
-   = goal qid(GN '. Q) is H |-{M} FD' endg
+   = goal GN[GA qid(QI '-> Q '`))] is
+       H
+     |-{M[MA]}
+       FD'
+     endg
      ind-schema-case(V, ODS, G)
-   if goal GN is H |-{M} FD endg := G
+   if goal GN[GA QI] is H |-{M[MA]} FD endg := G
       /\ (fm F [FAS] .) := FD
       /\ NTL := TP2VL(M, s getLB(F), getType(V), NTPL)
       /\ TL  := TP2VL-V(M, s getLB(F), getType(V), NTPL)
@@ -1785,7 +1746,7 @@ fmod CITP/APPLY/INIT is
   vars MS MS' : MembAxSet .
   vars RS RS' : RuleSet .
   var  GN : Qid .
-  var  QIL : QidList .
+  vars GA MA QIL : QidList .
   var  NVS : NeVariableSet .
   var  SR : String .
   vars K N : Nat .
@@ -1798,23 +1759,28 @@ fmod CITP/APPLY/INIT is
   *** given metadata and a substitution
   ceq apply(Tactic[L]{init SR, SB}, G)
    = if GL' :: NeGoalList{CITP}
-     then goal [GN / Tactic[L]{init SR, SB}] is H' |-{M'} C endg
+     then goal GN[GA qid('init '`( qid(SR) '`))] is
+            H'
+          |-{M'[MA qid(QIL)]}
+            C
+          endg
      else no-goal fi
-   if goal GN is H |-{M} C endg := G
+   if goal GN[GA] is H |-{M[MA]} C endg := G
       /\ MS := getMB(M, SR)
       /\ ES := getEQ(M, SR)
       /\ RS := getRL(M, SR)
       /\ GL' := init(H[SR], SB, init(RS, SB, init(ES, SB, init(MS, SB, G))))
       /\ M' := current-module(GL')
       /\ H' := current-premises(GL')
-      /\ GL' == no-goal or-else H' =/= H or-else M' =/= M .
+      /\ GL' == no-goal or-else H' =/= H or-else M' =/= M
+      /\ QIL := if M == M' then nil else '`[ qid(SR) '`] fi .
 
   *** given an index (of a premise) and a substitution
   ceq apply(Tactic[L]{init N, SB}, G)
    = if GL' :: NeGoalList{CITP}
-     then goal [GN / Tactic[L]{init N, SB}] is H' |-{M} C endg
+     then goal GN[GA qid('init '`( qid(N) '`))] is H' |-{M[MA]} C endg
      else no-goal fi
-   if goal GN is H |-{M} C endg := G
+   if goal GN[GA] is H |-{M[MA]} C endg := G
       /\ GL' := init(H[N], SB, G)
       /\ H' := current-premises(GL')
       /\ GL' == no-goal or-else H' =/= H .
@@ -1822,9 +1788,9 @@ fmod CITP/APPLY/INIT is
   *** given only metadata (for now, it acts only on premises)
   ceq apply(Tactic[L]{init SR}, G)
    = if GL' :: NeGoalList{CITP}
-     then goal [GN / Tactic[L]{init SR}] is H' |-{M} C endg
+     then goal GN[GA qid('init '`( qid(SR) '`))] is H' |-{M[MA]} C endg
      else no-goal fi
-   if goal GN is H |-{M} C endg := G
+   if goal GN[GA] is H |-{M[MA]} C endg := G
       /\ GL' := init(H[SR], G, variant-module(M))
       /\ H' := current-premises(GL')
       /\ GL' == no-goal or-else H' =/= H .
@@ -1832,41 +1798,41 @@ fmod CITP/APPLY/INIT is
   *** for all non-executable premises
   ceq apply(Tactic[L]{init-all}, G)
    = if GL' :: NeGoalList{CITP}
-     then goal [GN / Tactic[L]{init-all}] is H' |-{M} C endg
+     then goal GN[GA 'init-all] is H' |-{M[MA]} C endg
      else no-goal fi
-   if goal GN is H |-{M} C endg := G
+   if goal GN[GA] is H |-{M[MA]} C endg := G
       /\ GL' := init(non-execs(H), G, variant-module(M))
       /\ H' := current-premises(GL')
       /\ GL' == no-goal or-else H' =/= H .
 
   *** initialize membership axioms  - - - - - - - - - - - - - - - - - - - - - --
   op init : MembAxSet Substitution Goal{CITP} -> Goal{CITP} .
-  ceq init(MS, SB, goal GN is H |-{M} C endg)
-   = apply(Tactic[CITP]{simp}, goal GN is H |-{addMB(MS', M)} C endg)
+  ceq init(MS, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = apply(Tactic[CITP]{simp}, goal GN[GA] is H |-{addMB(MS', M)[MA]} C endg)
    if MS' := red(M, addLB(s getLB(getMbs(M)), rmLB(MS)) << SB) \ getMbs(M) .
-  eq init(MS, SB, goal GN is H |-{M} C endg)
-   = goal GN is H |-{M} C endg [owise] .
+  eq init(MS, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA] is H |-{M[MA]} C endg [owise] .
 
   *** initialize equations  - - - - - - - - - - - - - - - - - - - - - - - - - --
   op init : EquationSet Substitution Goal{CITP} -> Goal{CITP} .
-  ceq init(ES, SB, goal GN is H |-{M} C endg)
-   = apply(Tactic[CITP]{simp}, goal GN is H |-{addEQ(ES', M)} C endg)
+  ceq init(ES, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = apply(Tactic[CITP]{simp}, goal GN[GA] is H |-{addEQ(ES', M)[MA]} C endg)
    if ES' := red(M, addLB(s getLB(getEqs(M)), rmLB(ES)) << SB) \ getEqs(M) .
-  eq init(ES, SB, goal GN is H |-{M} C endg)
-   = goal GN is H |-{M} C endg [owise] .
+  eq init(ES, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA] is H |-{M[MA]} C endg [owise] .
 
   *** initialize rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op init : RuleSet Substitution Goal{CITP} -> Goal{CITP} .
-  ceq init(RS, SB, goal GN is H |-{M} C endg)
-   = apply(Tactic[CITP]{simp}, goal GN is H |-{addRL(RS', M)} C endg)
+  ceq init(RS, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = apply(Tactic[CITP]{simp}, goal GN[GA] is H |-{addRL(RS', M)[MA]} C endg)
    if RS' := red(M, addLB(s getLB(getRls(M)), rmLB(RS)) << SB) \ getRls(M) .
-  eq init(RS, SB, goal GN is H |-{M} C endg)
-   = goal GN is H |-{M} C endg [owise] .
+  eq init(RS, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA] is H |-{M[MA]} C endg [owise] .
 
   *** initialize formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op init : FormDeclList{CITP} SubstList GoalList{CITP} -> GoalList{CITP} .
-  ceq init(FD FDL, SB, goal GN is H |-{M} C endg)
-   = init(FDL, SB, apply(Tactic[CITP]{simp}, goal GN is H FD' |-{M} C endg))
+  ceq init(FD FDL, SB, goal GN[GA] is H |-{M[MA]} C endg)
+   = init(FDL, SB, apply(Tactic[CITP]{simp}, goal GN[GA] is H FD' |-{M[MA]} C endg))
    if SR := metadata(FD)
       /\ K := if SR == ""
               then max(getLB(H), getLB(M))
@@ -1898,14 +1864,15 @@ fmod CITP/APPLY/SUBST is
   vars C C' NFDL NFDL' : NeFormDeclList{CITP} .
   var  M : Module .
   var  GN : Qid .
+  vars GA MA : QidList .
   vars VS VS' : VariableSet .
   vars NVS NVS' : NeVariableSet .
   vars SB SB' : Substitution .
   var  AtS : AttrSet .
 
   *** apply the substitution tactic  - - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{subst SB}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{subst SB}] is H |-{M} C' endg
+  ceq apply(Tactic[L]{subst SB}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA 'subst] is H |-{M[MA]} C' endg
    if C' := sbt(C, SB) /\ C' =/= C .
 
   op sbt : FormDeclList{CITP} Substitution -> FormDeclList{CITP} .
@@ -1930,16 +1897,17 @@ fmod CITP/APPLY/PULL is
 
   var  L : CITP .
   var  GN : Qid .
+  vars GA MA : QidList .
   var  H : FormDeclList{CITP} .
   vars C NFDL : NeFormDeclList{CITP} .
   var  M : Module .
   var  SR : String .
 
   *** apply the pull tactic  - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{pull SR}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{pull SR}] is
+  ceq apply(Tactic[L]{pull SR}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA qid('pull '`( qid(SR) '`))] is
        H NFDL
-     |-{rmRL(rmMB(rmEQ(M, SR), SR), SR)}
+     |-{rmRL(rmMB(rmEQ(M, SR), SR), SR)[MA]}
        C
      endg
    if NFDL := eq2fm(L, getEQ(M, SR))
@@ -1955,6 +1923,7 @@ fmod CITP/APPLY/PUSH is
   var  L : CITP .
   var  G : Goal{CITP} .
   vars QI GN : Qid .
+  vars GA GA' MA MA' : QidList .
   var  F : Formula{CITP} .
   var  FD : FormDecl{CITP} .
   vars H H' FDL : FormDeclList{CITP} .
@@ -1968,31 +1937,39 @@ fmod CITP/APPLY/PUSH is
   var  AtS : AttrSet .
 
   *** apply the push tactic  - - - - - - - - - - - - - - - - - - - - - - - - - -
-  ceq apply(Tactic[L]{push SR}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{push SR}] is rm(H, SR) |-{M'} C endg
+  ceq apply(Tactic[L]{push SR}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA qid('push '`( qid(SR) '`))] is
+       rm(H, SR)
+     |-{M'[MA qid('`[ qid(SR) '`])]}
+       C
+     endg
    if ES := fm2eq(H[SR]) or-else none
       /\ MS := fm2mb(H[SR]) or-else none
       /\ RS := fm2rl(H[SR]) or-else none
       /\ ES =/= none or-else MS =/= none or-else RS =/= none
       /\ M' := addRL(RS, addMB(MS, addEQ(ES, M))) .
 
-  ceq apply(Tactic[L]{push N}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{push N}] is rm(H, N) |-{M'} C endg
+  ceq apply(Tactic[L]{push N}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA qid('push '`( qid(N) '`))] is
+       rm(H, N)
+     |-{M'[MA qid('`[ qid(N) '`])]}
+       C
+     endg
    if ES := fm2eq(H[N]) or-else none
       /\ MS := fm2mb(H[N]) or-else none
       /\ RS := fm2rl(H[N]) or-else none
       /\ ES =/= none or-else MS =/= none or-else RS =/= none
       /\ M' := addRL(RS, addMB(MS, addEQ(ES, M))) .
 
-  ceq apply(Tactic[L]{push-all}, goal GN is H |-{M} C endg)
-   = goal [GN / Tactic[L]{push-all}] is H' |-{M'} C endg
-   if goal GN is H' |-{M'} C endg := push(H, 0, goal GN is no-fd |-{M} C endg)
+  ceq apply(Tactic[L]{push-all}, goal GN[GA] is H |-{M[MA]} C endg)
+   = goal GN[GA 'push-all] is H' |-{M'[MA']} C endg
+   if goal GN[GA'] is H' |-{M'[MA']} C endg := push(H, 0, goal GN[GA] is no-fd |-{M[MA]} C endg)
       /\ H' =/= H or-else  M' =/= M .
 
   op push : FormDeclList{CITP} Nat Goal{CITP} -> Goal{CITP} .
   eq push(no-fd, N, G) = G .
-  ceq push(FD FDL, N, goal GN is H |-{M} C endg)
-   = push(FDL, N', goal GN is H |-{M'} C endg)
+  ceq push(FD FDL, N, goal GN[GA] is H |-{M[MA]} C endg)
+   = push(FDL, N', goal GN[GA] is H |-{M'[MA qid('`[ QI '`])]} C endg)
    if (fm F [AtS] .) := FD
       /\ F is executable
       /\ AtS is nonexec-free
@@ -2001,10 +1978,11 @@ fmod CITP/APPLY/PUSH is
       /\ RS := fm2rl(FD) or-else none
       /\ ES =/= none or-else MS =/= none or-else RS =/= none
       /\ SR := metadata(AtS)
+      /\ QI := if SR == "" then qid(N) else qid(SR) fi
       /\ M' := addRL(RS, addMB(MS, addEQ(ES, M)))
       /\ N' := if SR == "" then s N else N fi .
-  eq push(FD FDL, N, goal GN is H |-{M} C endg)
-   = push(FDL, N, goal GN is H FD |-{M} C endg) [owise] .
+  eq push(FD FDL, N, goal GN[GA] is H |-{M[MA]} C endg)
+   = push(FDL, N, goal GN[GA] is H FD |-{M[MA]} C endg) [owise] .
 endfm
 
 *** ----------------------------------------------------------------------------

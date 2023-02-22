@@ -3,8 +3,7 @@
 goal ASSOC is
 |-{LISTS}
   fm forall {L1:List, L2:List, L3:List}
-     L1:List @(L2:List @ L3:List)=(L1:List @ L2:List)@ L3:List
-     [metadata "assoc"] .
+     L1:List @(L2:List @ L3:List)=(L1:List @ L2:List)@ L3:List .
 endg
 
 begin proof PA of ASSOC
@@ -16,8 +15,7 @@ qed
 goal DIST is
 |-{LISTS}
   fm forall {L1:List, L2:List}
-     len(L1:List @ L2:List)= len(L1:List)+ len(L2:List)
-     [metadata "dist"] .
+     len(L1:List @ L2:List)= len(L1:List)+ len(L2:List) .
 endg
 
 begin proof PD of DIST
@@ -28,12 +26,10 @@ qed
 
 goal REV is
   fm forall{L1:List, L2:List, L3:List}
-     (L1:List @ L2:List) @ L3:List = L1:List @ (L2:List @ L3:List)
-     [metadata "assoc" nonexec].
+     (L1:List @ L2:List) @ L3:List = L1:List @ (L2:List @ L3:List) .
 |-{LISTS}
   fm forall {L1:List, L2:List, L3:List}
-     rev(L1:List @ L2:List)= rev(L2:List)@ rev(L1:List)
-     [metadata "app"] .
+     rev(L1:List @ L2:List)= rev(L2:List)@ rev(L1:List) .
 endg
 
 begin proof PR of REV

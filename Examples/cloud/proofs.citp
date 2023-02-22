@@ -35,8 +35,6 @@ begin proof PI of INV
   ``
   `` or we can initialize them one at a time
   ``
-  `` init("inv/IH[x#1]/CL")
-  `` init("inv/IH[x#1]/CR/CL")
   `` init("inv/IH[x#1]/CR/CR/CL")
   `` init("inv/IH[x#1]/CR/CR/CR/CL")
   `` init("inv/IH[x#1]/CR/CR/CR/CR")
