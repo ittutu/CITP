@@ -1,0 +1,141 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2020-2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Num.maude
+
+********************************************************************************
+
+fmod STRING/OPS is
+  protecting LEXICAL .
+  protecting QID-LIST .
+
+  vars S B E P R D SQI : String .
+  var  QI : Qid .
+  var  QIL : QidList .
+  vars N NS NP ND NQI : Nat .
+  var  FR : FindResult .
+
+  *** _begins with_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _begins`with_ : String String -> Bool .
+  eq S begins with B = find(S, B, 0) == 0 .
+
+  *** _ends with_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _ends`with_ : String String -> Bool .
+  eq S ends with E = find(S, E, sd(length(S), length(E))) :: Nat .
+
+  *** replace  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op replace : String String String -> String .
+  ceq replace(S, P, R)
+   = if FR :: Nat
+     then substr(S, 0, FR) + R + replace(substr(S, FR + NP, NS), P, R)
+     else S fi
+   if FR := find(S, P, 0) /\ NS := length(S) /\ NP := length(P) .
+
+  op _[_/_] : String String String -> String .
+  eq S [P / R] = replace(S, P, R) .
+
+  *** intercalate and concatenate  - - - - - - - - - - - - - - - - - - - - - - -
+  op _+[_]+_ : String String String -> String .
+  eq S +[B]+ R = if S == "" or R == "" then S + R else S + B + R fi .
+
+  *** capitalize  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op capitalize : String -> String .
+  eq capitalize(S)
+   = upperCase(substr(S, 0, 1)) + lowerCase(substr(S, 1, length(S))) .
+
+  op capitalize : String String -> String .
+  ceq capitalize(S, D)
+   = if FR :: Nat
+     then capitalize(substr(S, 0, FR)) + capitalize(substr(S, FR + ND, NS), D)
+     else capitalize(S) fi
+   if FR := find(S, D, 0) /\ NS := length(S) /\ ND := length(D) .
+
+  *** caps  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op caps : String -> String .
+  eq caps(S) = caps(S, length(S)) .
+
+  op caps : String Nat -> String .
+  eq caps(S, 0) = "" .
+  ceq caps(S, s N)
+   = if P == upperCase(P) then P + caps(R) else caps(R) fi
+   if P := substr(S, 0, 1) /\ R := substr(S, 1, N) .
+
+  *** mksord (make special, i.e. backquoted, characters ordinary)  - - - - - - -
+  op mksord : String -> String .
+  eq mksord(S) = S [ "`{" / "{" ] [ "`}" / "}" ] [ "`(" / "(" ] [ "`)" / ")" ]
+      [ "`[" / "[" ] [ "`]" / "]" ] [ "`," / "," ] [ "`" / " " ] .
+
+  *** unquote  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op unquote : String -> String .
+  eq unquote(S)
+  = if S begins with "'"
+    then unquote(substr(S, 1, length(S)))
+    else S fi .
+
+  *** trim-lnl (trim last newline)  - - - - - - - - - - - - - - - - - - - - - --
+  op trim-lnl : String -> String .
+  eq trim-lnl(S)
+   = if S ends with "\n"
+     then substr(S, 0, sd(length(S), 1))
+     else S fi .
+
+  *** take-until  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op take-until : String String -> String .
+  ceq take-until(P, S)
+   = if FR :: Nat
+     then substr(S, 0, FR)
+     else S fi
+   if FR := find(S, P, 0) .
+
+  *** locate (get the longest prefix of a String that matches a QidList)  - - --
+  op locate : QidList String -> String .
+  eq locate(nil, S) = "" .
+  ceq locate(QI QIL, S)
+   = if FR :: Nat
+     then substr(S, 0, FR + NQI) + locate(QIL, substr(S, FR + NQI, length(S)))
+     else "" fi
+   if SQI := printTokens(QI) /\ FR := find(S, SQI, 0) /\ NQI := length(SQI) .
+
+  *** replicate  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op replicate : String Nat -> String .
+  eq replicate(S, 0) = "" .
+  eq replicate(S, s N) = S + replicate(S, N) .
+endfm
+
+********************************************************************************
+
+fmod STRING/READ is
+  protecting META-LEVEL .
+
+  var T : Term .
+
+  *** undefined reading result  - - - - - - - - - - - - - - - - - - - - - - - --
+  op undef-read : -> [String] [ctor] .
+
+  *** read-string  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-string : Term ~> String .
+  eq read-string(T) = downTerm(T, (undef-read).[String]) .
+endfm
+
+********************************************************************************
+
+fmod STRING/SHOW is
+  protecting META-LEVEL .
+
+  var S : String .
+
+  *** show-string  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-string : String -> Term .
+  eq show-string(S) = upTerm(S) .
+endfm
+
+********************************************************************************

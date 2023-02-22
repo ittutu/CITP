@@ -1,0 +1,369 @@
+***( SpeX/Lang/CITP
+
+  This file is part of CITP.
+
+  License : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors : Daniel Gaina <daniel@imi.kyushu-u.ac.jp>,
+            Ionut Tutu <Ionut.Tutu@imar.ro>,
+            Adrian Riesco <ariesco@fdi.ucm.es>
+
+)
+
+sload ./preamble.maude
+sload ../../CommonLibs/QidList.maude
+sload ../../Lang/Base/Common/Attributes.maude
+sload ../../SAP/Compat.maude
+
+********************************************************************************
+
+fmod CITP/BRIDGE/PREAMBLE is
+  protecting CITP/PREAMBLE .
+  protecting QID-LIST/OPS .
+  protecting ATTRIBUTE/OPS .
+  protecting PRINTING/COMPAT .
+
+  vars QI MN : Qid .
+  var  QIL : QidList .
+  var  NQIL : NeQidList .
+  vars H H' : Header .
+  var  PDL : ParameterDeclList .
+  var  IL : ImportList .
+  var  S : Sort .
+  var  SS : SortSet .
+  var  SDS : SubsortDeclSet .
+  vars ODS ODS1 ODS2 : OpDeclSet .
+  vars MS MS1 MS2 : MembAxSet .
+  var  MS? : [MembAxSet] .
+  var  EC : EqCondition .
+  vars ES ES1 ES2 : EquationSet .
+  var  ES? : [EquationSet] .
+  var  C : Condition .
+  vars RS RS1 RS2 : RuleSet .
+  var  RS? : [RuleSet] .
+  var  M : Module .
+  vars T LHS RHS : Term .
+  var  V : Variable .
+  var  TL : TermList .
+  var  SB : Substitution .
+  var  TP : Type .
+  var  TPL : TypeList .
+  vars MD SR : String .
+  var  N : Nat .
+  vars AtS AtS1 AtS2 : AttrSet .
+
+  *** or-else  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _or-else_ : [MembAxSet] MembAxSet -> MembAxSet
+    [strat (1 0) gather (e E) prec 55] .
+  eq MS? or-else MS = if MS? :: MembAxSet then MS? else MS fi .
+
+  op _or-else_ : [EquationSet] EquationSet -> EquationSet
+    [strat (1 0) gather (e E) prec 55] .
+  eq ES? or-else ES = if ES? :: EquationSet then ES? else ES fi .
+
+  op _or-else_ : [RuleSet] RuleSet -> RuleSet
+    [strat (1 0) gather (e E) prec 55] .
+  eq RS? or-else RS = if RS? :: RuleSet then RS? else RS fi .
+
+  *** list-terms  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list-terms : TermList Module ~> QidList .
+  eq list-terms(empty, M) = nil .
+  eq list-terms((T, TL), M)
+   = qid(list term T given (M & none)) list-terms(TL, M) .
+
+  *** terms used in a substitution  - - - - - - - - - - - - - - - - - - - - - --
+  op terms : Substitution -> TermList .
+  eq terms(none) = empty .
+  eq terms(V <- T ; SB) = T, terms(SB) .
+
+  *** metadata  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op metadata : AttrSet -> String .
+  ceq metadata(metadata(MD) AtS) = MD if AtS is metadata-free .
+  eq metadata(AtS) = "" [owise] .
+
+  *** metadata ops  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op md-ops : OpDeclSet -> OpDeclSet .
+  ceq md-ops(op QI : TPL -> TP [AtS] . ODS) = md-ops(ODS)
+   if AtS is metadata-free .
+  eq md-ops(ODS) = ODS [owise] .
+
+  op md-ops* : OpDeclSet -> OpDeclSet .
+  ceq md-ops*(op QI : TPL -> TP [AtS] . ODS) = md-ops*(ODS)
+   if AtS is metadata-free or-else metadata(AtS) == "equality" .
+  eq md-ops*(ODS) = ODS [owise] .
+
+  op md-consts : OpDeclSet -> OpDeclSet .
+  ceq md-consts(op QI : nil -> TP [AtS] . ODS) = md-consts(ODS)
+   if AtS is metadata-free .
+  eq md-consts(ODS) = ODS [owise] .
+
+  *** metadata mbs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op md-mbs : MembAxSet -> MembAxSet .
+  ceq md-mbs(mb T : S [AtS] . MS) = md-mbs(MS)
+   if AtS is metadata-free .
+  ceq md-mbs(cmb T : S if EC [AtS] . MS) = md-mbs(MS)
+   if AtS is metadata-free .
+  eq md-mbs(MS) = MS [owise] .
+
+  *** metadata eqs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op md-eqs : EquationSet -> EquationSet .
+  ceq md-eqs(eq LHS = RHS [AtS] . ES) = md-eqs(ES)
+   if AtS is metadata-free .
+  ceq md-eqs(ceq LHS = RHS if EC [AtS] . ES) = md-eqs(ES)
+   if AtS is metadata-free .
+  eq md-eqs(ES) = ES [owise] .
+
+  op md-eqs* : EquationSet -> EquationSet .
+  ceq md-eqs*(eq LHS = RHS [AtS] . ES) = md-eqs*(ES)
+   if AtS is metadata-free or-else metadata(AtS) begins with "ca:" .
+  ceq md-eqs*(ceq LHS = RHS if EC [AtS] . ES) = md-eqs*(ES)
+   if AtS is metadata-free or-else metadata(AtS) begins with "ca:" .
+  eq md-eqs*(ES) = ES [owise] .
+
+  *** metadata rls  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op md-rls : RuleSet -> RuleSet .
+  ceq md-rls(rl LHS => RHS [AtS] . RS) = md-rls(RS)
+   if AtS is metadata-free .
+  ceq md-rls(crl LHS => RHS if C [AtS] . RS) = md-rls(RS)
+   if AtS is metadata-free .
+  eq md-rls(RS) = RS [owise] .
+
+  *** metadata updates  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op md-update : AttrSet String -> AttrSet .
+  eq md-update(metadata(MD) AtS, SR)
+   = metadata(MD + SR) md-update(AtS, SR) .
+  eq md-update(AtS, SR) = AtS [owise] .
+
+  op md-update* : AttrSet String -> AttrSet .
+  eq md-update*(metadata(MD) AtS, SR) = md-update(metadata(MD) AtS, SR) .
+  eq md-update*(AtS, SR) = metadata(SR) AtS [owise] .
+
+  op md-update : AttrSet Substitution Module -> AttrSet .
+  eq md-update(AtS, none, M) = AtS .
+  eq md-update(AtS, V <- T ; SB, M)
+   = md-update(
+      md-update(AtS, "[" + string(V) + "<-" + string(list-terms(T, M)) + "]"),
+      SB, M) .
+
+  *** getLB  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op getLB : AttrSet String -> Nat .
+  ceq getLB(metadata(MD) AtS, SR)
+   = max(N, getLB(AtS, SR))
+   if MD begins with SR
+      /\ N := rat(substr(MD, length(SR), length(MD)), 10) .
+  eq getLB(AtS, SR) = 0 [owise] .
+
+  op getLB : EquationSet String -> Nat .
+  eq getLB((none).EquationSet, SR) = 0 .
+  eq getLB(eq LHS = RHS [AtS] . ES, SR)
+   = max(getLB(AtS, SR), getLB(ES, SR)) .
+  eq getLB(ceq LHS = RHS if EC [AtS] . ES, SR)
+   = max(getLB(AtS, SR), getLB(ES, SR)) .
+
+  op getLB : MembAxSet String -> Nat .
+  eq getLB((none).MembAxSet, SR) = 0 .
+  eq getLB(mb T : S [AtS] . MS, SR)
+   = max(getLB(AtS, SR), getLB(MS, SR)) .
+  eq getLB(cmb T : S if EC [AtS] . MS, SR)
+   = max(getLB(AtS, SR), getLB(MS, SR)) .
+
+  op getLB : RuleSet String -> Nat .
+  eq getLB((none).RuleSet, SR) = 0 .
+  eq getLB(rl LHS => RHS [AtS] . RS, SR)
+   = max(getLB(AtS, SR), getLB(RS, SR)) .
+  eq getLB(crl LHS => RHS if C [AtS] . RS, SR)
+    = max(getLB(AtS, SR), getLB(RS, SR)) .
+
+  op getLB : Module String -> Nat .
+  eq getLB(fmod H is IL sorts SS . SDS ODS MS ES endfm, SR)
+   = max(getLB(MS, SR), getLB(ES, SR)) .
+  eq getLB(fth H is IL sorts SS . SDS ODS MS ES endfth, SR)
+   = max(getLB(MS, SR), getLB(ES, SR)) .
+  eq getLB(mod H is IL sorts SS . SDS ODS MS ES RS endm, SR)
+   = max(max(getLB(MS, SR), getLB(ES, SR)), getLB(RS, SR)) .
+  eq getLB(th H is IL sorts SS . SDS ODS MS ES RS endth, SR)
+   = max(max(getLB(MS, SR), getLB(ES, SR)), getLB(RS, SR)) .
+
+  op getLB : Module -> Nat .
+  eq getLB(fmod H is IL sorts SS . SDS ODS MS ES endfm)
+   = max(getLB(MS), getLB(ES)) .
+  eq getLB(fth H is IL sorts SS . SDS ODS MS ES endfth)
+   = max(getLB(MS), getLB(ES)) .
+  eq getLB(mod H is IL sorts SS . SDS ODS MS ES RS endm)
+   = max(max(getLB(MS), getLB(ES)), getLB(RS)) .
+  eq getLB(th H is IL sorts SS . SDS ODS MS ES RS endth)
+   = max(max(getLB(MS), getLB(ES)), getLB(RS)) .
+
+  *** variant generation  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op variant-module : Module -> Module .
+  eq variant-module(fmod H is IL sorts SS . SDS ODS MS ES endfm)
+   = (fmod H is IL sorts SS . SDS ODS MS variant-eqs(ES) endfm) .
+  eq variant-module(fth H is IL sorts SS . SDS ODS MS ES endfth)
+   = (fth H is IL sorts SS . SDS ODS MS variant-eqs(ES) endfth) .
+  eq variant-module(mod H is IL sorts SS . SDS ODS MS ES RS endm)
+   = (mod H is IL sorts SS . SDS ODS MS variant-eqs(ES) RS endm) .
+  eq variant-module(th H is IL sorts SS . SDS ODS MS ES RS endth)
+   = (th H is IL sorts SS . SDS ODS MS variant-eqs(ES) RS endth) .
+
+  op variant-eqs : EquationSet -> EquationSet .
+  eq variant-eqs(eq LHS = RHS [metadata(MD) AtS] . ES)
+   = (eq LHS = RHS [variant] .) variant-eqs(ES) .
+  eq variant-eqs(ES) = none [owise] .
+
+  *** set differences  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _\_ : OpDeclSet OpDeclSet -> OpDeclSet .
+  eq (op QI : TPL -> TP [AtS1] . ODS1) \ (op QI : TPL -> TP [AtS2] . ODS2)
+   = ODS1 \ (op QI : TPL -> TP [AtS2] . ODS2) .
+  eq ODS1 \ ODS2 = ODS1 [owise] .
+
+  op _\_ : MembAxSet MembAxSet -> MembAxSet .
+  eq (mb T : S [AtS1] . MS1) \ (mb T : S [AtS2] . MS2)
+   = MS1 \ (mb T : S [AtS2] . MS2) .
+  eq (cmb T : S if EC [AtS1] . MS1) \ (cmb T : S if EC [AtS2] . MS2)
+   = MS1 \ (cmb T : S if EC [AtS2] . MS2) .
+  eq MS1 \ MS2 = MS1 [owise] .
+
+  op _\_ : EquationSet EquationSet -> EquationSet .
+  eq (eq LHS = RHS [AtS1] . ES1) \ (eq LHS = RHS [AtS2] . ES2)
+   = ES1 \ (eq LHS = RHS [AtS2] . ES2) .
+  eq (ceq LHS = RHS if EC [AtS1] . ES1) \ (ceq LHS = RHS if EC [AtS2] . ES2)
+   = ES1 \ (ceq LHS = RHS if EC [AtS2] . ES2) .
+  eq ES1 \ ES2 = ES1 [owise] .
+
+  op _\_ : RuleSet RuleSet -> RuleSet .
+  eq (rl LHS => RHS [AtS1] . RS1) \ (rl LHS => RHS [AtS2] . RS2)
+   = RS1 \ (rl LHS => RHS [AtS2] . RS2) .
+  eq (crl LHS => RHS if EC [AtS1] . RS1) \ (crl LHS => RHS if EC [AtS2] . RS2)
+   = RS1 \ (crl LHS => RHS if EC [AtS2] . RS2) .
+  eq RS1 \ RS2 = RS1 [owise] .
+
+  *** removing equations from modules  - - - - - - - - - - - - - - - - - - - - -
+  op _\_ : Module EquationSet -> Module .
+  eq (fmod H is IL sorts SS . SDS ODS MS ES1 endfm) \ ES2
+   = (fmod H is IL sorts SS . SDS ODS MS (ES1 \ ES2) endfm) .
+  eq (fth H is IL sorts SS . SDS ODS MS ES1 endfth) \ ES2
+   = (fth H is IL sorts SS . SDS ODS MS (ES1 \ ES2) endfth) .
+  eq (mod H is IL sorts SS . SDS ODS MS ES1 RS endm) \ ES2
+   = (mod H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endm) .
+  eq (th H is IL sorts SS . SDS ODS MS ES1 RS endth) \ ES2
+   = (th H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endth) .
+
+  *** additional module-consistency checks  - - - - - - - - - - - - - - - - - --
+  ceq consistent(M) = false
+   if eq T = 'false.Bool [AtS] . ES := getEqs(M)
+      /\ red(M \ eq T = 'false.Bool [AtS] ., T) = 'true.Bool .
+  ceq consistent(M) = false
+   if eq T = 'true.Bool [AtS] . ES := getEqs(M)
+      /\ red(M \ eq T = 'true.Bool [AtS] ., T) = 'false.Bool .
+endfm
+
+********************************************************************************
+
+fmod CITP/BRIDGE/CA is
+  protecting CITP/BRIDGE/PREAMBLE .
+
+  var  AS : AttrSet .
+  var  SR : String .
+  vars N L : Nat .
+  var  FR : FindResult .
+  vars T T1 T2 : Term .
+  var  E : Equation .
+  var  MB : MembAx .
+  var  EC : EqCondition .
+  var  CD : Condition .
+  var  R : Rule .
+  var  ST : Sort .
+  var  M : Module .
+
+--- -------------------------------------------------------------------------
+--- check for CA attributes ---
+--- -------------------------------------------------------------------------
+--- Attributes ---
+ op CA? : AttrSet -> Bool .
+ ceq CA?(metadata(SR) AS) = true
+  if N := rfind(SR,"ca:",length(SR) + -4) /\ substr(SR, N + 3, 1) =/= " " .
+ eq CA?(AS) = false [owise] .
+--- Equation ---
+ op CA? : Equation -> Bool .
+ eq CA?(ceq T1 = T2 if EC [AS].)= CA?(AS) .
+ eq CA?(E) = false [owise].
+--- MembAx ---
+ op CA? : MembAx -> Bool .
+ eq CA?(cmb T : ST if EC [AS].)= CA?(AS) .
+ eq CA?(MB) = false [owise].
+--- Rule ---
+ op CA? : Rule -> Bool .
+ eq CA?(crl T1 => T2 if CD [AS].)= CA?(AS) .
+ eq CA?(R) = false [owise].
+--- -------------------------------------------------------------------------
+--- get the CA metadata ---
+--- -------------------------------------------------------------------------
+ op CA-md : AttrSet -> String .
+ ceq CA-md(metadata(SR) AS)
+  = if FR :: Nat
+    then substr(SR, N + 3, FR + - (N + 3))
+    else substr(SR, N + 3, L) fi
+  if CA?(metadata(SR)) /\ not CA?(AS)
+     /\ L := length(SR)
+     /\ N := rfind(SR, "ca:", L)
+     /\ FR := find(SR, " ", N + 3) .
+ eq CA-md(AS) = "<>" [owise] .
+--- -------------------------------------------------------------------------
+--- support for validating substitutions ---
+--- -------------------------------------------------------------------------
+ op validate : Module Term Term -> Bool .
+ eq validate(M,T1,T2) = not metaXmatch(M,T1,T2,nil,1,unbounded,0) :: MatchPair .
+endfm
+
+********************************************************************************
+
+fmod CITP/BRIDGE/IND is
+  protecting CITP/BRIDGE/PREAMBLE .
+
+  var  M : Module .
+  var  Q : Qid .
+  vars N N1 : Nat .
+  vars TP TP1 : Type .
+  var  TPL : TypeList .
+  vars SR SR1 : String .
+  var  GT : GroundTerm .
+  vars GTL : GroundTermList .
+
+--- list of types -> list of constants ---
+ op TP2C : Module Nat Type TypeList -> GroundTermList .
+ eq TP2C(M,N,TP,(nil).TypeList) = (empty).GroundTermList .
+ eq TP2C(M,N,TP1,TP TPL)=
+    if   sortLeq(M,TP,TP1)
+    then qid("x#" + string(N,10) + "." + string(TP)), TP2C(M,N + 1,TP1,TPL)
+    else qid("z#" + string(N,10) + "." + string(TP)), TP2C(M,N + 1,TP1,TPL) fi .
+--- list of types -> list of constants of types less-equal than the type of a variable ---
+ op TP2C-V : Module Nat Type TypeList -> GroundTermList .
+ eq TP2C-V(M,N,TP,(nil).TypeList) = (empty).GroundTermList .
+ eq TP2C-V(M,N,TP1, TP TPL) =
+    if   sortLeq(M,TP,TP1)
+    then qid("x#" + string(N,10) + "." + string(TP)), TP2C-V(M,N + 1,TP1,TPL)
+    else TP2C-V(M,N + 1,TP1, TPL) fi .
+--- list of constants -> operation declaration set ---
+ op C2ODS : GroundTermList -> OpDeclSet .
+ eq C2ODS(empty) = none .
+ceq C2ODS((GT,GTL)) = op Q : nil -> TP[metadata(SR1)]. C2ODS(GTL)
+ if Q := getName(GT) /\ TP := getType(GT) /\ SR := string(Q) /\ N := length(SR) /\
+    N1 := rfind(SR,"#",N) /\ SR1 := substr(SR,N1 + 1,N).
+  eq C2ODS((GT,GTL)) = C2ODS(GTL) [owise].
+
+--- list of types -> list of variables  ---
+ op TP2VL : Module Nat Type TypeList -> TermList .
+ eq TP2VL(M,N,TP,(nil).TypeList) = (empty).TermList .
+ eq TP2VL(M,N,TP1,TP TPL)=
+    if   sortLeq(M,TP,TP1)
+    then qid("X#" + string(N,10) + ":" + string(TP)),TP2VL(M,N + 1,TP1,TPL)
+    else qid("Z#" + string(N,10) + ":" + string(TP)),TP2VL(M,N + 1,TP1,TPL) fi .
+--- list of types -> list of variables of types less-equal than the type of a variable ---
+ op TP2VL-V : Module Nat Type TypeList -> TermList .
+ eq TP2VL-V(M,N,TP,(nil).TypeList) = (empty).TermList .
+ eq TP2VL-V(M,N,TP1, TP TPL) =
+    if   sortLeq(M,TP,TP1)
+    then qid("X#" + string(N,10) + ":" + string(TP)),TP2VL-V(M,N + 1,TP1,TPL)
+    else TP2VL-V(M,N + 1,TP1, TPL) fi .
+endfm
+
+********************************************************************************

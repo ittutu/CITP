@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # Check for Maude ..............................................................
-if ! command -v @maude@ > /dev/null 2>&1 ; then \
+if ! command -v maude > /dev/null 2>&1 ; then \
     echo "error: Could not find Maude." 1>&2
     exit 2
 fi
 # Check the version of Maude ...................................................
-case $(@maude@ --version 2> /dev/null) in
+case $(maude --version 2> /dev/null) in
     3.2.*)
         ;;
     *)
@@ -15,11 +15,11 @@ case $(@maude@ --version 2> /dev/null) in
         ;;
 esac
 # Run CITP .....................................................................
-export CITP_LIB=@pkgdatadir@
+export CITP_LIB=/usr/local/share/citp
 if test -z "${MAUDE_LIB}" ; then \
     export MAUDE_LIB=$CITP_LIB
 else
     export MAUDE_LIB=$MAUDE_LIB:$CITP_LIB
 fi
-@maude@ -no-banner -no-advise -allow-files $@ run-citp quit
+maude -no-banner -no-advise -allow-files $@ run-citp quit
 # ..............................................................................

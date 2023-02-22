@@ -1,0 +1,42 @@
+***( REPL/Examples
+
+  This file is part of the REPL-examples suite.
+
+  Copyright : (C) 2020, 2021 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../Interpreter.maude
+
+********************************************************************************
+
+view Echo from INTERPRETER/NAME to STRING/OPS is
+  op interpreter-name to term "Echo" .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod ECHO-INTERPRETER is
+  including BASIC-INTERPRETER { NIndex{Snippet/IO/String}, Echo } .
+
+  var O : Oid .
+  var S : String .
+  var Atts : AttributeSet .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op Echo : -> Oid [ctor] .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl < Echo : INT | running, Atts >
+    eval(Echo, O, S)
+   => < Echo : INT | running, Atts >
+    print(O, emph(trim(S))) .
+endm
+
+********************************************************************************
+
+*** erew in ECHO-INTERPRETER : start Echo .
+*** quit

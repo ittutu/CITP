@@ -1,0 +1,242 @@
+***( SpeX/REPL
+
+  This file is part of REPL, a generic Read-Eval-Print-Loop library
+  for Maude 3.
+
+  Copyright : (C) 2020-2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./REPL.maude
+sload ./Snippet.maude
+sload ../CommonLibs/Formatting.maude
+
+********************************************************************************
+
+fth INTERPRETER/UI is
+  protecting PROMPT .
+
+  op banner  : -> String .
+  op prompt  : -> Prompt .
+  op goodbye : -> String .
+endfth
+
+********************************************************************************
+
+mod INTERPRETER/BASE is
+  including PROMPT/OPS .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op INT : -> Cid [ctor] .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op starting`up : -> Attribute [ctor] .
+  op running : -> Attribute [ctor] .
+  op shutting`down : -> Attribute [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op start-up : Oid -> Msg [ctor message format (b o)] .
+  op shut-down : Oid -> Msg [ctor message format (b o)] .
+  op quit : Oid -> Msg [ctor message format (b o)] .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod INTERPRETER { IO :: REPL/IO, F :: REPL/FORMATTING, UI :: INTERPRETER/UI } is
+  including INTERPRETER/BASE .
+  including REPL { IO, F } .
+
+  vars I O Z IS OS : Oid .
+  var  OL : OidList .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+  var  Pt : Prompt .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op repls : -> AttrName [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op stop-current-repl : Oid -> Msg [ctor message format (b o)] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op repls : AttributeSet -> OidList .
+  ceq repls(Atts) = OL if AttrValue(OL) := (Atts).get(repls) .
+  eq repls(Atts) = nil [owise] .
+
+  op current-repl : AttributeSet -> Oid .
+  ceq current-repl(Atts) = O if AttrValue(O OL) := (Atts).get(repls) .
+  eq current-repl(Atts) = null [owise] .
+
+  op add-repl : Oid -> AttrModifier .
+  eq subject(add-repl(O)) = repls .
+  eq add-repl(O) AttrValue(OL) = AttrValue(add(O, OL)) .
+  eq add-repl(O) V? = AttrValue(O) [owise] .
+
+  op remove-repl : Oid -> AttrModifier .
+  eq subject(remove-repl(O)) = repls .
+  eq remove-repl(O) AttrValue(OL) = AttrValue(remove(O, OL)) .
+
+  op end-repls : AttributeSet -> Configuration .
+  eq end-repls(Atts) = $end-repls(repls(Atts)) .
+
+  op $end-repls : OidList -> Configuration .
+  eq $end-repls(O OL) = end-repl(O) $end-repls(OL) .
+  eq $end-repls(nil) = end-repl(repl-manager) .
+
+  *** initial configuration  - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op start_ : Oid -> Configuration .
+  eq start I
+   = <>
+    < I : INT | starting up, prompt : AttrValue((prompt).Prompt) >
+    write(stdout, I, banner)
+    < repl-manager >
+    create-repl(repl-manager, I, none) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Interpreter:initialize] :
+    < I : INT | starting up, Atts >
+    wrote(I, stdout)
+    created-repl(I, O)
+   => < I : INT | starting up, Atts >>= add-repl(O) >
+    start-repl(O)
+    start-up(I) .
+
+  rl [Interpreter:register-repl] :
+    < I : INT | Atts >
+    register-repl(I, O)
+   => < I : INT | Atts >>= add-repl(O) > .
+
+  rl [Interpreter:remove-repl] :
+    < I : INT | Atts >
+    remove-repl(I, O)
+   => < I : INT | Atts >>= remove-repl(O) > .
+
+  rl [Interpreter:stop-current-repl] :
+    < I : INT | running, Atts >
+    stop-current-repl(I)
+  => < I : INT | running, Atts >
+    stop-repl(current-repl(Atts)) .
+
+  rl [Interpreter:end-of-repl] :
+    < I : INT | running, Atts >
+    stopped-repl(I, O, IS, OS)
+   => < I : INT | shutting down, Atts >>= remove-repl(O) >
+    shut-down(I) .
+
+  rl [Interpreter:quit] :
+    < I : INT | shutting down, Atts >
+    quit(I)
+   => end-repls(Atts) write(stdout, I, goodbye) .
+endm
+
+********************************************************************************
+
+mod INTERPRETER/BASIC-START-UP is
+  including INTERPRETER/BASE .
+
+  var I : Oid .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Interpreter:start-up] :
+    < I : INT | starting up, Atts >
+    start-up(I)
+   => < I : INT | running, Atts > .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod INTERPRETER/BASIC-PROMPT-HANDLING is
+  including INTERPRETER/BASE .
+
+  vars I O : Oid .
+  var  Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Interpreter:get-prompt] :
+    < I : INT | running, Atts >
+    get-prompt(I, O)
+   => < I : INT | running, Atts >
+    got-prompt(O, prompt(Atts)) .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod INTERPRETER/BASIC-SHUT-DOWN is
+  including INTERPRETER/BASE .
+
+  var I : Oid .
+  var Atts : AttributeSet .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [Interpreter:shut-down] :
+    < I : INT | shutting down, Atts >
+    shut-down(I)
+   => < I : INT | shutting down, Atts >
+    quit(I) .
+endm
+
+*** ----------------------------------------------------------------------------
+
+view REPL/Basic-formatting
+from REPL/FORMATTING to STRING/FORMATTING + CONVERSION is
+  op warning(ON:String, N:Nat, S:String) to term
+    alert("Warning: ")
+    + ON:String + ", line " + string(N:Nat, 10) + ": " + S:String .
+
+  op add-context(S:String, C:String) to term
+    S:String
+    + "\n|\n"
+    + "| " + C:String + alert(" <--- here\n")
+    + "|_" + replicate("_", length(C:String) + 10) + "\n" .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod BASIC-INTERPRETER* { IO :: REPL/IO, UI :: INTERPRETER/UI } is
+  including INTERPRETER { IO, REPL/Basic-formatting, UI } .
+  including INTERPRETER/BASIC-START-UP .
+  including INTERPRETER/BASIC-PROMPT-HANDLING .
+  including INTERPRETER/BASIC-SHUT-DOWN .
+endm
+
+*** ----------------------------------------------------------------------------
+
+fth INTERPRETER/NAME is
+  protecting STRING .
+  op interpreter-name : -> String .
+endfth
+
+fmod INTERPRETER/BASIC-UI { IN :: INTERPRETER/NAME } is
+  protecting PROMPT .
+
+  *** banner  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op banner : -> String .
+  eq banner = welcome(interpreter-name) .
+
+  op welcome : String -> String .
+  eq welcome(I:String) = "\nWelcome to " + I:String + "\n\n" .
+
+  *** prompt  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op prompt : -> Prompt .
+  eq prompt = [interpreter-name >] .
+
+  *** goodbye  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op goodbye : -> String .
+  eq goodbye = "\nGoodbye.\n\n" .
+endfm
+
+view Interpreter/Basic-UI { IN :: INTERPRETER/NAME }
+from INTERPRETER/UI to INTERPRETER/BASIC-UI { IN } is
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod BASIC-INTERPRETER { IO :: SNIPPET/IO, IN :: INTERPRETER/NAME } is
+  including BASIC-INTERPRETER* { Snippet{IO}, Interpreter/Basic-UI{IN} } .
+endm
+
+*******************************************************************************

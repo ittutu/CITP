@@ -1,0 +1,389 @@
+***( Spex/Lang/CITP
+
+  This file is part of CITP.
+
+  License : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Authors : Daniel Gaina <daniel@imi.kyushu-u.ac.jp>,
+            Ionut Tutu <Ionut.Tutu@imar.ro>,
+            Adrian Riesco <ariesco@fdi.ucm.es>
+
+)
+
+sload ../../Processor.maude
+sload ./Language.maude
+
+********************************************************************************
+
+view CITP/Data from DATA to CITP/DATABASE is
+  sort Data to DB{CITP} .
+  op nil to empty .
+endv
+
+*** ----------------------------------------------------------------------------
+
+view CITP/Command from COMMAND to CITP/READ is
+  sort Command to Cmd{CITP} .
+  op command-annotations to term ('Command ; 'ProofCommand) .
+  op read-command(T:ATerm) to term read-cmd(CITP, T:ATerm) .
+endv
+
+*** ----------------------------------------------------------------------------
+
+mod CITP/PROCESSOR is
+  including  SPEX-PROCESSOR { CITP, CITP/Data, CITP/Command } .
+  including  SPEX-PROCESSOR/BASIC-START-UP { CITP } .
+  including  SPEX-PROCESSOR/BASIC-SHUT-DOWN { CITP } .
+  protecting SPEX/FORMATTING .
+  protecting CITP/PARSING-&-PRINTING .
+  protecting CITP/SPEC-LANG/ALL .
+  protecting CITP/APPLY/ALL .
+
+  var  L : CITP .
+  var  DB : SpeX/DB .
+  var  G : Goal{CITP} .
+  vars GL LGL : GoalList{CITP} .
+  var  SGL : Seq{GoalList{CITP}} .
+  var  P : Proof{CITP} .
+  var  PD : ProofDict{CITP} .
+  var  TtL : TacticList{CITP} .
+  var  STtL : Seq{TacticList{CITP}} .
+  var  I : Oid .
+  vars MN GN PN : Qid .
+  vars SL QIL MNL GNL PNL : QidList .
+  vars T T1 T2 : ATerm .
+  vars M M0 : Module .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+  vars RP RP1 RP2 : ResultPair .
+  var  RT : ResultTriple? .
+  var  Tr : Trace? .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op ongoing-proof : CITP -> AttrName [ctor] .
+  op proof-run : CITP -> AttrName [ctor] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op ongoing-proof : CITP AttributeSet ~> Proof{CITP} .
+  ceq ongoing-proof(L, Atts) = P
+   if AttrValue(P) := (Atts).get(ongoing-proof(L)) .
+
+  op append-tactics : TacticList{CITP} -> AttrModifier .
+  eq subject(append-tactics(TtL)) = ongoing-proof(CITP) .
+  eq append-tactics(TtL) AttrValue(proof PN of G is STtL qed)
+   = AttrValue(proof PN of G is STtL TtL . qed) .
+  eq append-tactics(TtL) V? = V? [owise] .
+
+  op rollback-tactics : CITP -> AttrModifier .
+  eq subject(rollback-tactics(L)) = ongoing-proof(L) .
+  eq rollback-tactics(L) AttrValue(proof PN of G is STtL qed)
+   = AttrValue(proof PN of G is init(STtL) qed) .
+  eq rollback-tactics(L) V? = V? [owise] .
+
+  op proof-run : CITP AttributeSet ~> Seq{GoalList{CITP}} .
+  ceq proof-run(L, Atts) = SGL
+   if AttrValue(SGL) := (Atts).get(proof-run(L)) .
+
+  op append-goals : GoalList{CITP} -> AttrModifier .
+  eq subject(append-goals(GL)) = proof-run(CITP) .
+  eq append-goals(GL) AttrValue(SGL)
+   = AttrValue(SGL GL .) .
+  eq append-goals(GL) V? = V? [owise] .
+
+  op rollback-goals : CITP -> AttrModifier .
+  eq subject(rollback-goals(L)) = proof-run(L) .
+  eq rollback-goals(L) AttrValue(SGL)
+   = AttrValue(init(SGL)) .
+  eq rollback-goals(L) V? = V? [owise] .
+
+  op _.begin-proof(_,_,_) : AttributeSet CITP Qid Goal{CITP} -> AttributeSet
+    [prec 15] .
+  eq (Atts).begin-proof(L, PN, G)
+   = (Atts).set(ongoing-proof(L), AttrValue(proof PN of G is no-tl qed))
+           .set(proof-run(L), AttrValue(G .))  .
+
+  op _.apply-proof-tactics(_,_) : AttributeSet TacticList{CITP}
+    GoalList{CITP} -> AttributeSet [prec 15] .
+  eq (Atts).apply-proof-tactics(TtL, GL)
+   = Atts >>= append-tactics(TtL) >>= append-goals(GL) .
+
+  op _.rollback(_) : AttributeSet CITP -> AttributeSet [prec 15] .
+  eq (Atts).rollback(L)
+   = Atts >>= rollback-tactics(L) >>= rollback-goals(L) .
+
+  op _.end-proof(_) : AttributeSet CITP  -> AttributeSet [prec 15] .
+  eq (Atts).end-proof(L)
+   = (Atts).delete(ongoing-proof(L)).delete(proof-run(L))  .
+
+  op status : Proof{CITP} -> QidList .
+  eq status(P)
+   = if eval(P) == no-goal then nil else '\t '`( 'incomplete '`) fi .
+
+  op status : QidList ProofDict{CITP} -> QidList2 .
+  eq status(nil, PD) = nil .
+  eq status(PN PNL, PD) = :[PN status(PD[PN])] status(PNL, PD) .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [CITP:get-prompt] :
+    < $[L] : PROC | running, Atts >
+    get-prompt($[L], I)
+   => < $[L] : PROC | running, Atts >
+    if defined((Atts).get(ongoing-proof(L)))
+    then got-prompt(I, [name(ongoing-proof(L, Atts)) >])
+    else got-prompt(I, [>]) fi .
+
+  rl [CITP:parse] :
+    < $[L] : PROC | running, Atts >
+    parse($[L], I, QIL, DB)
+   => < $[L] : PROC | running, Atts >
+    parsed(I, $[L],
+      if defined((Atts).get(ongoing-proof(L)))
+      then
+        parse L proof-cmd (QIL)
+          in AnalysisState[L]{current-module(proof-run(L, Atts))}
+        or-else
+        parse L tactic list (QIL)
+          in AnalysisState[L]{last-list(proof-run(L, Atts))}
+      else
+        parse L command (QIL)
+          in AnalysisState[L]{DB /
+               modules(DB[L]) & goals(DB[L]) & proofs(DB[L])}
+        or-else
+        parse L declaration (QIL)
+          in AnalysisState[L]{modules(DB[L]) & goals(DB[L])}
+      fi) .
+
+  crl [CITP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+      if defined(goals(DB[L])[GN])
+      then Advisory: log('redefining 'goal) GN
+      else log('Loading 'goal) GN fi,
+      insert-goal(GN, G, DB[L]))
+   if T :: 'Goal
+      /\ G := read-goal(L, T, modules(DB[L]))
+      /\ GN := name(G) .
+
+  crl [CITP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], Warning: 'This 'goal 'is 'trivial.)
+   if T :: 'Goal
+      /\ no-goal := read-goal(L, T, modules(DB[L])) .
+
+  crl [CITP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L],
+      if defined(proofs(DB[L])[PN])
+      then Advisory: log('redefining 'proof) PN
+      else log('Loading 'proof) PN fi status(P),
+      insert-proof(PN, P, DB[L]))
+   if T :: 'Proof
+      /\ P := read-proof(L, T, goals(DB[L]))
+      /\ PN := name(P) .
+
+  crl [CITP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, if GL == LGL then Atts
+                               else (Atts).apply-proof-tactics(TtL, GL) fi >
+    processed(I, $[L], log('Applying) print(TtL, LGL) '\n
+      mk-page(if GL == LGL
+        then alert('Nothing 'has 'changed.)
+        else print-abridged(GL) fi))
+   if T :: ('Tactic ; 'TacticList)
+      /\ TtL := read-tactics(L, T)
+      /\ LGL := last-list(proof-run(L, Atts))
+      /\ GL := apply(TtL, LGL) .
+
+  *** executing CITP commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl [CITP:import-module] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{import SL module MN}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Importing SL 'module) MN,
+      insert-module(MN, get-module(L, SL, MN, DB), DB[L])) .
+
+  crl [CITP:list-modules] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{list modules}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'modules) '\n
+      mk-page(if MNL == nil
+        then 'Empty 'module 'list
+        else intersperse('\n, MNL) fi))
+   if MNL := list(module-names(DB[L])) .
+
+  rl [CITP:show-module] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show module MN}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'module) MN '\n
+      mk-page(print(L, modules(DB[L])[MN]))) .
+
+  crl [CITP:list-goals] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{list goals}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'goals) '\n
+      mk-page(if GNL == nil
+        then 'Empty 'goal 'list
+        else intersperse('\n, GNL) fi))
+   if GNL := list(goal-names(DB[L])) .
+
+  rl [CITP:show-goal] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show goal GN}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'goal) GN '\n
+      mk-page(print(goals(DB[L])[GN]))) .
+
+  crl [CITP:list-proofs] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{list proofs}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Listing 'proofs) '\n
+      mk-page(if PNL == nil
+        then 'Empty 'proof 'list
+        else intercalate('\n, status(PNL, proofs(DB[L]))) fi))
+   if PNL := list(proof-names(DB[L])) .
+
+  rl [CITP:show-proof] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show proof PN}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'proof) PN '\n
+      mk-page(print(proofs(DB[L])[PN]))) .
+
+  rl [CITP:begin-proof] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{begin proof PN of GN}, DB)
+   => < $[L] : PROC | running, (Atts).begin-proof(L, PN, goals(DB[L])[GN]) >
+    processed(I, $[L], log('Beginning 'proof) PN) .
+
+  crl [CITP:qed] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{qed}, DB)
+   => < $[L] : PROC | running, (Atts).end-proof(L) >
+    processed(I, $[L],
+      if defined(proofs(DB[L])[PN])
+      then Advisory: log('redefining 'proof) PN
+      else log('Loading 'proof) PN fi status(P),
+      insert-proof(PN, P, DB[L]))
+   if AttrValue(P) := (Atts).get(ongoing-proof(L))
+      /\ PN := name(P) .
+
+  crl [CITP:show-ongoing-proof] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show ongoing proof}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'ongoing 'proof) name(P) '\n
+        mk-page(print(P)))
+   if AttrValue(P) := (Atts).get(ongoing-proof(L)) .
+
+  rl [CITP:show-goals] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show goals}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'goals) '\n
+      mk-page(print(last-list(proof-run(L, Atts)), 0))) .
+
+  rl [CITP:show-goals-in-full] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show goals in full}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'goals) '\n
+      mk-page(print(last-list(proof-run(L, Atts)),
+          base-module(ongoing-proof(L, Atts)), 0))) .
+
+  crl [CITP:show-current-goal] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show current goal}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'current 'goal) '\n
+      mk-page(if GL == no-goal
+        then 'Nothing 'to 'prove
+        else print(head-goal(GL)) fi))
+   if GL := last-list(proof-run(L, Atts)) .
+
+  crl [CITP:show-current-goal-in-full] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show current goal in full}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'current 'goal) '\n
+      mk-page(if GL == no-goal
+        then 'Nothing 'to 'prove
+        else print(head-goal(GL), base-module(ongoing-proof(L, Atts))) fi))
+   if GL := last-list(proof-run(L, Atts)) .
+
+  crl [CITP:show-current-module] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show current module}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'current 'module) '\n
+      mk-page(if GL == no-goal
+        then 'No 'module '\s '`( 'there's 'nothing 'to 'prove '`)
+        else print(L, module(head-goal(GL))) fi))
+   if GL := last-list(proof-run(L, Atts)) .
+
+  crl [CITP:show-additions] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show additions}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'added 'declarations) '\n
+      mk-page(if GL == no-goal
+        then 'No 'metadata '\s '`( 'there's 'nothing 'to 'prove '`)
+        else if has-printable-metadata(L, module(head-goal(GL)))
+             then print-additions(L, module(head-goal(GL)), M0)
+             else 'No 'added 'declarations' fi fi))
+   if GL := last-list(proof-run(L, Atts))
+      /\ M0 := base-module(ongoing-proof(L, Atts)) .
+
+  rl [CITP:rollback] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{rollback}, DB)
+   => if size(ongoing-proof(L, Atts)) > 0
+    then < $[L] : PROC | running, (Atts).rollback(L) >
+      processed(I, $[L], log('Rolling 'back) '\n
+        mk-page(print-abridged(last-list(init(proof-run(L, Atts))))))
+    else < $[L] : PROC | running, Atts >
+      processed(I, $[L], log('Rolling 'back) '\n
+        mk-page('Cannot 'roll 'back 'any 'further)) fi .
+
+  crl [CITP:reduce-term] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{reduce term T}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Reducing 'term) '\n
+      mk-page('Result: '\s print term getTerm(RP) given (M & none)))
+   if M := current-module(proof-run(L, Atts))
+      /\ RP := metaReduce(M, plain-term(T)) .
+
+  crl [CITP:search-path] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{search path from T1 to T2}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Searching 'path) '\n
+      mk-page('Result: '\s
+        if RP1 == RP2
+        then (print term T1 given (M & none))
+             '\s '= '\s
+             (print term T2 given (M & none))
+        else if Tr == nil
+             then print term show-substitution(CITP, M, getSubstitution(RT))
+                  given tactic-grammar(CITP)
+             else print(L, M, Tr) fi fi))
+   if M := current-module(proof-run(L, Atts))
+      /\ RP1 := metaReduce(M, plain-term(T1))
+      /\ RP2 := metaReduce(M, plain-term(T2))
+      /\ RT := metaSearch(M, plain-term(T1), plain-term(T2),
+                          nil, '*, unbounded, 0)
+      /\ Tr := metaSearchPath(M, plain-term(T1), plain-term(T2),
+                              nil, '*, unbounded, 0) .
+endm
+
+********************************************************************************

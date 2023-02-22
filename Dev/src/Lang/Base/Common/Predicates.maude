@@ -1,0 +1,89 @@
+***( SpeX/Lang/Base/Common
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021 Simion Stoilow Institute of Mathematics of the
+              Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Attributes.maude
+
+********************************************************************************
+
+fmod PRED-DECL is
+  protecting META-LEVEL .
+
+  sort PredDecl .
+  op (pred_:_[_].) : Qid TypeList AttrSet -> PredDecl
+    [ctor format (d d d d s d d s d)] .
+endfm
+
+view PredDecl from TRIV to PRED-DECL is
+  sort Elt to PredDecl .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod PRED-DECL-SET is
+  protecting READ { PredDecl } *
+    (sort BrList{PredDecl} to PredDeclList,
+     sort NeBrList{PredDecl} to NePredDeclList,
+     op read-elt to read-pred,
+     op read-list to read-preds) .
+  protecting ATTR-SET .
+
+  *** PredDeclSet  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sort PredDeclSet .
+  subsort PredDecl < PredDeclSet .
+  op none : -> PredDeclSet [ctor] .
+  op __ : PredDeclSet PredDeclSet -> PredDeclSet
+    [ctor assoc comm id: none format (d ni d)] .
+  eq PD:PredDecl PD:PredDecl = PD:PredDecl .
+
+  *** - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  var  QI : Qid .
+  vars TPL A : TypeList .
+  var  AtS : AttrSet .
+  var  PD : PredDecl .
+  var  PDS : PredDeclSet .
+
+  *** _in_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _in_ : PredDecl PredDeclSet -> Bool .
+  eq PD in (PD PDS) = true .
+  eq PD in PDS = false [owise] .
+
+  op pred_:_in_ : Qid TypeList PredDeclSet -> Bool .
+  eq pred QI : TPL in (pred QI : TPL [AtS] . PDS) = true .
+  eq pred QI : TPL in PDS = false [owise] .
+
+  *** _not-in_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _not-in_ : PredDecl PredDeclSet -> Bool .
+  eq PD not-in PDS = not (PD in PDS) .
+
+  op pred_:_not-in_ : Qid TypeList PredDeclSet -> Bool .
+  eq pred QI : TPL not-in PDS = not (pred QI : TPL in PDS) .
+
+  *** symbols (with a given arity)  - - - - - - - - - - - - - - - - - - - - - --
+  op symbols : PredDeclSet TypeList -> QidSet .
+  eq symbols(none, A) = none .
+  eq symbols(pred QI : TPL [AtS] . PDS, A)
+   = if TPL == A
+     then QI ; symbols(PDS, A)
+     else symbols(PDS, A) fi .
+
+  *** list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : PredDeclSet -> PredDeclList .
+  eq list((none).PredDeclSet) = nil .
+  eq list(PDS) = read-preds(unpack('__, upTerm(PDS))) [owise] .
+
+  *** pure  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op pure : PredDeclSet -> PredDeclSet .
+  eq pure(none) = none .
+  eq pure(pred QI : TPL [AtS] . PDS)
+   = (pred QI : TPL [none] .) pure(PDS) .
+endfm
+
+********************************************************************************

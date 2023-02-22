@@ -1,0 +1,389 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2020-2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./QidSet.maude
+sload ./String.maude
+sload ./StringList.maude
+
+********************************************************************************
+
+fmod ATERM is
+  protecting TERM/OPS .
+
+  var  M : Module .
+  var  TQ : TermQid .
+  var  @TQ : ATermQid .
+  var  T : Term .
+  var  @T : ATerm .
+  var  TL : TermList .
+  var  @TL : ATermList .
+  var  NTL : NeTermList .
+  var  @NTL : NeATermList .
+  vars QI X : Qid .
+  var  XS : QidSet .
+  var  Args : ATermArgs .
+
+  *** annotated terms  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  sorts AConstant AVariable ATermQid ATerm .
+  subsorts AConstant AVariable < ATermQid < ATerm .
+  op {_:_} : Constant Qid -> AConstant [ctor] .
+  op {_:__} : Constant Qid ATermArgs -> AConstant [ctor gather (& & &)] .
+  op {_:_} : AConstant Qid -> AConstant [ctor] .
+  op {_:__} : AConstant Qid ATermArgs -> AConstant [ctor gather (& & &)] .
+  op {_:_} : Variable Qid -> AVariable [ctor] .
+  op {_:__} : Variable Qid ATermArgs -> AVariable [ctor ditto] .
+  op {_:_} : AVariable Qid -> AVariable [ctor] .
+  op {_:__} : AVariable Qid ATermArgs -> AVariable [ctor ditto] .
+  op {_:_} : TermQid Qid -> ATermQid [ctor] .
+  op {_:__} : TermQid Qid ATermArgs -> ATermQid [ctor ditto] .
+  op {_:_} : ATermQid Qid -> ATermQid [ctor] .
+  op {_:__} : ATermQid Qid ATermArgs -> ATermQid [ctor ditto] .
+  op {_:_} : ATerm Qid -> ATerm [ctor] .
+  op {_:__} : ATerm Qid ATermArgs -> ATerm [ctor ditto] .
+
+  op _[_] : Qid NeATermList -> ATerm [ctor format (d s n++i n--i d)] .
+
+  sort ATermArgs .
+  op |_ : Universal -> ATermArgs [ctor gather (&) poly (1)] .
+
+  sorts NeATermList ATermList .
+  subsorts ATerm < NeATermList < ATermList .
+  op empty : -> ATermList [ctor] .
+  op _,_ : ATermList ATermList -> ATermList
+    [ctor assoc id: empty gather (e E) prec 121 format (d d ni d)] .
+  op _,_ : NeATermList ATermList -> NeATermList [ctor ditto] .
+  op _,_ : ATermList NeATermList -> NeATermList [ctor ditto] .
+
+  *** drop-args  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op drop-args : ATerm -> ATerm .
+  eq drop-args({TQ : X Args}) = {TQ : X} .
+  eq drop-args({@T : X Args}) = {@T : X} .
+  eq drop-args(@T) = @T [owise] .
+
+  *** plain-term  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op plain-term : ATerm -> Term .
+  eq plain-term({TQ : X}) = TQ .
+  eq plain-term({TQ : X Args}) = TQ .
+  eq plain-term({@T : X}) = plain-term(@T) .
+  eq plain-term({@T : X Args}) = plain-term(@T) .
+  eq plain-term(QI[@NTL]) = QI[plain-terms(@NTL)] .
+
+  op plain-terms : ATermList -> TermList .
+  eq plain-terms(empty) = empty .
+  eq plain-terms((@T, @TL)) = plain-term(@T), plain-terms(@TL) .
+
+  *** annotation  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op annotation : ATerm ~> Qid .
+  eq annotation({TQ : X}) = X .
+  eq annotation({TQ : X Args}) = X .
+  eq annotation({@T : X}) = X .
+  eq annotation({@T : X Args}) = X .
+
+  *** _::_  (checking the annotation of an aterm)  - - - - - - - - - - - - - - -
+  op _::_ : ATerm QidSet -> Bool .
+  eq {TQ : X} :: (X ; XS) = true .
+  eq {TQ : X Args} :: (X ; XS) = true .
+  eq {@T : X} :: (X ; XS) = true .
+  eq {@T : X Args} :: (X ; XS) = true .
+  eq @T :: XS = false [owise] .
+
+  op _:/:_ : ATerm QidSet -> Bool .
+  eq @T :/: XS = not @T :: XS .
+
+  *** name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op name : ATermQid -> Qid .
+  eq name({TQ : X}) = getName(TQ) .
+  eq name({TQ : X Args}) = getName(TQ) .
+  eq name({@TQ : X}) = name(@TQ) .
+  eq name({@TQ : X Args}) = name(@TQ) .
+
+  *** annotate term  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op annotate : Term Module -> ATerm .
+  eq annotate(TQ, M) = {TQ : leastSort(M, TQ)} .
+  eq annotate(QI[NTL], M)
+   = {QI [ annotate(NTL, M) ] : leastSort(M, QI[NTL])} .
+
+  op annotate : TermList Module -> ATermList .
+  eq annotate(empty, M) = empty .
+  eq annotate((T, TL), M)
+   = annotate(T, M), annotate(TL, M) .
+
+  *** type  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op type : ATermQid -> Type .
+  eq type({TQ : X}) = getType(TQ) .
+  eq type({TQ : X Args}) = getType(TQ) .
+  eq type({@TQ : X}) = type(@TQ) .
+  eq type({@TQ : X Args}) = type(@TQ) .
+
+  *** term-traversal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op term-traversal : ATerm -> NeQidList .
+  eq term-traversal(@T) = term-traversal(plain-term(@T)) .
+
+  op tl-traversal : ATermList -> QidList .
+  eq tl-traversal((empty).ATermList) = nil .
+  eq tl-traversal((@T, @TL)) = term-traversal(@T) tl-traversal(@TL) .
+
+  *** symbols (occurring in a term list)  - - - - - - - - - - - - - - - - - - --
+  op symbols : ATermList -> QidSet .
+  eq symbols(@TL) = symbols(plain-terms(@TL)) .
+
+  *** variables (occurring in an annotated term list)  - - - - - - - - - - - - -
+  op vars : ATermList -> VariableSet .
+  eq vars(@TL) = vars(plain-terms(@TL)) .
+
+  *** filter terms (by annotation)  - - - - - - - - - - - - - - - - - - - - - --
+  op filter-terms(_:_) : ATermList Qid -> ATermList .
+  eq filter-terms(empty : X) = empty .
+  eq filter-terms((@T, @TL) : X)
+   = if @T :: X then @T, filter-terms(@TL : X) else filter-terms(@TL : X) fi .
+endfm
+
+********************************************************************************
+
+fmod ATERM/EXPANSION is
+  protecting ATERM .
+
+  sort ATermExpansion .
+  op expanding`to_ : ATermList -> ATermExpansion [ctor] .
+endfm
+
+********************************************************************************
+
+fmod ATERM/OPS is
+  protecting ATERM .
+
+  var TP : Type .
+  var TPL : TypeList .
+  var T : ATerm .
+  var TL : ATermList .
+
+  *** take  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op take : TypeList ATermList -> ATermList .
+  eq take(TPL, empty) = empty .
+  eq take(nil, TL) = empty .
+  eq take(TP TPL, (T, TL)) = T, take(TPL, TL) .
+
+  *** drop  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op drop : TypeList ATermList -> ATermList .
+  eq drop(TPL, empty) = empty .
+  eq drop(nil, TL) = TL .
+  eq drop(TP TPL, (T, TL)) = drop(TPL, TL) .
+endfm
+
+********************************************************************************
+
+fmod ATERM/READ is
+  protecting ATERM/EXPANSION .
+  protecting QID/READ .
+  protecting NUM/READ .
+  protecting STRING/READ .
+
+  var T : Term .
+  var @T : ATerm .
+  var @TL : ATermList .
+
+  *** undefined reading result  - - - - - - - - - - - - - - - - - - - - - - - --
+  op undef-read : -> [ATerm] .
+
+  *** read-aterm  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-aterm : Term ~> ATerm .
+  eq read-aterm(T) = downTerm(T, (undef-read).[ATerm]) .
+
+  *** read-qid  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-qid : ATerm ~> Qid .
+  eq read-qid(@T) = read-qid(plain-term(@T)) .
+
+  op read-qids : ATermList ~> QidList .
+  eq read-qids(@TL) = read-qids(plain-terms(@TL)) .
+
+  *** read-num  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-num : ATerm ~> Rat .
+  eq read-num(@T) = read-num(plain-term(@T)) .
+
+  *** read-string  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op read-string : ATerm ~> String .
+  eq read-string(@T) = read-string(plain-term(@T)) .
+endfm
+
+********************************************************************************
+
+fmod ATERM/VARS is
+  protecting ATERM .
+  protecting STRING-LIST .
+  protecting QID-SET/OPS .
+
+  var  QI : Qid .
+  var  QIL : QidList .
+  var  V : Variable .
+  var  VS : VariableSet .
+  vars VN VN' C P : String .
+  vars VNL CNL DNL : StringList .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  N : Nat .
+  var  I : [Nat] .
+
+  *** fresh variables (given a list of types)  - - - - - - - - - - - - - - - - -
+  op fresh-vars : TypeList -> ATermList .
+  eq fresh-vars(TPL) = fresh-vars(TPL, none) .
+
+  *** fresh variables (given a list of types and predeclared variables)  - - - -
+  op fresh-vars : TypeList VariableSet -> ATermList .
+  eq fresh-vars(TPL, VS) = fresh-vars(TPL, VS, "") .
+
+  *** fresh variables (given a list of types, predeclared variables, and prefix)
+  op fresh-vars : TypeList VariableSet String -> ATermList .
+  ceq fresh-vars(TPL, VS, P) = mk-vars(VNL, TPL)
+   if DNL := var-names(list(VS))
+      /\ CNL := prepend(caps(TPL), P)
+      /\ VNL := var-name-list(nil, DNL, CNL) .
+
+  op var-names : QidList -> StringList .
+  eq var-names(nil) = nil .
+  eq var-names(V QIL) = string(getName(V)) var-names(QIL) .
+  eq var-names(QI QIL) = var-names(QIL) [owise] .
+
+  op mk-vars : StringList TypeList -> ATermList .
+  eq mk-vars(VN VNL, TP TPL) = {var(qid(VN), TP) : TP}, mk-vars(VNL, TPL) .
+  eq mk-vars(VNL, TPL) = empty [owise] .
+
+  op var-name-list : StringList StringList StringList -> StringList .
+  eq var-name-list(VNL, DNL, nil) = VNL .
+  eq var-name-list(VNL, DNL, C CNL)
+   = var-name-list(VNL fresh-var-name(C, DNL CNL VNL), DNL C, CNL) .
+
+  op fresh-var-name : String StringList -> String .
+  eq fresh-var-name(VN, VNL)
+   = if occurs(VN, VNL)
+     then VN + string(s var-name-suffix(VN, VNL, 0), 10)
+     else VN fi .
+
+  op var-name-suffix : String StringList Nat -> Nat .
+  eq var-name-suffix(VN, nil, N) = N .
+  ceq var-name-suffix(VN, VN' VNL, N)
+   = if VN' begins with VN and I :: Nat
+     then var-name-suffix(VN, VNL, max(I, N))
+     else var-name-suffix(VN, VNL, N) fi
+   if I := rat(substr(VN', length(VN), length(VN')), 10) .
+
+  op caps : TypeList -> StringList .
+  eq caps((nil).TypeList) = nil .
+  eq caps(TP TPL) = caps(string(TP)) caps(TPL) .
+endfm
+
+********************************************************************************
+
+fmod ATERM/SUBSTITUTION is
+  protecting ATERM .
+
+  var  M : Module .
+  var  S : Substitution .
+  vars @S @S' : ASubstitution .
+  var  N@S : NeASubstitution .
+  var  @C : AConstant .
+  var  V : Variable .
+  var  @V : AVariable .
+  var  T : Term .
+  var  @T : ATerm .
+  var  N@TL : NeATermList .
+  vars QI X : Qid .
+  var  Args : ATermArgs .
+
+  *** substitutions (of annotated variables)  - - - - - - - - - - - - - - - - --
+  sorts AAssignment NeASubstitution ASubstitution .
+  subsorts AAssignment < NeASubstitution < ASubstitution .
+  op subst : AVariable ATerm -> AAssignment [ctor] .
+  op none : -> ASubstitution [ctor] .
+  op _;_ : ASubstitution ASubstitution -> ASubstitution
+    [ctor assoc comm id: none] .
+  op _;_ : NeASubstitution ASubstitution -> NeASubstitution
+    [ctor ditto] .
+  eq N@S ; N@S = N@S .
+
+  *** def  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op def : ASubstitution AVariable -> Bool .
+  eq def(subst(@V, @T) ; @S, @V) = true .
+  eq def(@S, @V) = false [owise] .
+
+  op ndef : ASubstitution AVariable -> Bool .
+  eq ndef(@S, @V) = not def(@S, @V) .
+
+  *** _\_  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _\_ : ASubstitution ASubstitution -> ASubstitution .
+  eq (N@S ; @S) \ (N@S ; @S') = @S \ (N@S ; @S') .
+  eq @S \ @S' = @S [owise] .
+
+  *** apply  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op apply : ASubstitution ATerm -> ATerm .
+  ceq apply(subst(@V, @T) ; @S, @V) = @T if ndef(@S \ subst(@V, @T), @V) .
+  eq apply(@S, @V) = @V [owise] .
+  eq apply(@S, @C) = @C .
+  eq apply(@S, {@T : X}) = {apply(@S, @T) : X} .
+  eq apply(@S, {@T : X Args}) = {apply(@S, @T) : X Args} .
+  eq apply(@S, QI[N@TL]) = QI[apply(@S, N@TL)] .
+
+  op apply : ASubstitution ATermList -> ATermList .
+  eq apply(@S, empty) = empty .
+  eq apply(@S, (@T, N@TL)) = apply(@S, @T), apply(@S, N@TL) .
+
+  *** annotate substitution  - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op annotate : Substitution Module -> ASubstitution .
+  eq annotate((none).Substitution, M) = none .
+  eq annotate(V <- T ; S, M)
+   = subst(annotate(V, M), annotate(T, M)) ; annotate(S, M) .
+endfm
+
+********************************************************************************
+
+view ATerm/Substitution from TRIV to ATERM/SUBSTITUTION is
+  sort Elt to ASubstitution .
+endv
+
+view ATerm/Assignment from TRIV to ATERM/SUBSTITUTION is
+  sort Elt to AAssignment .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod ATERM/SUBSTITUTION-LIST is
+  protecting LIST { ATerm/Substitution } *
+    (sort NeList{ATerm/Substitution} to NeASubstList,
+     sort List{ATerm/Substitution} to ASubstList) .
+  protecting READ { ATerm/Assignment } *
+    (sort NeBrList{ATerm/Assignment} to NeAAssignmentList,
+     sort BrList{ATerm/Assignment} to AAssignmentList,
+     op read-elt to read-@assignment,
+     op read-list to read-@substitution) .
+  protecting TERM/OPS .
+
+  var @S : ASubstitution .
+  var N@SL : NeASubstList .
+  var @SL : ASubstList .
+  var @T : ATerm .
+
+  *** list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : ASubstitution -> AAssignmentList .
+  eq list((none).ASubstitution) = nil .
+  eq list(@S) = read-@substitution(unpack('_;_, upTerm(@S))) [owise] .
+
+  *** apply  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op apply : ASubstList ATerm -> ATermList .
+  eq apply(nil, @T) = @T .
+  eq apply(@S N@SL, @T) = apply(@S, @T), apply(N@SL, @T) .
+
+  *** apply1  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op apply1 : ASubstList ATerm -> ATerm .
+  eq apply1(nil, @T) = @T .
+  eq apply1(@S @SL, @T) = apply(@S, @T) .
+endfm
+
+********************************************************************************

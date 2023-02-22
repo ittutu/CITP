@@ -1,0 +1,342 @@
+***( SpeX
+
+  This file is part of SpeX, a simple framework for working with
+  formal specifications based on SAP and REPL.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./SAP/Interpreter.maude
+sload ./Language.maude
+sload ./Processor.maude
+
+********************************************************************************
+
+fmod SPEX/LID is
+  sort SpeX .
+  op SpeX : -> SpeX .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+fmod SPEX/CMD is
+  protecting SPEX/LID .
+  protecting SPEX/LANG/BASE .
+
+  sort Cmd{SpeX} .
+  op load_ : String -> Cmd{SpeX} [ctor format (b so d)] .
+  op eof : -> Cmd{SpeX} [ctor format (r o)] .
+  op quit : -> Cmd{SpeX} [ctor format (r o)] .
+  op lang_ : SpeX/Lang -> Cmd{SpeX} [ctor format (b so d)] .
+endfm
+
+********************************************************************************
+
+fmod SPEX/LANGUAGE is
+  protecting SPEX/LID .
+  protecting GRAMMAR .
+
+  op cmd-grammar : SpeX -> Grammar .
+  eq cmd-grammar(SpeX)
+   = grammar 'SpeX/Cmd/Syntax is
+       'Command
+         ::= "load_" : 'FilePath [format ('b 'so 'd)]
+          |  lit "eof" [format ('r 'o)]
+          |  lit "quit" [format ('r 'o)]
+          |  lit "q" [format ('r 'o)]
+          |  "lang_" : 'Language [format ('b 'so 'd)]
+       'Language
+         ::= bubble "language"
+       'FilePath
+         ::= bubble "file-path"
+     endgr .
+endfm
+
+*** ----------------------------------------------------------------------------
+
+view SpeX from LANGUAGE to SPEX/LANGUAGE is
+  sort Lid to SpeX .
+  op Lid to SpeX .
+  op grammar to cmd-grammar .
+endv
+
+********************************************************************************
+
+fmod SPEX/READ is
+  protecting SPEX/CMD .
+  protecting ATERM/READ .
+
+  var  L : SpeX .
+  vars LN FP : ATerm .
+
+  *** read command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-cmd : SpeX ATerm ~> Cmd{SpeX} .
+  eq read-cmd(L, {'load_[FP] : 'Command}) = load read-file-path(L, FP) .
+  eq read-cmd(L, {'eof.Command : 'Command}) = eof .
+  eq read-cmd(L, {'quit.Command : 'Command}) = quit .
+  eq read-cmd(L, {'q.Command : 'Command}) = quit .
+  eq read-cmd(L, {'lang_[LN] : 'Command}) = lang read-lang-name(L, LN) .
+
+  *** read-file-path  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-file-path : SpeX ATerm -> String .
+  eq read-file-path(L, FP) = printTokens(read-qids(FP)) .
+
+  *** read-lang-name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op read-lang-name : SpeX ATerm ~> SpeX/Lang .
+  eq read-lang-name(L, LN) = decode-lang(read-qids(LN)) .
+endfm
+
+********************************************************************************
+
+mod SPEX/PARSING is
+  including  STATELESS-SYNTACTIC-ANALYSIS { SpeX } .
+  protecting SPEX/READ .
+
+  var  L : SpeX .
+  var  QIL : QidList .
+  var  C : Constant .
+  vars $FP FP $LN LN : ATerm .
+  var  $ : Qid .
+
+  *** parse input  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  eq parse L input (QIL) in [*]
+   = parse L command (QIL) .
+
+  op parse_command_ : SpeX QidList ~> ParsingOutcome .
+  eq parse L command (QIL)
+   = scan L input (QIL : 'Command)
+     then analyse L command in [*] .
+
+  *** analyse command  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_command : SpeX -> AnalysisAction{SpeX} .
+  eq analyse L command {C : 'Command}
+   = return {C : 'Command} .
+  eq analyse L command {'load_[$FP] : 'Command}
+   = try {'load_ [ solve L file path ($FP) ] : 'Command} .
+  eq analyse L command {'lang_[$LN] : 'Command}
+   = try {'lang_ [ analyse L language name ($LN) ] : 'Command} .
+
+  *** solve file path  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op solve_file`path : SpeX -> AnalysisAction{SpeX} .
+  eq solve L file path {$[FP] : 'FilePath} = return {FP : 'FilePath} .
+
+  *** analyse language name  - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op analyse_language`name : SpeX -> AnalysisAction{SpeX} .
+  eq analyse L language name {$[LN] : 'Language}
+   = check (read-qids(LN) is known-lang) and-then return {LN : 'Language}
+     or-else
+     fail ('unknown 'language: emph(read-qids(LN))) .
+endm
+
+********************************************************************************
+
+fth SPEX/PRESET is
+  protecting SPEX/LANG/BASE .
+  op preset : -> [SpeX/Lang] .
+endfth
+
+*** ----------------------------------------------------------------------------
+
+mod SPEX/CORE { P :: SPEX/PRESET, UI :: INTERPRETER/UI } is
+  including  SAP-INTERPRETER { REPL/Basic-formatting, UI } .
+  including  SPEX-PROCESSOR/BASE .
+  protecting SPEX/PARSING .
+
+  vars O P : Oid .
+  vars PL PT : OidList .
+  var  NPT : NeOidList .
+  var  SL : SpeX/Lang .
+  var  SL? : [SpeX/Lang] .
+  var  DB : SpeX/DB .
+  var  R : SpeX/DB/Record .
+  var  Pt : Prompt .
+  var  V? : [AttrValue] .
+  var  Atts : AttributeSet .
+  var  QIL : QidList .
+  var  T : ATerm .
+  var  FP : String .
+  var  WA : WarningArgs .
+
+  *** objects  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op SpeX : -> Oid [ctor] .
+
+  *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op selected`language : -> AttrName [ctor] .
+  op processors : -> AttrName [ctor] .
+  op database : -> AttrName [ctor] .
+
+  *** messages  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op do : Oid Cmd{SpeX} -> Msg [ctor message format (b o)] .
+
+  *** auxiliary operations  - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op lang : AttributeSet -> [SpeX/Lang] .
+  ceq lang(Atts) = SL?
+   if AttrValue(SL?) := (Atts).get(selected language) .
+  eq lang(Atts) = none [owise] .
+
+  op lang-selected : AttributeSet -> Bool .
+  eq lang-selected(Atts) = defined((Atts).get(selected language)) .
+
+  op set-lang : [SpeX/Lang] -> AttrModifier .
+  eq subject(set-lang(SL)) = selected language .
+  eq set-lang(SL) V? = AttrValue(SL) .
+  eq set-lang(none) V? = V? .
+
+  op procs : AttributeSet -> OidList .
+  ceq procs(Atts) = PL
+   if AttrValue((PL).OidList) := (Atts).get(processors) .
+  eq procs(Atts) = nil [owise] .
+
+  op add-proc : [SpeX/Lang] -> AttrModifier .
+  eq subject(add-proc(SL)) = processors .
+  eq add-proc(SL) AttrValue((PL).OidList) = AttrValue(add($[SL], PL)) .
+  eq add-proc(SL) V? = AttrValue($[SL]) [owise] .
+  eq add-proc(none) V? = V? .
+
+  op db : AttributeSet -> SpeX/DB .
+  ceq db(Atts) = DB
+   if AttrValue(DB) := (Atts).get(database) .
+  eq db(Atts) = empty [owise] .
+
+  op update-db : [SpeX/Lang] SpeX/DB/Record -> AttrModifier .
+  eq subject(update-db(SL?, R)) = database .
+  eq update-db(SL, R) AttrValue(DB) = AttrValue(insert(SL, R, DB)) .
+  eq update-db(SL, R) V? = AttrValue(insert(SL, R, empty)) [owise] .
+  eq update-db(none, R) V? = V? .
+
+  op ready-db : [SpeX/Lang] -> AttrModifier .
+  eq subject(ready-db(SL)) = database .
+  eq ready-db(SL) AttrValue(DB) = AttrValue(add(SL, nil, DB)) .
+  eq ready-db(SL) V? = AttrValue(SL : nil) [owise] .
+  eq ready-db(none) V? = V? .
+
+  op _.select-language(_) : AttributeSet [SpeX/Lang] -> AttributeSet [prec 15] .
+  eq (Atts).select-language(SL)
+   = Atts >>= add-proc(SL) >>= ready-db(SL) >>= set-lang(SL) .
+  eq (Atts).select-language(none) = Atts .
+
+  *** rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  rl [SpeX:start-up] :
+    < SpeX : INT | starting up, Atts >
+    start-up(SpeX)
+   => < SpeX : INT | running, (Atts).select-language(preset) >
+    start-processor($[preset]) if preset :: SpeX/Lang .
+
+  rl [SpeX:get-prompt] :
+    < SpeX : INT | running, Atts >
+    get-prompt(SpeX, O)
+   => < SpeX : INT | reading O input, Atts >
+    if lang-selected(Atts)
+    then get-prompt($[lang(Atts)], SpeX)
+    else got-prompt(SpeX, empty) fi .
+
+  rl [SpeX:parse-input] :
+    < SpeX : INT | running, Atts >
+    eval(SpeX, O, QIL)
+   => < SpeX : INT | parsing O input, Atts >
+    if lang-selected(Atts)
+    then relay(SpeX, parse SpeX command (QIL)
+                     or-else parse($[lang(Atts)], SpeX, QIL, db(Atts)))
+    else relay(SpeX, parse SpeX command (QIL)) fi .
+
+  rl [SpeX:successful-parsing] :
+    < SpeX : INT | parsing O input, Atts >
+    parsed(SpeX, nil, successful-parsing(T))
+   => < SpeX : INT | executing O command, Atts >
+    do(SpeX, read-cmd(SpeX, T)) .
+
+  rl [SpeX:successful-parsing] :
+    < SpeX : INT | parsing O input, Atts >
+    parsed(SpeX, NPT, successful-parsing(T))
+   => < SpeX : INT | processing O input, Atts >
+    process(head(NPT), tail(NPT), SpeX, T, db(Atts)) .
+
+  rl [SpeX:incomplete-input] :
+    < SpeX : INT | parsing O input, Atts >
+    parsed(SpeX, PT, incomplete input)
+   => < SpeX : INT | running, Atts >
+    read-more(O) .
+
+  rl [SpeX:parsing-error] :
+    < SpeX : INT | parsing O input, Atts >
+    parsed(SpeX, PT, parsing-error(QIL, WA))
+   => < SpeX : INT | running, Atts >
+    warn(O, printTokens(QIL), WA) .
+
+  rl [SpeX:shut-down] :
+    < SpeX : INT | shutting down, Atts >
+    shut-down(SpeX)
+   => < SpeX : INT | shutting down, Atts >
+    shut-down(procs(Atts)) quit(SpeX) .
+
+  *** executing SpeX commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
+  rl [SpeX:load-file] :
+    < SpeX : INT | executing O command, Atts >
+    do(SpeX, load FP)
+   => < SpeX : INT | running, Atts >
+    visit-file(O, FP) .
+
+  rl [SpeX:end-of-file] :
+    < SpeX : INT | executing O command, Atts >
+    do(SpeX, eof)
+   => < SpeX : INT | running, Atts >
+    stop-current-repl(SpeX) .
+
+  rl [SpeX:quit] :
+    < SpeX : INT | executing O command, Atts >
+    do(SpeX, quit)
+   => < SpeX : INT | shutting down, Atts >
+    shut-down(SpeX) .
+
+  rl [SpeX:select-language] :
+    < SpeX : INT | executing O command, Atts >
+    do(SpeX, lang SL)
+   => < SpeX : INT | running, (Atts).select-language(SL) >
+    start-processor($[SL]) unless occurs($[SL], procs(Atts))
+    continue(O) .
+
+  *** recording the outcome of a SpeX processor  -  -  -  -  -  -  -  -  -  -  -
+  rl [SpeX:update-prompt] :
+    < SpeX : INT | reading O input, Atts >
+    got-prompt(SpeX, Pt)
+   => < SpeX : INT | running, Atts >
+    if lang-selected(Atts)
+    then got-prompt(O, prompt(Atts) ? string(lang(Atts)) / Pt)
+    else got-prompt(O, prompt(Atts)) fi .
+
+  rl [SpeX:print-proc-msg-&-update-db] :
+    < SpeX : INT | processing O input, Atts >
+    processed(SpeX, P, QIL, R)
+   => < SpeX : INT | running, Atts >>= update-db(lang(Atts), R) >
+    print(O, QIL) .
+
+  rl [SpeX:print-proc-msg] :
+    < SpeX : INT | processing O input, Atts >
+    processed(SpeX, P, QIL)
+   => < SpeX : INT | running, Atts >
+    print(O, QIL) .
+
+  rl [SpeX:update-db] :
+    < SpeX : INT | processing O input, Atts >
+    processed(SpeX, P, R)
+   => < SpeX : INT | running, Atts >>= update-db(lang(Atts), R) >
+    continue(O) .
+
+  rl [SpeX:processed] :
+    < SpeX : INT | processing O input, Atts >
+    processed(SpeX, P)
+   => < SpeX : INT | running, Atts >
+    continue(O) .
+endm
+
+********************************************************************************
+
+view SpeX/No-preset from SPEX/PRESET to QID + SPEX/LANG/BASE is
+  op preset to term none .
+endv
+
+********************************************************************************

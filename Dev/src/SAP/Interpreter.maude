@@ -1,0 +1,28 @@
+***( SpeX/SAP
+
+  This file is part of SAP, a Syntactic Analysis & Printing library
+  for Maude 3 based on REPL.
+
+  Copyright : (C) 2020, 2021 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../REPL/Interpreter.maude
+sload ./Snippet.maude
+
+********************************************************************************
+
+mod SAP-INTERPRETER { F :: REPL/FORMATTING, UI :: INTERPRETER/UI } is
+  including INTERPRETER { SAP-Snippet, F, UI } .
+endm
+
+*** ----------------------------------------------------------------------------
+
+mod BASIC-SAP-INTERPRETER { IN :: INTERPRETER/NAME } is
+  including BASIC-INTERPRETER* { SAP-Snippet, Interpreter/Basic-UI{IN} } .
+endm
+
+********************************************************************************

@@ -1,0 +1,244 @@
+***( SpeX/CommonLibs
+
+  This file is part of CommonLibs (CL), a suite of Maude 3 libraries
+  that extend the predefined data modules from the standard prelude.
+
+  Copyright : (C) 2020, 2021 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ./Qid.maude
+sload ./QidList2.maude
+sload ./Read.maude
+
+********************************************************************************
+
+fmod TERM/OPS is
+  protecting META-LEVEL .
+  protecting QID/OPS .
+  protecting QID/SHOW .
+  protecting QID-LIST2 .
+  protecting LEXICAL .
+
+  var  QI : Qid .
+  var  QIL : QidList .
+  var  QLL : QidList2 .
+  var  C : Constant .
+  var  V : Variable .
+  var  TQ : TermQid .
+  vars T T' : Term .
+  vars TL S : TermList .
+  var  NTL : NeTermList .
+  var  TP : Type .
+  var  TPL : TypeList .
+  var  ODS : OpDeclSet .
+  var  AtS : AttrSet .
+
+  *** pack  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op pack : Qid NeTermList -> Term .
+  eq pack(QI, T) = T .
+  eq pack(QI, NTL) = QI[NTL] [owise] .
+
+  *** unpack  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op unpack : Qid Term -> NeTermList .
+  eq unpack(QI, QI[NTL]) = NTL .
+  eq unpack(QI, T) = T [owise] .
+
+  *** map  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op map : Qid TermList -> TermList .
+  eq map(QI, empty) = empty .
+  eq map(QI, (T, TL)) = QI[T], map(QI, TL) .
+
+  *** _as_ (type conversion for constants and variables)  - - - - - - - - - - --
+  op _as_ : Term Type -> Term .
+  eq C as TP = qid(string(getName(C)) + "." + string(TP)) .
+  eq V as TP = qid(string(getName(V)) + ":" + string(TP)) .
+  eq T as TP = T [owise] .
+
+  *** as-qid  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op as-qid : Term -> Term .
+  eq as-qid(T) = T as 'Qid .
+
+  op as-qids : TermList -> TermList .
+  eq as-qids(empty) = empty .
+  eq as-qids((T, TL)) = as-qid(T), as-qids(TL) .
+
+  *** var (make variables with given names and types)  - - - - - - - - - - - - -
+  op var : Qid Type -> Variable .
+  eq var(QI, TP) = qid(string(QI) + ":" + string(TP)) .
+
+  *** const (make constants with given names and types)  - - - - - - - - - - - -
+  op const : Qid Type -> Constant .
+  eq const(QI, TP) = qid(string(QI) + "." + string(TP)) .
+
+  *** intersperse  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op tl-intersperse : TermList TermList -> TermList .
+  eq tl-intersperse(S, (T, T', TL)) = T, S, tl-intersperse(S, (T', TL)) .
+  eq tl-intersperse(S, TL) = TL [owise] .
+
+  *** mk-bubble  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op mk-bubble : Qid NeTermList -> Term .
+  eq mk-bubble(QI, NTL) = QI[pack('__, as-qids(NTL))] .
+
+  *** comma-separated bubbles  - - - - - - - - - - - - - - - - - - - - - - - - -
+  op cs-bubble : Qid NeTermList -> Term .
+  eq cs-bubble(QI, TL) = mk-bubble(QI, tl-intersperse(show-qid('`,), TL)) .
+
+  *** usplit (split a qid by underscores)  - - - - - - - - - - - - - - - - - - -
+  op usplit : Qid -> NeQidList2 .
+  eq usplit(QI) = usplit-list(tokenize(mksord(string(QI))["_" / " _ "])) .
+
+  op usplit-list : QidList -> NeQidList2 .
+  eq usplit-list(nil) = :[nil] .
+  eq usplit-list('_ QIL) = :[nil] usplit-list(QIL) .
+  eq usplit-list(QI QIL) = :[QI] ++ usplit-list(QIL) .
+
+  *** #underscores  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op #underscores : Qid -> Nat .
+  eq #underscores(QI) = p size2(usplit(QI)) .
+
+  *** term traversal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op term-traversal : Term -> NeQidList .
+  eq term-traversal(TQ) = getName(TQ) .
+  ceq term-traversal(QI[NTL])
+   = if QI is ufree
+     then QI '`( intercalate('`,, QLL) '`)
+     else zip(usplit(QI), QLL) fi
+   if QLL := tl-2traversal(NTL) .
+
+  op tl-2traversal : TermList -> QidList2 .
+  eq tl-2traversal(empty) = nil .
+  eq tl-2traversal((T, TL)) = :[term-traversal(T)] tl-2traversal(TL) .
+
+  op tl-traversal : TermList -> QidList .
+  eq tl-traversal(TL) = concat(tl-2traversal(TL)) .
+
+  *** symbols (occurring in a term list)  - - - - - - - - - - - - - - - - - - --
+  op symbols : TermList -> QidSet .
+  eq symbols(empty) = none .
+  eq symbols(QI[NTL]) = QI ; symbols(NTL) .
+  eq symbols(C) = getName(C) .
+  eq symbols(V) = none .
+  eq symbols((T, NTL)) = symbols(T) ; symbols(NTL) .
+
+  *** variables (occurring in a term list)  - - - - - - - - - - - - - - - - - --
+  op vars : TermList -> VariableSet .
+  eq vars(empty) = none .
+  eq vars(QI[NTL]) = vars(NTL) .
+  eq vars(C) = none .
+  eq vars(V) = V .
+  eq vars((T, NTL)) = vars(T) ; vars(NTL) .
+
+  *** operation declarations (used in a term list)  - - - - - - - - - - - - - --
+  op ops : TermList OpDeclSet -> OpDeclSet .
+  eq ops(empty, ODS) = none .
+  eq ops(C, ODS) = find(getName(C), nil, getType(C), ODS) .
+  eq ops(V, ODS) = none .
+  ceq ops(QI[NTL], ODS) = find(QI, TPL, ODS) ops(NTL, ODS)
+   if TPL := type-list(NTL, ODS) .
+  eq ops(QI[NTL], ODS) = none [owise] .
+  eq ops((T, NTL), ODS) = ops(T, ODS) ops(NTL, ODS) .
+
+  op type-list : TermList OpDeclSet ~> TypeList .
+  eq type-list(empty, ODS) = nil .
+  eq type-list(QI[NTL], ODS) = type(QI, type-list(NTL, ODS), ODS) .
+  eq type-list(C, ODS) = getType(C) .
+  eq type-list(V, ODS) = getType(V) .
+  eq type-list((T, NTL), ODS) = type-list(T, ODS) type-list(NTL, ODS) .
+
+  op type : Qid TypeList OpDeclSet ~> Type .
+  ceq type(QI, TPL, (op QI : TPL -> TP [AtS] .) ODS) = TP
+   if find(QI, TPL, ODS) = none .
+
+  op find : Qid TypeList OpDeclSet -> OpDeclSet .
+  eq find(QI, TPL, (op QI : TPL -> TP [AtS] .) ODS)
+   = (op QI : TPL -> TP [AtS] .) find(QI, TPL, ODS) .
+  eq find(QI, TPL, ODS) = none [owise] .
+
+  op find : Qid TypeList Type OpDeclSet -> OpDeclSet .
+  eq find(QI, TPL, TP, (op QI : TPL -> TP [AtS] .) ODS)
+   = (op QI : TPL -> TP [AtS] .) find(QI, TPL, TP, ODS) .
+  eq find(QI, TPL, TP, ODS) = none [owise] .
+endfm
+
+********************************************************************************
+
+fmod NAME { X :: TRIV } is
+  protecting TERM/OPS .
+
+  var X : X$Elt .
+
+  *** name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op name : X$Elt -> QidList .
+  eq name(X) = term-traversal(upTerm(X)) .
+endfm
+
+********************************************************************************
+
+view Term/Assignment from TRIV to TERM/OPS is
+  sort Elt to Assignment .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod TERM/ASSIGNMENT-LIST is
+  protecting READ { Term/Assignment } *
+    (sort NeBrList{Term/Assignment} to NeAssignmentList,
+     sort BrList{Term/Assignment} to AssignmentList,
+     op read-elt to read-assignment,
+     op read-list to read-substitution) .
+
+  var S : Substitution .
+
+  *** list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : Substitution -> AssignmentList .
+  eq list((none).Substitution) = nil .
+  eq list(S) = read-substitution(unpack('_;_, upTerm(S))) [owise] .
+endfm
+
+********************************************************************************
+
+view Term/Substitution from TRIV to TERM/OPS is
+  sort Elt to Substitution .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod TERM/SUBSTITUTION-LIST is
+  protecting LIST { Term/Substitution } *
+    (sort NeList{Term/Substitution} to NeSubstList,
+     sort List{Term/Substitution} to SubstList) .
+endfm
+
+********************************************************************************
+
+fmod TERM/VARIANT-UNIFICATION is
+  protecting BOUND/OPS .
+  protecting TERM/SUBSTITUTION-LIST .
+
+  var UP : UnificationProblem .
+  var UR : UnificationPair? .
+  var N : Nat .
+  var B : Bound .
+  var M : Module .
+
+  *** solve a variant-unification problem  - - - - - - - - - - - - - - - - - - -
+  op solve : UnificationProblem Module -> SubstList .
+  eq solve(UP, M) = solve(UP, unbounded, M) .
+
+  op solve : UnificationProblem Bound Module -> SubstList .
+  eq solve(UP, B, M) = solve(UP, 0, B, M) .
+
+  op solve : UnificationProblem Nat Bound Module -> SubstList .
+  ceq solve(UP, N, B, M)
+   = if UR :: UnificationPair and-then N < B
+     then getSubstitution(UR) solve(UP, s N, B, M)
+     else nil fi
+    if UR := metaVariantUnify(M, UP, empty, '@, filter delay, N) .
+  eq solve(UP, N, B, M) = nil [owise] .
+endfm
+
+********************************************************************************

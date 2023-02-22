@@ -1,0 +1,36 @@
+***( SpeX/REPL
+
+  This file is part of REPL, a generic Read-Eval-Print-Loop library
+  for Maude 3.
+
+  Copyright : (C) 2020, 2021 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+********************************************************************************
+
+fth REPL/IO is
+  protecting STRING .
+
+  sort Accumulator .
+  op nil : -> Accumulator .
+  op append : String Accumulator -> Accumulator .
+  op flush : Accumulator -> Accumulator .
+
+  sort Input .
+  op input : Accumulator -> Input .
+
+  sort Result .
+  op show : Result -> String .
+
+  sort IdxAccumulator Index .
+  op index : Accumulator -> IdxAccumulator .
+  op end-index : IdxAccumulator -> Index .
+  op line-No : IdxAccumulator Index -> Nat .
+  op context : IdxAccumulator Index -> String .
+endfth
+
+********************************************************************************

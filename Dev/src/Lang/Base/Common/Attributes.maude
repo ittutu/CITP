@@ -1,0 +1,116 @@
+***( SpeX/Lang/Base/Common
+
+  This file is part of the SpeX-languages suite.
+
+  Copyright : (C) 2021, 2022 Simion Stoilow Institute of Mathematics
+              of the Romanian Academy (IMAR)
+  License   : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author    : Ionut Tutu <Ionut.Tutu@imar.ro>
+
+)
+
+sload ../../../CommonLibs/Term.maude
+sload ../../../CommonLibs/Read.maude
+
+********************************************************************************
+
+view Attr from TRIV to META-LEVEL is
+  sort Elt to Attr .
+endv
+
+*** ----------------------------------------------------------------------------
+
+fmod ATTR-SET is
+  protecting READ { Attr } *
+    (sort BrList{Attr} to AttrList,
+     sort NeBrList{Attr} to NeAttrList,
+     op read-elt to read-attr,
+     op read-list to read-attrs) .
+  protecting TERM/OPS .
+
+  var  AtS : AttrSet .
+
+  *** list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : AttrSet -> AttrList .
+  eq list((none).AttrSet) = nil .
+  eq list(AtS) = read-attrs(unpack('__, upTerm(AtS))) [owise] .
+endfm
+
+********************************************************************************
+
+fmod ATTRIBUTE/OPS is
+  extending ATTR-SET .
+
+  var At : Attr .
+  var AtS : AttrSet .
+  var L : Qid .
+  var MD : String .
+  var T : Term .
+
+  *** new attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  ops rigid shared flexible : -> Attr [ctor] .
+
+  *** filter original Maude attributes from an extended attribute set  - - - - -
+  op filter : AttrSet -> AttrSet .
+  eq filter((none).AttrSet) = none .
+  eq filter(rigid AtS) = filter(AtS) .
+  eq filter(shared AtS) = filter(AtS) .
+  eq filter(flexible AtS) = filter(AtS) .
+  eq filter(At AtS) = At filter(AtS) [owise] .
+
+  *** filter (new) constraint attributes from an extended attribute set  - - - -
+  op constraint-attrs : AttrSet -> AttrSet .
+  eq constraint-attrs(rigid AtS) = rigid constraint-attrs(AtS) .
+  eq constraint-attrs(shared AtS) = shared constraint-attrs(AtS) .
+  eq constraint-attrs(flexible AtS) = flexible constraint-attrs(AtS) .
+  eq constraint-attrs(AtS) = none [owise] .
+
+  *** filter label attributes from an extended attribute set  - - - - - - - - --
+  op label-attrs : AttrSet -> AttrSet .
+  eq label-attrs(none) = none .
+  eq label-attrs(label(L) AtS) = label(L) label-attrs(AtS) .
+  eq label-attrs(At AtS) = label-attrs(AtS) [owise] .
+
+  *** is label-free  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _is`label-free : AttrSet -> Bool .
+  eq AtS is label-free = label-attrs(AtS) == none .
+
+  *** filter metadata attributes from an extended attribute set  - - - - - - - -
+  op metadata-attrs : AttrSet -> AttrSet .
+  eq metadata-attrs(none) = none .
+  eq metadata-attrs(metadata(MD) AtS) = metadata(MD) metadata-attrs(AtS) .
+  eq metadata-attrs(At AtS) = metadata-attrs(AtS) [owise] .
+
+  *** is metadata-free  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _is`metadata-free : AttrSet -> Bool .
+  eq AtS is metadata-free = metadata-attrs(AtS) == none .
+
+  *** filter id attributes from an extended attribute set  - - - - - - - - - - -
+  op id-attrs : AttrSet -> AttrSet .
+  eq id-attrs(none) = none .
+  eq id-attrs(id(T) AtS) = id(T) id-attrs(AtS) .
+  eq id-attrs(At AtS) = id-attrs(AtS) [owise] .
+
+  *** is id-free  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _is`id-free : AttrSet -> Bool .
+  eq AtS is id-free = id-attrs(AtS) == none .
+
+  *** _is equational  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op _is`equational : Attr -> Bool .
+  eq assoc is equational = true .
+  eq comm is equational = true .
+  eq id(T) is equational = true .
+  eq left-id(T) is equational = true .
+  eq right-id(T) is equational = true .
+  eq At is equational = false [owise] .
+
+  op _is-not`equational : Attr -> Bool .
+  eq At is-not equational = not (At is equational) .
+
+  *** is nonexec-free  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op _is`nonexec-free : AttrSet -> Bool .
+  eq (nonexec AtS) is nonexec-free = false .
+  eq AtS is nonexec-free = true [owise] .
+endfm
+
+********************************************************************************
