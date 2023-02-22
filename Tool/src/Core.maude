@@ -47,6 +47,7 @@ fmod SPEX/LANGUAGE is
          ::= "load_" : 'FilePath [format ('b 'so 'd)]
           |  lit "eof" [format ('r 'o)]
           |  lit "quit" [format ('r 'o)]
+          |  lit "q" [format ('r 'o)]
           |  "lang_" : 'Language [format ('b 'so 'd)]
        'Language
          ::= bubble "language"
@@ -77,6 +78,7 @@ fmod SPEX/READ is
   eq read-cmd(L, {'load_[FP] : 'Command}) = load read-file-path(L, FP) .
   eq read-cmd(L, {'eof.Command : 'Command}) = eof .
   eq read-cmd(L, {'quit.Command : 'Command}) = quit .
+  eq read-cmd(L, {'q.Command : 'Command}) = quit .
   eq read-cmd(L, {'lang_[LN] : 'Command}) = lang read-lang-name(L, LN) .
 
   *** read-file-path  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --

@@ -11,9 +11,4 @@
 
 ********************************************************************************
 
-set show command off .
-set show stats off .
-set show advisories off .
-popd
-load citp.maude
-erew in CITP/INTERPRETER : start citp .
+quit
