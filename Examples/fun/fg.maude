@@ -8,11 +8,11 @@ fmod FG is
  vars X Y Z : Nat .
 ---
  eq X + 0 = X .
- eq X + (s Y) = s (X + Y) .
+ eq X + s(Y) = s(X + Y) .
 ---
- ceq F(X) = s_^5(0) if X <= s_^7(0) [metadata "ca:F1"].
- ceq F(X) = s 0   if s_^8(0) <= X [metadata "ca:F2"].
+ ceq F(X) = s^5(0) if X <= s^7(0) [metadata "ca:F1"].
+ ceq F(X) = s(0)   if s^8(0) <= X [metadata "ca:F2"].
 ---
- ceq G(Y) = s_^2(0) if Y <= s_^4(0)[metadata "ca:G1"].
- ceq G(Y) = s_^7(0) if s_^5(0) <= Y [metadata "ca:G2"]. 
+ ceq G(Y) = s^2(0) if Y <= s^4(0) [metadata "ca:G1"].
+ ceq G(Y) = s^7(0) if s^5(0) <= Y [metadata "ca:G2"]. 
 endfm

@@ -2,7 +2,7 @@
 
 goal INF is
 |-{FG}
-  fm forall {M:Nat} s_^9(0) <= G(F(M:Nat)) + G(M:Nat) = true .
+  fm forall {M:Nat} s^9(0) <= G(F(M:Nat)) + G(M:Nat) = true .
 endg
 
 begin proof PI of INF
@@ -15,7 +15,8 @@ qed
 
 goal TOTAL is
 |-{LEQ}
-  fm forall {M:Nat, N:Nat} M:Nat <= N:Nat = true \/ N:Nat <= M:Nat = true .
+  fm forall {M:Nat, N:Nat} M:Nat <= N:Nat = true \/ N:Nat <= M:Nat = true
+     [metadata "total"] .
 endg
 
 begin proof PT of TOTAL
