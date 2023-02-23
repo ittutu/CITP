@@ -337,9 +337,8 @@ fmod CITP/BRIDGE/IND is
 --- list of constants -> operation declaration set ---
  op C2ODS : GroundTermList -> OpDeclSet .
  eq C2ODS(empty) = none .
-ceq C2ODS((GT,GTL)) = op Q : nil -> TP[metadata(SR1)]. C2ODS(GTL)
- if Q := getName(GT) /\ TP := getType(GT) /\ SR := string(Q) /\ N := length(SR) /\
-    N1 := rfind(SR,"#",N) /\ SR1 := substr(SR,N1 + 1,N).
+ceq C2ODS((GT,GTL)) = op Q : nil -> TP[none]. C2ODS(GTL)
+ if Q := getName(GT) /\ TP := getType(GT) .
   eq C2ODS((GT,GTL)) = C2ODS(GTL) [owise].
 
 --- list of types -> list of variables  ---
