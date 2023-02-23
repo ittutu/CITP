@@ -539,11 +539,11 @@ fmod CITP/MODULE-PRINTING is
   eq print2(L, M, (none).MembAxSet) = nil .
   eq print2(L, M, mb T : S [AtS] . MS)
    = :['mb '\s print(L, M, T : S) '\s
-       '`[ print(L, AtS) '`] '\s '.]
+        if AtS == none then nil else '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, M, MS) .
   eq print2(L, M, cmb T : S if EC [AtS] . MS)
    = :['cmb '\s print(L, M, T : S) '\s 'if '\s print(L, M, EC) '\s
-       '`[ print(L, AtS) '`] '\s '.]
+        if AtS == none then nil else '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, M, MS) .
 
   op print : CITP Module MembAxSet -> QidList .
@@ -554,11 +554,11 @@ fmod CITP/MODULE-PRINTING is
   eq print2(L, M, (none).EquationSet) = nil .
   eq print2(L, M, eq LHS = RHS [AtS] . ES)
    = :['eq '\s print(L, M, LHS = RHS) '\s
-       '`[ print(L, AtS) '`] '\s '.]
+        if AtS == none then nil else '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, M, ES) .
   eq print2(L, M, ceq LHS = RHS if EC [AtS] . ES)
    = :['ceq '\s print(L, M, LHS = RHS) '\s 'if '\s print(L, M, EC) '\s
-       '`[ print(L, AtS) '`] '\s '.]
+        if AtS == none then nil else '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, M, ES) .
 
   op print : CITP Module EquationSet -> QidList .
@@ -569,11 +569,11 @@ fmod CITP/MODULE-PRINTING is
   eq print2(L, M, (none).RuleSet) = nil .
   eq print2(L, M, rl LHS => RHS [AtS] . RS)
    = :['rl '\s print(L, M, LHS => RHS) '\s
-       '`[ print(L, AtS) '`] '\s '.]
+        if AtS == none then nil else '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, M, RS) .
   eq print2(L, M, crl LHS => RHS if C [AtS] . RS)
    = :['crl '\s print(L, M, LHS => RHS) '\s 'if '\s print(L, M, C) '\s
-       '`[ print(L, AtS) '`] '\s '.]
+        if AtS == none then nil else '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, M, RS) .
 
   op print : CITP Module RuleSet -> QidList .

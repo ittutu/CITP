@@ -205,7 +205,7 @@ fmod CITP/BRIDGE/PREAMBLE is
    = (th H is IL sorts SS . SDS ODS MS variant-eqs(ES) RS endth) .
 
   op variant-eqs : EquationSet -> EquationSet .
-  eq variant-eqs(eq LHS = RHS [metadata(MD) AtS] . ES)
+  eq variant-eqs(eq LHS = RHS [AtS] . ES)
    = (eq LHS = RHS [variant] .) variant-eqs(ES) .
   eq variant-eqs(ES) = none [owise] .
 

@@ -176,8 +176,10 @@ fmod CITP/FORMULA is
   eq md-only(no-fd) = no-fd .
   eq md-only(fm F [AtS] . FDL) = (fm F [metadata-attrs(AtS)] .) md-only(FDL) .
 
-  op md-update : FormDecl{CITP} Substitution Module -> FormDecl{CITP} .
-  eq md-update(fm F [AtS] ., SB, M) = (fm F [md-update(AtS, SB, M)] .) .
+  op md-update : FormDeclList{CITP} Substitution Module -> FormDeclList{CITP} .
+  eq md-update(no-fd, SB, M) = no-fd .
+  eq md-update(fm F [AtS] . FDL, SB, M)
+   = (fm F [md-update(AtS, SB, M)] .) md-update(FDL, SB, M) .
 
   *** substitutions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op _<<_ : Formula{CITP} Substitution -> Formula{CITP} .
@@ -1794,7 +1796,7 @@ fmod CITP/APPLY/INIT is
      then goal GN[GA qid('init '`( qid(SR) '`))] is H' |-{M[MA]} C endg
      else no-goal fi
    if goal GN[GA] is H |-{M[MA]} C endg := G
-      /\ GL' := init(H[SR], G, variant-module(M))
+      /\ GL' := init(H[SR], G, M)
       /\ H' := current-premises(GL')
       /\ GL' == no-goal or-else H' =/= H .
 
@@ -1804,7 +1806,7 @@ fmod CITP/APPLY/INIT is
      then goal GN[GA 'init-all] is H' |-{M[MA]} C endg
      else no-goal fi
    if goal GN[GA] is H |-{M[MA]} C endg := G
-      /\ GL' := init(non-execs(H), G, variant-module(M))
+      /\ GL' := init(non-execs(H), G, M)
       /\ H' := current-premises(GL')
       /\ GL' == no-goal or-else H' =/= H .
 
@@ -1846,7 +1848,7 @@ fmod CITP/APPLY/INIT is
   eq init(FDL, no-goal, M) = no-goal .
   ceq init(FD FDL, NGL, M) = init(FDL, init(FD, SBL, head-goal(NGL)), M)
    if (fm F1 if F2 [AtS] .) := strip(FD)
-      /\ SBL := solve(unif-problem(F2), M) .
+      /\ SBL := solve(unif-problem(F2), variant-module(M)) .
   eq init(FD FDL, NGL, M) = init(FDL, NGL, M) [owise] .
 endfm
 
