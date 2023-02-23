@@ -33,21 +33,28 @@ fmod CITP/MODULE-DICT is
   protecting CITP/LID .
   including  DICTIONARY { Qid, CITP/Module } *
     (sort KeyValuePair{Qid,CITP/Module} to MDEntry{CITP},
-     sort Dict{Qid,CITP/Module} to ModuleDict{CITP}) .
+     sort Dict{Qid,CITP/Module} to ModuleDict{CITP},
+     op (_[_] : Dict{Qid,CITP/Module} Qid -> Module) to search) .
   protecting CITP/BRIDGE/PREAMBLE .
 
   var L : CITP .
   var MD : ModuleDict{CITP} .
   var M : Module .
+  var M? : [Module] .
   var MN : Qid .
-  var V : Variable .
+  var MV : Variable .
 
   *** lookup adjustments  - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  ceq lookup(MN, MD) = M
-   if M := upModule(MN, true) .
+  op _[_] : ModuleDict{CITP} Qid ~> Module [prec 23] .
 
-  ceq lookup(V, MD) = (fmod V is nil sorts none . none none none none endfm)
-   if getType(V) = 'Module .
+  ceq MD[MN]
+   = if defined(M?) then M? else upModule(MN, true) fi
+   if not MN :: Variable /\ M? := lookup(MN, MD) .
+
+  ceq MD[MV] = (th MV is nil sorts none . none none none none none endth)
+   if getType(MV) = 'Module .
+
+  eq MD[MN] = (undefined).Module [owise] .
 
   *** module-names  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op module-names : ModuleDict{CITP} -> QidSet .

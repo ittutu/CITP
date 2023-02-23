@@ -148,7 +148,7 @@ mod CITP/PROCESSOR is
           in AnalysisState[L]{DB /
                modules(DB[L]) & goals(DB[L]) & proofs(DB[L])}
         or-else
-        parse L declaration (QIL)
+        parse L goal (QIL)
           in AnalysisState[L]{modules(DB[L]) & goals(DB[L])}
       fi) .
 
@@ -172,19 +172,6 @@ mod CITP/PROCESSOR is
     processed(I, $[L], Warning: 'This 'goal 'is 'trivial.)
    if T :: 'Goal
       /\ no-goal := read-goal(L, T, modules(DB[L])) .
-
-  crl [CITP:process] :
-    < $[L] : PROC | running, Atts >
-    process($[L], I, T, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L],
-      if defined(proofs(DB[L])[PN])
-      then Advisory: log('redefining 'proof) PN
-      else log('Loading 'proof) PN fi status(P),
-      insert-proof(PN, P, DB[L]))
-   if T :: 'Proof
-      /\ P := read-proof(L, T, goals(DB[L]))
-      /\ PN := name(P) .
 
   crl [CITP:process] :
     < $[L] : PROC | running, Atts >
@@ -337,9 +324,9 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Showing 'added 'declarations) '\n
       mk-page(if GL == no-goal
         then 'No 'metadata '\s '`( 'there's 'nothing 'to 'prove '`)
-        else if has-printable-metadata(L, module(head-goal(GL)))
-             then print-additions(L, module(head-goal(GL)), M0)
-             else 'No 'added 'declarations' fi fi))
+        else if module(head-goal(GL)) == M0
+             then 'No 'added 'declarations'
+             else print-additions(L, module(head-goal(GL)), M0) fi fi))
    if GL := last-list(proof-run(L, Atts))
       /\ M0 := base-module(ongoing-proof(L, Atts)) .
 

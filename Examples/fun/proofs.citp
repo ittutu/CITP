@@ -1,5 +1,7 @@
 `` -----------------------------------------------------------------------------
 
+import Maude module FG
+
 goal INF is
 |-{FG}
   fm forall {M:Nat} s^9(0) <= G(F(M:Nat)) + G(M:Nat) = true .
