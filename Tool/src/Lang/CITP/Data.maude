@@ -34,7 +34,7 @@ fmod CITP/MODULE-DICT is
   including  DICTIONARY { Qid, CITP/Module } *
     (sort KeyValuePair{Qid,CITP/Module} to MDEntry{CITP},
      sort Dict{Qid,CITP/Module} to ModuleDict{CITP},
-     op (_[_] : Dict{Qid,CITP/Module} Qid -> Module) to search) .
+     op _`[_`] : Dict{Qid,CITP/Module} Qid -> [Module] to search) .
   protecting CITP/BRIDGE/PREAMBLE .
 
   var L : CITP .

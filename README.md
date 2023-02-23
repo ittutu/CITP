@@ -128,13 +128,13 @@ CITP supports the following system-level commands:
 
 Within proofs, i.e., after executing a `begin proof` command, CITP supports a different set of commands:
 - `show proof` displays the tactics used so far in the proof.
-- `show [full] goals` displays summaries of all open goals.
-- `show [full] goal` displays a summary of the curent open goal.
-- `show additions` displays all additional declarations generated during the proof.
+- `show goals [abridged]` displays summaries of all open goals.
+- `show goal [abridged]` displays a summary of the curent open goal.
+- `show additions` displays all additional declarations generated during a proof.
 - `rollback` reverses the effect of the last list of tactics applied.
 - `reduce term T` evaluates a term `T` w.r.t. the curent module.
 - `search path from S to T` searches for a rewrite path from a source term `S` to a target term `T` w.r.t. the current module.
-- `qed` ends the current proof (returning to the system level).
+- `qed` ends the current proof and returns to the system level.
 
 ## Tactics
 
