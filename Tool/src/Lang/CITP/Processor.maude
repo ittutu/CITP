@@ -116,7 +116,7 @@ mod CITP/PROCESSOR is
 
   op status : Proof{CITP} -> QidList .
   eq status(P)
-   = if eval(P) == no-goal then nil else '\t '`( 'incomplete '`) fi .
+   = if eval(P) == no-goal then nil else '\s '`( 'incomplete '`) fi .
 
   op status : QidList ProofDict{CITP} -> QidList2 .
   eq status(nil, PD) = nil .
@@ -181,11 +181,12 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Applying) print(TtL, LGL) '\n
       mk-page(if GL == LGL
         then alert('Nothing 'has 'changed.)
-        else print-abridged(GL, base-module(ongoing-proof(L, Atts))) fi))
+        else print-abridged(GL, M0) fi))
    if T :: ('Tactic ; 'TacticList)
       /\ TtL := read-tactics(L, T)
       /\ LGL := last-list(proof-run(L, Atts))
-      /\ GL := apply(TtL, LGL) .
+      /\ GL := apply(TtL, LGL)
+      /\ M0 := base-module(ongoing-proof(L, Atts)) .
 
   *** executing CITP commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
   rl [CITP:import-module] :
@@ -304,8 +305,9 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Showing 'current 'goal) '\n
       mk-page(if GL == no-goal
         then 'Nothing 'to 'prove
-        else print(head-goal(GL), base-module(ongoing-proof(L, Atts))) fi))
-   if GL := last-list(proof-run(L, Atts)) .
+        else print(head-goal(GL), M0) fi))
+   if GL := last-list(proof-run(L, Atts))
+      /\ M0 := base-module(ongoing-proof(L, Atts)) .
 
   crl [CITP:show-current-module] :
     < $[L] : PROC | executing I command, Atts >
