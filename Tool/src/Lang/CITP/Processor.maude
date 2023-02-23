@@ -194,7 +194,7 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Applying) print(TtL, LGL) '\n
       mk-page(if GL == LGL
         then alert('Nothing 'has 'changed.)
-        else print(head-goal(GL), base-module(ongoing-proof(L, Atts))) fi))
+        else print-abridged(head-goal(GL), base-module(ongoing-proof(L, Atts))) fi))
    if T :: ('Tactic ; 'TacticList)
       /\ TtL := read-tactics(L, T)
       /\ LGL := last-list(proof-run(L, Atts))
@@ -343,16 +343,18 @@ mod CITP/PROCESSOR is
    if GL := last-list(proof-run(L, Atts))
       /\ M0 := base-module(ongoing-proof(L, Atts)) .
 
-  rl [CITP:rollback] :
+  crl [CITP:rollback] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{rollback}, DB)
    => if size(ongoing-proof(L, Atts)) > 0
     then < $[L] : PROC | running, (Atts).rollback(L) >
       processed(I, $[L], log('Rolling 'back) '\n
-        mk-page(print-abridged(last-list(init(proof-run(L, Atts))))))
+        mk-page(print-abridged(head-goal(GL), M0)))
     else < $[L] : PROC | running, Atts >
       processed(I, $[L], log('Rolling 'back) '\n
-        mk-page('Cannot 'roll 'back 'any 'further)) fi .
+        mk-page('Cannot 'roll 'back 'any 'further)) fi
+   if GL := last-list(proof-run(L, Atts))
+      /\ M0 := base-module(ongoing-proof(L, Atts)) .
 
   crl [CITP:reduce-term] :
     < $[L] : PROC | executing I command, Atts >

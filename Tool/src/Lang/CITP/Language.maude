@@ -35,7 +35,6 @@ fmod CITP/LANGUAGE is
              [format ('! 'so 's! 'on! 'o+++ 'd 'd '---n++i 'n--i! 'o)]
           |  "goal_is_|-{_}_endg" : 'GoalName 'FormDeclList 'MaudeModule 'FormDeclList
              [format ('! 'so 's! 'on++i 'n--i! 'o+++ 'd 'd '---n++i 'n--i! 'o)]
-
        'GoalName
          ::= bubble "goalName" [exclude ("is")]
        'ModuleName
@@ -60,7 +59,7 @@ fmod CITP/LANGUAGE is
        'AttrList
          ::= bubble "attrList" [exclude ("[" "]")]
        *** proofs  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-       'Proof
+       'Proof *** for printing purposes only
          ::= "proof_of_is`qed" : 'ProofName 'GoalName
              [format ('! 'so 's! 'so '!s 'on! 'o)]
           |  "proof_of_is_qed" : 'ProofName 'GoalName 'TacticListSeq
@@ -68,7 +67,7 @@ fmod CITP/LANGUAGE is
        'ProofName
          ::= token "proofName"
        'TacticListSeq
-         ::= "_." : 'TacticList [format ('d 's! 'o)]
+         ::= just 'TacticList
           |  "__" : 'TacticListSeq 'TacticListSeq [assoc format ('d 'ni 'd)]
        'TacticList
          ::= bubble "tacticList"
@@ -685,9 +684,11 @@ fmod CITP/SHOW is
   
   *** show goal name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op show-goal-name : CITP Qid QidList -> Term .
+  eq show-goal-name(L, GN, nil)
+   = mk-bubble('goalName, show-qids(mksord(GN))) .
   eq show-goal-name(L, GN, GA)
    = mk-bubble('goalName,
-      show-qids(mksord(qid(GN '`[ intersperse('`] '`[, GA) '`])))) .
+      show-qids(mksord(qid(GN '`[ intersperse('`] '`[, GA) '`])))) [owise] .
 
   *** show module name  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op show-module-name : CITP Qid QidList -> Term .
@@ -817,12 +818,8 @@ fmod CITP/SHOW is
    = show-tactic-lists(L, NGL, NSTtL1),
      show-tactic-lists(L, apply(NSTtL1, NGL), NSTtL2) .
   eq show-tactic-lists(L, NGL, TtL .)
-   = '_. [bubble-tactics(L, NGL, TtL)] .
-
-  op bubble-tactics : CITP GoalList{CITP} TacticList{CITP} -> Term .
-  eq bubble-tactics(L, GL, TtL)
    = mk-bubble('tacticList,
-      show-qids(print term pack('__, show-tactics(L, GL, TtL))
+      show-qids(print term pack('__, show-tactics(L, NGL, TtL))
         given tactic-grammar(L))) .
 
   *** show tactics  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -1026,11 +1023,8 @@ fmod CITP/PARSING is
   op parse_declaration_in_ : CITP QidList AnalysisState{CITP}
     ~> ParsingOutcome .
   eq parse L declaration (QIL) in SAS
-   = (scan L input (QIL : 'Goal)
-      then analyse L goal in AnalysisState[L]{modules(SAS)})
-     or-else
-     (scan L input (QIL : 'Proof)
-      then analyse L proof in AnalysisState[L]{goals(SAS)}) .
+   = scan L input (QIL : 'Goal)
+     then analyse L goal in AnalysisState[L]{modules(SAS)} .
 
   op parse_tactic`list_in_ : CITP Qid AnalysisState{CITP} ~> ParsingOutcome .
   eq parse L tactic list (QIL) in SAS
