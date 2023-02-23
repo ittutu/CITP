@@ -1979,7 +1979,7 @@ fmod CITP/APPLY/PUSH is
       /\ ES =/= none or-else MS =/= none or-else RS =/= none
       /\ SR := metadata(AtS)
       /\ QI := if SR == "" then qid(N) else qid(SR) fi
-      /\ M' := addRL(RS, addMB(MS, addEQ(ES, M)))
+      /\ M' := addRL(RS, addMB(MS, addSeqRedEQ(ES, M)))
       /\ N' := if SR == "" then s N else N fi .
   eq push(FD FDL, N, goal GN[GA] is H |-{M[MA]} C endg)
    = push(FDL, N, goal GN[GA] is H FD |-{M[MA]} C endg) [owise] .

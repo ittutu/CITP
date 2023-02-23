@@ -316,6 +316,11 @@ ceq addEQ(ES,fth Q is IL sorts SS . SDS ODS1 MS1 ES1 endfth) =
 ceq addEQ(ES,th Q is IL sorts SS . SDS ODS1 MS1 ES1 RS1 endth) =
     th Q is IL sorts SS . SDS ODS1 MS1 addEQ(M,ES,ES1) RS1 endth
  if M := th Q is IL sorts SS . SDS ODS1 none none none endth .
+*** add seq-red eqs *******************************
+ op addSeqRedEQ : EquationSet Module -> Module .
+ eq addSeqRedEQ(none, M) = M .
+ eq addSeqRedEQ(E ES, M)
+  = addSeqRedEQ(ES, addEQ(red(M, E), M)) .
 *** match membership axioms *******************************
  op match? : Module MembAx MembAx -> Bool .
 ceq match?(M,mb T1 : ST1[AS1]., mb T2 : ST2[AS2].) = true

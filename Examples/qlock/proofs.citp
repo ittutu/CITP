@@ -10,13 +10,6 @@ endg
 begin proof PI1 of INV1
   ind(S:Sys) tc ca imp red push-all red
   init-all push-all red
-  init-all push-all red
-  ``
-  `` Alternatively, the proof can also be finalized as follows, using
-  `` explicit substitutions.
-  ``
-  `` init("qinv1/IH[x#1]", I:X$Pid <- I#3) push-all red
-  `` init("qinv1/IH[x#1]", I:X$Pid <- z#2) push-all red
 qed
 
 `` -----------------------------------------------------------------------------
@@ -33,14 +26,7 @@ endg
 
 begin proof PI2 of INV2
   tc imp conj push-all
-  init-all push-all
-  init-all
-  ``
-  `` Alternatively, the proof can also be finalized as follows, using
-  `` explicit substitutions.
-  ``
-  `` init("qinv1", I:X$Pid <- J#2 ; S:Sys <- S#3) push("qinv1/init1")
-  `` init("qinv1", I:X$Pid <- I#1 ; S:Sys <- S#3) push("qinv1/init2") red
+  init-all push-all red
 qed
 
 `` -----------------------------------------------------------------------------

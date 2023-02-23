@@ -32,12 +32,6 @@ begin proof PI of INV
   tc ca red ca red
   imp conj push-all red
   init-all
-  ``
-  `` or we can initialize them one at a time
-  ``
-  `` init("inv/IH[x#1]/CR/CR/CL")
-  `` init("inv/IH[x#1]/CR/CR/CR/CL")
-  `` init("inv/IH[x#1]/CR/CR/CR/CR")
 qed
 
 `` -----------------------------------------------------------------------------

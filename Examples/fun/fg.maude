@@ -1,18 +1,18 @@
 in leq
 fmod FG is
  pr LEQ .
- op _+_ : Nat Nat -> Nat [assoc comm].
- op _<=_ : Nat Nat -> Bool[metadata "transitive"].
+ op _+_ : Nat Nat -> Nat [assoc comm] .
+ op _<=_ : Nat Nat -> Bool [metadata "transitive"] .
  op F : Nat -> Nat .
  op G : Nat -> Nat .
- vars X Y Z : Nat .
+ vars M N : Nat .
 ---
- eq X + 0 = X .
- eq X + s(Y) = s(X + Y) .
+ eq M + 0 = M .
+ eq M + s(N) = s(M + N) .
 ---
- ceq F(X) = s^5(0) if X <= s^7(0) [metadata "ca:F1"].
- ceq F(X) = s(0)   if s^8(0) <= X [metadata "ca:F2"].
+ ceq F(M) = s^5(0) if M <= s^7(0) [metadata "ca:F1"] .
+ ceq F(M) = s(0)   if s^8(0) <= M [metadata "ca:F2"] .
 ---
- ceq G(Y) = s^2(0) if Y <= s^4(0) [metadata "ca:G1"].
- ceq G(Y) = s^7(0) if s^5(0) <= Y [metadata "ca:G2"]. 
+ ceq G(N) = s^2(0) if N <= s^4(0) [metadata "ca:G1"] .
+ ceq G(N) = s^7(0) if s^5(0) <= N [metadata "ca:G2"] . 
 endfm
