@@ -445,9 +445,8 @@ op _<<_ : RuleSet Substitution -> RuleSet .
 *** add Substitution (obtained above) to Module *******************************
  op addSB : Substitution Module -> Module .
  eq addSB(none,M) = M .
-ceq addSB(V <- CT ; SB,M) = addSB(SB,addOP(op Q : nil -> TP[metadata(SR1)].,M))
- if Q := getName(CT) /\ TP := getType(CT) /\ SR := string(Q) /\ N := length(SR) /\
-    N1 := rfind(SR,"#",N) /\ SR1 := substr(SR,N1 + 1,N).
+ceq addSB(V <- CT ; SB,M) = addSB(SB,addOP(op Q : nil -> TP[none].,M))
+ if Q := getName(CT) /\ TP := getType(CT) .
  eq addSB(V <- T ; SB,M) = addSB(SB,M)[owise]. 
 *** free variables *******************************
  op fv : TermList -> VariableSet .

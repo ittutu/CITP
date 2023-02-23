@@ -31,17 +31,18 @@ fmod CITP/LANGUAGE is
                                     'FormDeclList
              [format ('! 'so 's! 'on++i 'n--i! 'o 'd 'd 'n++i 'n--i! 'o)]
        'Goal* *** for printing purposes only
-         ::= "goal_is |-{_[_]}_endg" : 'GoalName 'ModuleName 'MaudeDeclList
-                                       'FormDeclList
-             [format ('! 'so 's! 'on! 'o 'd 'd 'n++i 'n--i 'd 'n++i 'n--i! 'o)]
-          |  "goal_is_|-{_[_]}_endg" : 'GoalName 'FormDeclList 'ModuleName
-                                    'MaudeDeclList 'FormDeclList
-             [format ('! 'so 's! 'on++i 'n--i! 'o 'd 'd 'n++i 'n--i 'd 'n++i
-                      'n--i! 'o)]
+         ::= "goal_is |-{_}_endg" : 'GoalName 'MaudeModule 'FormDeclList
+             [format ('! 'so 's! 'on! 'o+++ 'd 'd '---n++i 'n--i! 'o)]
+          |  "goal_is_|-{_}_endg" : 'GoalName 'FormDeclList 'MaudeModule 'FormDeclList
+             [format ('! 'so 's! 'on++i 'n--i! 'o+++ 'd 'd '---n++i 'n--i! 'o)]
+
        'GoalName
          ::= bubble "goalName" [exclude ("is")]
        'ModuleName
          ::= bubble "moduleName" [exclude ("}")]
+       'MaudeModule
+         ::= "th_is`protecting_._endth" : 'ModuleName 'ModuleName 'MaudeDeclList
+             [format ('! 'so 's! 's 'so 's! 'on+++i 'n---i! 'o)]
        'MaudeDeclList
          ::= just 'MaudeDecl
           |  "__" : 'MaudeDeclList 'MaudeDeclList [assoc format ('d 'ni 'd)]
@@ -201,9 +202,9 @@ fmod CITP/LANGUAGE is
          ::= lit "qed"
           |  lit "show proof"
           |  lit "show goals"
-          |  lit "show full goals"
+          |  lit "show goals abridged"
           |  lit "show goal"
-          |  lit "show full goal"
+          |  lit "show goal abridged"
           |  lit "show module"
           |  lit "show additions"
           |  lit "rollback"
@@ -446,12 +447,12 @@ fmod CITP/READ is
    = Cmd[L]{show ongoing proof} .
   eq read-cmd(L, {'show`goals.ProofCommand : 'ProofCommand})
    = Cmd[L]{show goals} .
-  eq read-cmd(L, {'show`full`goals.ProofCommand : 'ProofCommand})
-   = Cmd[L]{show goals in full} .
+  eq read-cmd(L, {'show`goals`abridged.ProofCommand : 'ProofCommand})
+   = Cmd[L]{show goals abridged} .
   eq read-cmd(L, {'show`goal.ProofCommand : 'ProofCommand})
    = Cmd[L]{show current goal} .
-  eq read-cmd(L, {'show`full`goal.ProofCommand : 'ProofCommand})
-   = Cmd[L]{show current goal in full} .
+  eq read-cmd(L, {'show`goal`abridged.ProofCommand : 'ProofCommand})
+   = Cmd[L]{show current goal abridged} .
   eq read-cmd(L, {'show`module.ProofCommand : 'ProofCommand})
    = Cmd[L]{show current module} .
   eq read-cmd(L, {'show`additions.ProofCommand : 'ProofCommand})
@@ -509,8 +510,8 @@ fmod CITP/MODULE-PRINTING is
   op print2 : CITP OpDeclSet -> QidList2 .
   eq print2(L, (none).OpDeclSet) = nil .
   eq print2(L, op QI : TPL -> TP [AtS] . ODS)
-   = :['op '\s QI '\s ': '\s if TPL == nil then nil else TPL '\s fi
-       '-> '\s TP '\s '`[ print(L, AtS) '`] '\s '.]
+   = :['op '\s QI '\s ': '\s if TPL == nil then nil else TPL '\s fi '-> '\s TP
+     if AtS == none then nil else '\s '`[ print(L, AtS) '`] '\s fi '.]
      print2(L, ODS) .
 
   *** conditions  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  --
@@ -656,25 +657,32 @@ fmod CITP/SHOW is
        show-module-name(L, getName(M), MA),
        pack('__, show-formulas(L, M, C)) ] [owise] .
 
+        
   op show-goal : CITP Goal{CITP} Module -> Term .
   eq show-goal(L, goal GN[GA] is no-fd |-{M[MA]} C endg, M0)
    = if M == M0
      then show-goal(L, goal GN[GA] is no-fd |-{M[MA]} C endg)
-     else 'goal_is`|-`{_`[_`]`}_endg [
+    else 'goal_is`|-`{_`}_endg [
         show-goal-name(L, GN, GA),
-        show-module-name(L, getName(M), nil),
-        pack('__, show-module-additions(L, print2-additions(L, M, M0))),
+        show-module(L, M, MA, M0),
         pack('__, show-formulas(L, M, C)) ] fi .
   eq show-goal(L, goal GN[GA] is H |-{M[MA]} C endg, M0)
    = if M == M0
      then show-goal(L, goal GN[GA] is H |-{M[MA]} C endg)
-     else 'goal_is_|-`{_`[_`]`}_endg [
+     else 'goal_is_|-`{_`}_endg [
         show-goal-name(L, GN, GA),
         pack('__, show-formulas(L, M, H)),
-        show-module-name(L, getName(M), nil),
-        pack('__, show-module-additions(L, print2-additions(L, M, M0))),
+        show-module(L, M, MA, M0),
         pack('__, show-formulas(L, M, C)) ] fi [owise] .
 
+  *** show module  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op show-module : CITP Module QidList Module -> Term  .
+  eq show-module(L, M, MA, M0)
+   = 'th_is`protecting_._endth [
+       show-module-name(L, getName(M), MA),
+       show-module-name(L, getName(M), nil),
+       pack('__, show-module-additions(L, print2-additions(L, M, M0))) ] .
+  
   *** show goal name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op show-goal-name : CITP Qid QidList -> Term .
   eq show-goal-name(L, GN, GA)
@@ -1623,14 +1631,14 @@ fmod CITP/PRINTING is
   eq print(G, N)
    = '--- 'goal qid(N) '\n '\n
      (print CITP term (show-goal(CITP, G))) .
-  eq print(G NGL, N) = print(G, N) '\n '\n print(NGL, s N) .
+  eq print(G NGL, N) = print(NGL, s N) '\n '\n print(G, N) .
 
   op print : GoalList{CITP} Module Nat -> QidList .
   eq print(no-goal, M0, N) = 'QED .
   eq print(G, M0, N)
    = '--- 'goal qid(N) '\n '\n
      (print CITP term (show-goal(CITP, G, M0))) .
-  eq print(G NGL, M0, N) = print(G, M0, N) '\n '\n print(NGL, M0, s N) .
+  eq print(G NGL, M0, N) = print(NGL, M0, s N) '\n '\n print(G, M0, N) .
 
   *** print abridged  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op print-abridged : GoalList{CITP} -> QidList .

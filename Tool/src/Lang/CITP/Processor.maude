@@ -194,7 +194,7 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Applying) print(TtL, LGL) '\n
       mk-page(if GL == LGL
         then alert('Nothing 'has 'changed.)
-        else print-abridged(GL) fi))
+        else print(head-goal(GL), base-module(ongoing-proof(L, Atts))) fi))
    if T :: ('Tactic ; 'TacticList)
       /\ TtL := read-tactics(L, T)
       /\ LGL := last-list(proof-run(L, Atts))
@@ -285,24 +285,24 @@ mod CITP/PROCESSOR is
         mk-page(print(P)))
    if AttrValue(P) := (Atts).get(ongoing-proof(L)) .
 
+  rl [CITP:show-goals-abridged] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show goals abridged}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'goals) '\n
+      mk-page(print(last-list(proof-run(L, Atts)), 0))) .
+
   rl [CITP:show-goals] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show goals}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'goals) '\n
-      mk-page(print(last-list(proof-run(L, Atts)), 0))) .
-
-  rl [CITP:show-goals-in-full] :
-    < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{show goals in full}, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L], log('Showing 'goals) '\n
       mk-page(print(last-list(proof-run(L, Atts)),
           base-module(ongoing-proof(L, Atts)), 0))) .
 
-  crl [CITP:show-current-goal] :
+  crl [CITP:show-current-goal-abridged] :
     < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{show current goal}, DB)
+    do($[L], Cmd[L]{show current goal abridged}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'current 'goal) '\n
       mk-page(if GL == no-goal
@@ -310,9 +310,9 @@ mod CITP/PROCESSOR is
         else print(head-goal(GL)) fi))
    if GL := last-list(proof-run(L, Atts)) .
 
-  crl [CITP:show-current-goal-in-full] :
+  crl [CITP:show-current-goal] :
     < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{show current goal in full}, DB)
+    do($[L], Cmd[L]{show current goal}, DB)
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'current 'goal) '\n
       mk-page(if GL == no-goal

@@ -176,6 +176,9 @@ fmod CITP/FORMULA is
   eq md-only(no-fd) = no-fd .
   eq md-only(fm F [AtS] . FDL) = (fm F [metadata-attrs(AtS)] .) md-only(FDL) .
 
+  op md-update : FormDecl{CITP} Substitution Module -> FormDecl{CITP} .
+  eq md-update(fm F [AtS] ., SB, M) = (fm F [md-update(AtS, SB, M)] .) .
+
   *** substitutions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op _<<_ : Formula{CITP} Substitution -> Formula{CITP} .
   eq true << SB = true .
@@ -294,8 +297,8 @@ fmod CITP/FORMULA is
   ceq fm2eq(fm (LHS :[L]= RHS) if F [AtS] .) = (ceq RHS = LHS if EC [AtS] .)
    if EC := f2c(F) .
   ceq fm2eq(fm F1 /\ F2 [AtS] .) = ES1 ES2
-   if ES1 := fm2eq(fm F1 [md-update(AtS, "/SF1")] .)
-      /\ ES2 := fm2eq(fm F2 [md-update(AtS, "/SF2")] .) .
+   if ES1 := fm2eq(fm F1 [md-update(AtS, "[lhs]")] .)
+      /\ ES2 := fm2eq(fm F2 [md-update(AtS, "[rhs]")] .) .
   ceq fm2eq(fm forall {VS} F [AtS] .) = ES if ES := fm2eq(fm F [AtS] .) .
 
   *** membership axioms to formula declarations  - - - - - - - - - - - - - - - -
@@ -972,9 +975,9 @@ fmod CITP/CMD is
   op Cmd[_]{qed} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`ongoing`proof} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`goals} : CITP -> Cmd{CITP} [ctor] .
-  op Cmd[_]{show`goals`in`full} : CITP -> Cmd{CITP} [ctor] .
+  op Cmd[_]{show`goals`abridged} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`current`goal} : CITP -> Cmd{CITP} [ctor] .
-  op Cmd[_]{show`current`goal`in`full} : CITP -> Cmd{CITP} [ctor] .
+  op Cmd[_]{show`current`goal`abridged} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`current`module} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`additions} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{rollback} : CITP -> Cmd{CITP} [ctor] .
@@ -1173,9 +1176,9 @@ fmod CITP/APPLY/IMP is
   *** apply the implication tactic  - - - - - - - - - - - - - - - - - - - - - --
   ceq apply(Tactic[L]{imp}, goal GN[GA] is H |-{M[MA]} fm F1 if F2 [AtS] . endg)
    = goal GN[GA 'imp] is
-       H fm F2 [md-update(metadata-attrs(AtS), "/H")] .
+       H fm F2 [md-update(metadata-attrs(AtS), "[premise]")] .
      |-{M[MA]}
-       fm F1 [md-update(AtS, "/C")] .
+       fm F1 [md-update(AtS, "[conclusion]")] .
      endg
    if fv(F1 if F2) = none .
 endfm
@@ -1205,11 +1208,11 @@ fmod CITP/APPLY/CONJ is
 
   op conjuncts : FormDeclList{CITP} -> FormDeclList{CITP} .
   eq conjuncts(fm F1 /\ F2 [AtS] .)
-   = conjuncts(fm F1 [md-update(AtS, "/CL")] .)
-     conjuncts(fm F2 [md-update(AtS, "/CR")] .) .
+   = conjuncts(fm F1 [md-update(AtS, "[lhs]")] .)
+     conjuncts(fm F2 [md-update(AtS, "[rhs]")] .) .
   eq conjuncts(fm forall {VS} F1 /\ F2 [AtS] .)
-   = conjuncts(fm forall {VS} F1 [md-update(AtS, "/CL")] .)
-     conjuncts(fm forall {VS} F2 [md-update(AtS, "/CR")] .) .
+   = conjuncts(fm forall {VS} F1 [md-update(AtS, "[lhs]")] .)
+     conjuncts(fm forall {VS} F2 [md-update(AtS, "[rhs]")] .) .
   eq conjuncts(NFDL1 NFDL2)
    = conjuncts(NFDL1) conjuncts(NFDL2) .
   eq conjuncts(FDL) = FDL [owise] .
@@ -1488,7 +1491,7 @@ endfm
 *** ----------------------------------------------------------------------------
 
 fmod CITP/APPLY/TRANS is
-  including CITP/APPLY .
+  including CITP/APPLY/REDUCE .
 
   var  L : CITP .
   vars F F1 F2 : Formula{CITP} .
@@ -1555,14 +1558,14 @@ fmod CITP/APPLY/TRANS is
   op comp : CITP Module EquationSet EquationSet -> EquationSet .
   ceq comp(L, M, eq Q[T1,T2] = 'true.Bool [AtS1] .,
                  eq Q[T3,T4] = 'true.Bool [AtS2] .)
-   = if EUT :: UnificationTriple
-     then eq Q[T1 << addX(getLhs(EUT)),
-               T4 << addX(getRhs(EUT))] = 'true.Bool [AtS] .
+   = if EUT :: UnificationTriple and-then T =/= 'true.Bool
+     then eq T = 'true.Bool [AtS] .
      else none fi
    if EUT := metaDisjointUnify(M, T2 =? T3, 0, 0)
       /\ MD := "T<" + metadata(AtS1) + ";" + metadata(AtS2) + ">"
       /\ AtS := if metadata(AtS1) =/= "" and-then metadata(AtS2) =/= ""
-                then metadata(MD) else none fi .
+                then metadata(MD) else none fi
+      /\ T := red(L, M, Q[T1 << addX(getLhs(EUT)), T4 << addX(getRhs(EUT))]) .
   ceq comp(L, M, E1 ES1, E2 ES2)
    = comp(L, M, E1, E2) comp(L, M, E1, ES2)
      comp(L, M, ES1, E2) comp(L, M, ES1, ES2)
@@ -1667,7 +1670,7 @@ fmod CITP/APPLY/IND is
    = goal GN[GA qid(QI '-> Q '`))] is H |-{M[MA]} FD' endg
      ind-case(V, ODS, G)
    if goal GN[GA QI] is H |-{M[MA]} FD endg := G
-      /\ MD  := "[" + string(V) + "<-" + string(Q) + "]"
+      /\ MD  := "[" + string(getName(V)) + "<-" + string(Q) + "]"
       /\ FD' := md-update(FD << (V <- const(Q, TP)), MD) .
   ceq ind-case(V, op Q : NTPL -> TP [AtS] . ODS, G)
    = goal GN[GA qid(QI '-> Q '`))] is
@@ -1681,7 +1684,7 @@ fmod CITP/APPLY/IND is
       /\ GTL  := TP2C-V(M, s getLB(getOps(M)), getType(V), NTPL)
       /\ GT   := Q[NGTL]
       /\ M'   := addOP(C2ODS(NGTL), M)
-      /\ MD   := "[" + string(V) + "<-" + string(list-terms(GT, M')) + "]"
+      /\ MD   := "[" + string(getName(V)) + "<-" + string(list-terms(GT, M')) + "]"
       /\ FD'  := md-update(FD << (V <- GT), MD) .
 
   op ind-schema-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .
@@ -1690,7 +1693,7 @@ fmod CITP/APPLY/IND is
    = goal GN[GA qid(QI '-> Q '`))] is H |-{M[MA]} FD' endg
      ind-schema-case(V, ODS, G)
    if goal GN[GA QI] is H |-{M[MA]} FD endg := G
-      /\ MD  := "[" + string(V) + "<-" + string(Q) + "]"
+      /\ MD  := "[" + string(getName(V)) + "<-" + string(Q) + "]"
       /\ FD' := md-update(FD << (V <- const(Q, TP)), MD) .
   ceq ind-schema-case(V, op Q : NTPL -> TP [OAS] . ODS, G)
    = goal GN[GA qid(QI '-> Q '`))] is
@@ -1706,7 +1709,7 @@ fmod CITP/APPLY/IND is
       /\ T   := Q[NTL]
       /\ VS  := vars(NTL)
       /\ F'  := forall {VS} ((F << (V <- T)) if makeIH(V, TL, F))
-      /\ MD  := "[" + string(V) + "<-" + string(list-terms(T, M)) + "]"
+      /\ MD  := "[" + string(getName(V)) + "<-" + string(list-terms(T, M)) + "]"
       /\ FD' := (fm F' [md-update(FAS, MD)] .) .
 
   *** makeIH  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -1715,7 +1718,7 @@ fmod CITP/APPLY/IND is
   eq makeIH(V, empty, M, FD)
    = no-fd .
   eq makeIH(V, (GT, GTL), M, FD)
-   = md-update(FD << (V <- GT), "/IH[" + string(list-terms(GT, M)) + "]")
+   = md-update(FD << (V <- GT), "[" + string(getName(V)) + "<-" + string(list-terms(GT, M)) + "]")
      makeIH(V, GTL, M, FD) .
 
   op makeIH : Variable TermList Formula{CITP} -> Formula{CITP} .
@@ -1833,12 +1836,7 @@ fmod CITP/APPLY/INIT is
   op init : FormDeclList{CITP} SubstList GoalList{CITP} -> GoalList{CITP} .
   ceq init(FD FDL, SB, goal GN[GA] is H |-{M[MA]} C endg)
    = init(FDL, SB, apply(Tactic[CITP]{simp}, goal GN[GA] is H FD' |-{M[MA]} C endg))
-   if SR := metadata(FD)
-      /\ K := if SR == ""
-              then max(getLB(H), getLB(M))
-              else max(getLB(H, SR + "/init"), getLB(M, SR + "/init")) fi
-      /\ FD' := md-update(md-only(red(M, strip(FD) << SB)),
-                  if SR == "" then "" else "/init" fi + string(s K, 10))
+   if FD' := md-update(md-only(red(M, strip(FD) << SB)), SB, M)
       /\ not occurs(FD', H) .
   eq init(FDL, SB NSBL, GL) = init(FDL, NSBL, init(FDL, SB, GL)) .
   eq init(FDL, SBL, GL) = GL [owise] .

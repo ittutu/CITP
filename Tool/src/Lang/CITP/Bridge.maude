@@ -141,7 +141,7 @@ fmod CITP/BRIDGE/PREAMBLE is
   eq md-update(AtS, none, M) = AtS .
   eq md-update(AtS, V <- T ; SB, M)
    = md-update(
-      md-update(AtS, "[" + string(V) + "<-" + string(list-terms(T, M)) + "]"),
+      md-update(AtS, "[" + string(getName(V)) + "<-" + string(list-terms(T, M)) + "]"),
       SB, M) .
 
   *** getLB  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -246,14 +246,6 @@ fmod CITP/BRIDGE/PREAMBLE is
    = (mod H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endm) .
   eq (th H is IL sorts SS . SDS ODS MS ES1 RS endth) \ ES2
    = (th H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endth) .
-
-  *** additional module-consistency checks  - - - - - - - - - - - - - - - - - --
-  ceq consistent(M) = false
-   if eq T = 'false.Bool [AtS] . ES := getEqs(M)
-      /\ red(M \ eq T = 'false.Bool [AtS] ., T) = 'true.Bool .
-  ceq consistent(M) = false
-   if eq T = 'true.Bool [AtS] . ES := getEqs(M)
-      /\ red(M \ eq T = 'true.Bool [AtS] ., T) = 'false.Bool .
 endfm
 
 ********************************************************************************

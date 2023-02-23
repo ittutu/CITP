@@ -3,8 +3,7 @@
 goal INV1 is
 |-{QLOCK}
   fm forall {S:Sys, I:X$Pid}
-     top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
-     [metadata("qinv1")] .
+     top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs .
 endg
 
 begin proof PI1 of INV1
