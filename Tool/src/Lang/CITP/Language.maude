@@ -1557,7 +1557,7 @@ endfm
 
 fmod CITP/PRINTING is
   protecting PRINTING { CITP } .
-  protecting CITP/GOAL-DICT .
+  protecting CITP/APPLY .
   protecting CITP/SHOW .
 
   var  L : CITP .
@@ -1610,13 +1610,11 @@ fmod CITP/PRINTING is
      (print term show-goal(CITP, G, M0) given print-grammar(CITP)) .
 
   *** print proof  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op print : Proof{CITP} -> QidList .
-  eq print(P) = print term show-proof(CITP, P) given print-grammar(CITP) .
-
   op print : ProofList{CITP} -> QidList .
   eq print((nil).ProofList{CITP}) = nil .
   eq print(P)
-   = print term show-proof(CITP, P) given print-grammar(CITP) .
+   = if eval(P) == no-goal then nil else '\! '\y 'incomplete '\o fi
+     (print term show-proof(CITP, P) given print-grammar(CITP)) .
   eq print(P NPL) = print(P) '\n '\n '--- '\n '\n print(NPL) .
 
   *** print tactic list  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
