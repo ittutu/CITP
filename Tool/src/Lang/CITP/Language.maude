@@ -56,6 +56,7 @@ fmod CITP/LANGUAGE is
              [format ('! 'so 's! 'on! 'o 'd 'd 'n++i 'n--i! 'o)]
           |  "goal_is_|-{_}_endg" : 'GoalName 'FormDeclList 'ModuleName
                                     'FormDeclList
+             [format ('! 'so 's! 'on++i 'n--i! 'o 'd 'd 'n++i 'n--i! 'o)]
           |  "goal_is |-{_}_endg" : 'GoalName 'MaudeModule 'FormDeclList
              [format ('! 'so 's! 'on! 'o+++ 'd 'd '---n++i 'n--i! 'o)]
           |  "goal_is_|-{_}_endg" : 'GoalName 'FormDeclList 'MaudeModule
@@ -1584,28 +1585,18 @@ fmod CITP/PRINTING is
 
   op print : GoalList{CITP} Module Nat -> QidList .
   eq print(no-goal, M0, N) = 'QED .
-  eq print(G, M0, N)
+  eq  print(G, M0, N)
    = '--- 'goal qid(N) '\n '\n
      (print term show-goal(CITP, G, M0) given print-grammar(CITP)) .
   eq print(G NGL, M0, N) = print(NGL, M0, s N) '\n '\n print(G, M0, N) .
 
-  *** print abridged  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op print-abridged : GoalList{CITP} -> QidList .
-  eq print-abridged(no-goal) = 'QED .
-  eq print-abridged(G)
-   = 'One 'remaining 'goal 'to 'prove: '\n '\n
-     (print term show-goal(CITP, G) given print-grammar(CITP)) .
-  eq print-abridged(G NGL)
-   = qid(size(G NGL)) 'remaining 'goals 'to 'prove.
-     'Here's 'the 'first 'one: '\n '\n
-     (print term show-goal(CITP, G) given print-grammar(CITP)) .
-
-  op print-abridged : GoalList{CITP} Module -> QidList .
-  eq print-abridged(no-goal, M0) = 'QED .
-  eq print-abridged(G, M0)
+  *** print summary  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print-summary : GoalList{CITP} Module -> QidList .
+  eq print-summary(no-goal, M0) = 'QED .
+  eq print-summary(G, M0)
    = 'One 'remaining 'goal 'to 'prove: '\n '\n
      (print term show-goal(CITP, G, M0) given print-grammar(CITP)) .
-  eq print-abridged(G NGL, M0)
+  eq print-summary(G NGL, M0)
    = qid(size(G NGL)) 'remaining 'goals 'to 'prove.
      'Here's 'the 'first 'one: '\n '\n
      (print term show-goal(CITP, G, M0) given print-grammar(CITP)) .

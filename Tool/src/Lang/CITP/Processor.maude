@@ -168,20 +168,12 @@ mod CITP/PROCESSOR is
   crl [CITP:process] :
     < $[L] : PROC | running, Atts >
     process($[L], I, T, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L], Warning: 'This 'goal 'is 'trivial.)
-   if T :: 'Goal
-      /\ no-goal := read-goal(L, T, modules(DB[L])) .
-
-  crl [CITP:process] :
-    < $[L] : PROC | running, Atts >
-    process($[L], I, T, DB)
    => < $[L] : PROC | running, if GL == LGL then Atts
                                else (Atts).apply-proof-tactics(TtL, GL) fi >
     processed(I, $[L], log('Applying) print(TtL, LGL) '\n
       mk-page(if GL == LGL
         then alert('Nothing 'has 'changed.)
-        else print-abridged(GL, M0) fi))
+        else print-summary(GL, M0) fi))
    if T :: ('Tactic ; 'TacticList)
       /\ TtL := read-tactics(L, T)
       /\ LGL := last-list(proof-run(L, Atts))
@@ -273,13 +265,6 @@ mod CITP/PROCESSOR is
         mk-page(print(P)))
    if AttrValue(P) := (Atts).get(ongoing-proof(L)) .
 
-  rl [CITP:show-goals-abridged] :
-    < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{show goals abridged}, DB)
-   => < $[L] : PROC | running, Atts >
-    processed(I, $[L], log('Showing 'goals) '\n
-      mk-page(print(last-list(proof-run(L, Atts)), 0))) .
-
   rl [CITP:show-goals] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show goals}, DB)
@@ -288,15 +273,12 @@ mod CITP/PROCESSOR is
       mk-page(print(last-list(proof-run(L, Atts)),
           base-module(ongoing-proof(L, Atts)), 0))) .
 
-  crl [CITP:show-current-goal-abridged] :
+  rl [CITP:show-goals-abridged] :
     < $[L] : PROC | executing I command, Atts >
-    do($[L], Cmd[L]{show current goal abridged}, DB)
+    do($[L], Cmd[L]{show goals abridged}, DB)
    => < $[L] : PROC | running, Atts >
-    processed(I, $[L], log('Showing 'current 'goal) '\n
-      mk-page(if GL == no-goal
-        then 'Nothing 'to 'prove
-        else print(head-goal(GL)) fi))
-   if GL := last-list(proof-run(L, Atts)) .
+    processed(I, $[L], log('Showing 'goals) '\n
+      mk-page(print(last-list(proof-run(L, Atts)), 0))) .
 
   crl [CITP:show-current-goal] :
     < $[L] : PROC | executing I command, Atts >
@@ -308,6 +290,16 @@ mod CITP/PROCESSOR is
         else print(head-goal(GL), M0) fi))
    if GL := last-list(proof-run(L, Atts))
       /\ M0 := base-module(ongoing-proof(L, Atts)) .
+
+  crl [CITP:show-current-goal-abridged] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show current goal abridged}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'current 'goal) '\n
+      mk-page(if GL == no-goal
+        then 'Nothing 'to 'prove
+        else print(head-goal(GL)) fi))
+   if GL := last-list(proof-run(L, Atts)) .
 
   crl [CITP:show-current-module] :
     < $[L] : PROC | executing I command, Atts >
@@ -338,7 +330,7 @@ mod CITP/PROCESSOR is
    => if size(ongoing-proof(L, Atts)) > 0
     then < $[L] : PROC | running, (Atts).rollback(L) >
       processed(I, $[L], log('Rolling 'back) '\n
-        mk-page(print-abridged(GL, M0)))
+        mk-page(print-summary(GL, M0)))
     else < $[L] : PROC | running, Atts >
       processed(I, $[L], log('Rolling 'back) '\n
         mk-page('Cannot 'roll 'back 'any 'further)) fi
