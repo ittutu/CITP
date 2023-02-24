@@ -35,3 +35,46 @@ begin proof PI of INV
 qed
 
 `` -----------------------------------------------------------------------------
+`` tc should be applicable to free variables
+`` implement show proofs ``
+goal INV6 is
+ fm true = false if (I:X$Client =? J:X$Client)= false /\ statusp(S:Sys,J:X$Client)= gotval /\ statusp(S:Sys,I:X$Client)= gotval [nonexec metadata "inv4"].
+|-{CLOUD}
+ fm forall {S:Sys,I:X$Client} tmp(S:Sys,I:X$Client)= valc(S:Sys) if statusp(S:Sys,I:X$Client)= gotval [metadata "inv6"].
+endg
+
+begin proof P6 of INV6
+ ind(S:Sys)
+`` indentation  ``show goals 
+ tc red ca red ca red
+ imp push-all red
+`` an application of init-all leads to non-termination `` 
+  init("inv4",(S:Sys <- x#1) ; (I:X$Client <- I#1) ; (J:X$Client <- z#2))
+qed
+
+`` -----------------------------------------------------------------------------
+
+goal GOAL is
+ fm true = false if N:Nat <= M:Nat = true /\ M:Nat < N:Nat = true [nonexec metadata("lemma-nat")] .
+ fm true = false if statusp(S:Sys, I:X$Client) = updated /\ statusp(S:Sys, J:X$Client) = gotval [nonexec metadata("inv3")].
+ fm tmp(S:Sys, I:X$Client) = valc(S:Sys) if statusp(S:Sys, I:X$Client) = gotval [metadata("inv6")].
+|-{CLOUD}
+ fm forall {S:Sys,I:X$Client} valp(S:Sys, I:X$Client) = valc(S:Sys) if statusp(S:Sys, I:X$Client) = updated [metadata("inv7")] .
+endg
+
+begin proof PG of GOAL
+ ind(S:Sys) red
+ tc red ca red ca red ca red
+ imp push-all red
+
+`` 1. pull("inv6") `` rollback but inv6 is not back in the body of the spec.
+
+`` 2. init("lemma-nat", (M:Nat <- valp(x#1, z#2)) ; (N:Nat <- tmp(x#1, z#2))) 
+
+``    push-all pull("inv6")  pull("1")  pull("2")  `` non-termination 
+ @crt(pull("inv6"))
+ @crt(init("lemma-nat", (M:Nat <- valp(x#1, z#2)) ; (N:Nat <- tmp(x#1, z#2))))
+ init("inv3", I:X$Client <- I#1 ; J:X$Client <- z#2 ; S:Sys <- x#1)
+qed
+
+`` problem with pull ??? ``
