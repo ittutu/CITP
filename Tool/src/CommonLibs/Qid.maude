@@ -77,7 +77,7 @@ fmod QID/OPS is
   protecting QID/CONVERSION .
   protecting FIND-RESULT .
 
-  vars QI QI' : Qid .
+  vars QI QI' BN : Qid .
   var  QIL : QidList .
   var  S : String .
   var  FR : FindResult .
@@ -102,7 +102,11 @@ fmod QID/OPS is
 
   *** basename  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op basename : Qid -> Qid [memo] .
-  ceq basename(QI)
+  ceq basename(QI) = BN if BN := basename?(QI) .
+  eq basename(QI) = QI [owise] .
+
+  op basename? : Qid ~> Qid .
+  ceq basename?(QI)
   = if FR :: Nat
     then qid(unquote(substr(S, 0, FR)))
     else qid(unquote(S)) fi
