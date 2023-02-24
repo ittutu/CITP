@@ -766,6 +766,11 @@ fmod CITP/GOAL-DICT is
   op goal-names : GoalDict{CITP} -> QidSet .
   eq goal-names(empty) = none .
   eq goal-names((GN : G, GD)) = GN ; goal-names(GD) .
+
+  *** goal-list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op list : GoalDict{CITP} -> GoalList{CITP} .
+  eq list(empty) = no-goal .
+  eq list((GN : G, GD)) = G list(GD) .
 endfm
 
 ********************************************************************************
@@ -862,8 +867,14 @@ fmod CITP/PROOF is
   var STtL : Seq{TacticList{CITP}} .
 
   *** Proof{CITP}  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  sort Proof{CITP} .
+  sorts Proof{CITP} NeProofList{CITP} ProofList{CITP} .
+  subsorts Proof{CITP} < NeProofList{CITP} < ProofList{CITP} .
   op proof_of_is_qed : Qid Goal{CITP} Seq{TacticList{CITP}} -> Proof{CITP} .
+  op nil : -> ProofList{CITP} [ctor] .
+  op __ : ProofList{CITP} ProofList{CITP} -> ProofList{CITP}
+    [ctor assoc id: nil format (d ni d)] .
+  op __ : NeProofList{CITP} ProofList{CITP} -> NeProofList{CITP} [ctor ditto] .
+  op __ : ProofList{CITP} NeProofList{CITP} -> NeProofList{CITP} [ctor ditto] .
 
   *** name  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op name : Proof{CITP} -> Qid .
@@ -899,6 +910,11 @@ fmod CITP/PROOF-DICT is
   op proof-names : ProofDict{CITP} -> QidSet .
   eq proof-names(empty) = none .
   eq proof-names((PN : P, PD)) = PN ; proof-names(PD) .
+
+  *** proof-list  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op list : ProofDict{CITP} -> ProofList{CITP} .
+  eq list(empty) = nil .
+  eq list((PN : P, PD)) = P list(PD) .
 endfm
 
 ********************************************************************************
@@ -980,6 +996,7 @@ fmod CITP/CMD is
   op Cmd[_]{show`goal_} : CITP Qid -> Cmd{CITP} [ctor] .
   op Cmd[_]{list`proofs} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`proof_} : CITP Qid -> Cmd{CITP} [ctor] .
+  op Cmd[_]{show`proofs} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{begin`proof_of_} : CITP Qid Qid -> Cmd{CITP} [ctor] .
   op Cmd[_]{qed} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{show`ongoing`proof} : CITP -> Cmd{CITP} [ctor] .

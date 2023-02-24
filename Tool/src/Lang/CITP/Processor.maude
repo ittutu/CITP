@@ -44,6 +44,7 @@ mod CITP/PROCESSOR is
   vars GL LGL : GoalList{CITP} .
   var  SGL : Seq{GoalList{CITP}} .
   var  P : Proof{CITP} .
+  var  PL : ProofList{CITP} .
   var  PD : ProofDict{CITP} .
   var  TtL : TacticList{CITP} .
   var  STtL : Seq{TacticList{CITP}} .
@@ -127,7 +128,7 @@ mod CITP/PROCESSOR is
     < $[L] : PROC | running, Atts >
     get-prompt($[L], I)
    => < $[L] : PROC | running, Atts >
-    if defined((Atts).get(ongoing-proof(L)))
+    if defined(ongoing-proof(L, Atts))
     then got-prompt(I, [name(ongoing-proof(L, Atts)) >])
     else got-prompt(I, [>]) fi .
 
@@ -136,7 +137,7 @@ mod CITP/PROCESSOR is
     parse($[L], I, QIL, DB)
    => < $[L] : PROC | running, Atts >
     parsed(I, $[L],
-      if defined((Atts).get(ongoing-proof(L)))
+      if defined(ongoing-proof(L, Atts))
       then
         parse L proof-cmd (QIL)
           in AnalysisState[L]{current-module(proof-run(L, Atts))}
@@ -222,6 +223,17 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Showing 'goal) GN '\n
       mk-page(print(goals(DB[L])[GN]))) .
 
+  crl [CITP:show-goals] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show goals}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'goals) '\n
+      mk-page(if GL == no-goal
+        then 'Empty 'goal 'list
+        else print(GL) fi))
+   if not defined(ongoing-proof(L, Atts))
+      /\ GL := list(goals(DB[L])) .
+
   crl [CITP:list-proofs] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{list proofs}, DB)
@@ -239,6 +251,16 @@ mod CITP/PROCESSOR is
     processed(I, $[L], log('Showing 'proof) PN '\n
       mk-page(print(proofs(DB[L])[PN]))) .
 
+  crl [CITP:show-proofs] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{show proofs}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Showing 'proofs) '\n
+      mk-page(if PL == nil
+        then 'Empty 'proof 'list
+        else print(PL) fi))
+   if PL := list(proofs(DB[L])) .
+
   rl [CITP:begin-proof] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{begin proof PN of GN}, DB)
@@ -254,7 +276,7 @@ mod CITP/PROCESSOR is
       then Advisory: log('redefining 'proof) PN
       else log('Loading 'proof) PN fi status(P),
       insert-proof(PN, P, DB[L]))
-   if AttrValue(P) := (Atts).get(ongoing-proof(L))
+   if P := ongoing-proof(L, Atts)
       /\ PN := name(P) .
 
   crl [CITP:show-ongoing-proof] :
@@ -263,21 +285,21 @@ mod CITP/PROCESSOR is
    => < $[L] : PROC | running, Atts >
     processed(I, $[L], log('Showing 'ongoing 'proof) name(P) '\n
         mk-page(print(P)))
-   if AttrValue(P) := (Atts).get(ongoing-proof(L)) .
+   if P := ongoing-proof(L, Atts) .
 
-  rl [CITP:show-goals] :
+  crl [CITP:show-goals] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show goals}, DB)
    => < $[L] : PROC | running, Atts >
-    processed(I, $[L], log('Showing 'goals) '\n
-      mk-page(print(last-list(proof-run(L, Atts)),
-          base-module(ongoing-proof(L, Atts)), 0))) .
+    processed(I, $[L], log('Showing 'open 'goals) '\n
+      mk-page(print(last-list(proof-run(L, Atts)), base-module(P), 0)))
+   if P := ongoing-proof(L, Atts) .
 
   rl [CITP:show-goals-abridged] :
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{show goals abridged}, DB)
    => < $[L] : PROC | running, Atts >
-    processed(I, $[L], log('Showing 'goals) '\n
+    processed(I, $[L], log('Showing 'open 'goals) '\n
       mk-page(print(last-list(proof-run(L, Atts)), 0))) .
 
   crl [CITP:show-current-goal] :

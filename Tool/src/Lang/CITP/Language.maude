@@ -221,8 +221,10 @@ fmod CITP/LANGUAGE is
           |  "show module_" : 'ModuleName
           |  lit "list goals"
           |  "show goal_" : 'GoalName
+          |  lit "show goals"
           |  lit "list proofs"
           |  "show proof_" : 'ProofName
+          |  lit "show proofs"
           |  "begin proof_of_" : 'ProofName 'GoalName [none]
        'ProofCommand
          ::= lit "qed"
@@ -450,8 +452,12 @@ fmod CITP/READ is
    = Cmd[L]{list goals} .
   eq read-cmd(L, {'show`goal_[GN] : 'Command})
    = Cmd[L]{show goal read-goal-name(L, GN)} .
+  eq read-cmd(L, {'show`goals.Command : 'Command})
+   = Cmd[L]{show goals} .
   eq read-cmd(L, {'list`proofs.Command : 'Command})
    = Cmd[L]{list proofs} .
+  eq read-cmd(L, {'show`proofs.Command : 'Command})
+   = Cmd[L]{show proofs} .
   eq read-cmd(L, {'show`proof_[PN] : 'Command})
    = Cmd[L]{show proof read-proof-name(L, PN)} .
   eq read-cmd(L, {'begin`proof_of_[PN, GN] : 'Command})
@@ -1551,6 +1557,7 @@ endfm
 
 fmod CITP/PRINTING is
   protecting PRINTING { CITP } .
+  protecting CITP/GOAL-DICT .
   protecting CITP/SHOW .
 
   var  L : CITP .
@@ -1558,6 +1565,7 @@ fmod CITP/PRINTING is
   var  GL : GoalList{CITP} .
   var  NGL : NeGoalList{CITP} .
   var  P : Proof{CITP} .
+  var  NPL : NeProofList{CITP} .
   var  TtL : TacticList{CITP} .
   vars M M0 : Module .
   var  N : Nat .
@@ -1567,7 +1575,7 @@ fmod CITP/PRINTING is
   eq print(no-goal) = 'QED .
   eq print(G)
    = print term show-goal(CITP, G) given print-grammar(CITP) .
-  eq print(G NGL) = print(G) '\n '\n print(NGL) .
+  eq print(G NGL) = print(G) '\n '\n '--- '\n '\n print(NGL) .
 
   op print : GoalList{CITP} Module -> QidList .
   eq print(no-goal, M0) = 'QED .
@@ -1604,6 +1612,12 @@ fmod CITP/PRINTING is
   *** print proof  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op print : Proof{CITP} -> QidList .
   eq print(P) = print term show-proof(CITP, P) given print-grammar(CITP) .
+
+  op print : ProofList{CITP} -> QidList .
+  eq print((nil).ProofList{CITP}) = nil .
+  eq print(P)
+   = print term show-proof(CITP, P) given print-grammar(CITP) .
+  eq print(P NPL) = print(P) '\n '\n '--- '\n '\n print(NPL) .
 
   *** print tactic list  - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op print : TacticList{CITP} GoalList{CITP} -> QidList .
