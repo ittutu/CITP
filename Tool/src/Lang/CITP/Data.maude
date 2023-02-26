@@ -236,14 +236,12 @@ fmod CITP/FORMULA is
   ceq (LHS =[L]= RHS) is executable = true
    if vars(RHS) subset vars(LHS) .
   ceq ((LHS =[L]= RHS) if F) is executable = true
-   if vars(RHS) subset vars(LHS)
-      /\ cond-vars(F, vars(LHS)) :: VariableSet
+   if vars(RHS) subset cond-vars(F, vars(LHS))
       /\ F is eqCondition .
   ceq (LHS =[L]> RHS) is executable = true
    if vars(RHS) subset vars(LHS) .
   ceq ((LHS =[L]> RHS) if F) is executable = true
-   if vars(RHS) subset vars(LHS)
-      /\ cond-vars(F, vars(LHS)) :: VariableSet .
+   if vars(RHS) subset cond-vars(F, vars(LHS)) .
   eq (forall {VS} F) is executable
    = F is executable .
   eq F is executable = false [owise] .
