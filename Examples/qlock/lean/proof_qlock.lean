@@ -58,6 +58,8 @@ end
 axiom eq1_trans (i j k : kPid) : bool.eq₁ i j → bool.eq₁ j k → bool.eq₁ i k 
 axiom eq1_trans_congr (i j k : kPid) : bool.eq₁ i k → bool.eq₁ j k → bool.eq₁ i j 
 axiom eq1_trans2 (i j k : kPid) : bool.eq₁ i j = tt → bool.eq₁ i k = tt → bool.eq₁ k j = tt
+axiom eq_sort_trans (i j : kQueue) : i ⊳ MSort.Queue → i =E j → j ⊳ MSort.Queue
+axiom kQueue_sc (q : kQueue) : q ⊳ MSort.Queue → ∃ c, q =E c ∧ c.ctor_only
 
 lemma mutex (S : kSys)(I J : kPid) 
             (sort_S : S.has_sort Maude.MSort.Sys)
@@ -426,29 +428,29 @@ lemma mutex (S : kSys)(I J : kPid)
           simp at i_eq_k,
           simp[*,bool.eq_eq₀₃],
           have sort_Q := kQueue.has_sort.queue_decl apply_want_sort.left,
-          cases kQueue.queue s,
-          {
-            simp[*],
-            simp[bool.eq_eq₁₁] at S_x,
+          cases (kQueue_sc (kQueue.queue s) (kQueue.has_sort.queue_decl apply_want_sort.left)) with q qh,
+          cases q,
+
+          case kQueue.empty {
+            simp[*, qh.left],
+            simp[bool.eq_eq₁₁, qh.left] at S_x,
             rw @ bool.eq₁_comm kPid.none I at S_x,
             have red_ff := bool.eq_eq₁₁ sort_I kPid.has_sort.none_decl,
             simp[red_ff] at S_x,
             exact S_x.right,
           },
-          {
-            have args_sorts := bar_sort _ _ sort_Q,
-            simp[*] at S_x,
+          case kQueue.bar {
+            simp[*, qh.left],
+            have st := eq_sort_trans _ _ sort_Q qh.left,
+            have args_sorts := bar_sort _ _ st,
+            simp[*, qh.left] at S_x,
             simp[*],
             exact S_x.right,
           },
-          {-- No constructor
-            sorry,
-          },
-          {-- No constructor
-            sorry,
-          },
-          {-- No constructor
-            sorry,
+
+          all_goals {
+            simp [kQueue.ctor_only,kQueue_sc] at *,
+            contradiction,
           },
         },
       },

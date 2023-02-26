@@ -152,8 +152,9 @@ CITP supports the following tactics:
 - `sk` for Skolemization.
 - `ca` for case analysis.
 - `ca-rev` for case analysis reversing the order of the terms.
+- `cs`  for case analysis for sequences.
 - `init(ID, SB)` or `init(N, SB)`, where `SB` stands for a substitution, `N` for the index of the premise, and `ID` for its identifier (given by metadata). When the substitution can be inferred from the context the `init(ID)` tactic can be used for a particular identifier and `init-all` for all premises.
-- `subst(SB)` for applying the substitution `SB`.
+- `subst(SB)` for applying the substitution `SB` in existential quantifications.
 - `trans` for transitivity.
 - `@crt(T)` is used for appyling the tactic `T` only to the current goal.
 - `select(N)`, with `N` the index of a goal, for selection the `N`th goal.
