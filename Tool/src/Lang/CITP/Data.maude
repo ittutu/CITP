@@ -101,21 +101,21 @@ fmod CITP/FORMULA is
   *** formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   sort Formula{CITP} .
   ops true false : -> Formula{CITP} [ctor] .
-  op _:[_]:_ : Term CITP Sort -> Formula{CITP} [ctor] .
-  op _=[_]=_ : Term CITP Term -> Formula{CITP} [ctor] .
-  op _:[_]=_ : Term CITP Term -> Formula{CITP} [ctor] .
-  op _=[_]>_ : Term CITP Term -> Formula{CITP} [ctor] .
-  op ~_ : Formula{CITP} -> Formula{CITP} [ctor] .
+  op _:[_]:_ : Term CITP Sort -> Formula{CITP} [ctor prec 71] .
+  op _=[_]=_ : Term CITP Term -> Formula{CITP} [ctor prec 71] .
+  op _:[_]=_ : Term CITP Term -> Formula{CITP} [ctor prec 71] .
+  op _=[_]>_ : Term CITP Term -> Formula{CITP} [ctor prec 71] .
+  op ~_ : Formula{CITP} -> Formula{CITP} [ctor prec 72] .
   op _/\_ : Formula{CITP} Formula{CITP} -> Formula{CITP}
-    [ctor prec 31] .
+    [ctor assoc prec 73] .
   op _\/_ : Formula{CITP} Formula{CITP} -> Formula{CITP}
-    [ctor prec 33] .
+    [ctor assoc prec 75] .
   op _if_ : Formula{CITP} Formula{CITP} -> Formula{CITP}
-    [ctor gather (E e) prec 35] .
+    [ctor gather (E e) prec 77] .
   op forall{_}_ : VariableSet Formula{CITP} -> Formula{CITP}
-    [ctor prec 37] .
+    [ctor prec 79] .
   op exists{_}_ : VariableSet Formula{CITP} -> Formula{CITP}
-    [ctor prec 37] .
+    [ctor prec 79] .
   op fmvar : CITP Qid -> Formula{CITP} [ctor] .
 
   *** formula declarations  - - - - - - - - - - - - - - - - - - - - - - - - - --
