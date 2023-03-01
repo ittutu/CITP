@@ -34,7 +34,7 @@ fmod CITP/PREAMBLE is
  vars RS RS1 RS2 : RuleSet .
  vars SS SS1 SS2 : SortSet .
  vars SDS SDS1 SDS2 : SubsortDeclSet .
- var OD : OpDecl .
+ vars OD OD1 OD2 : OpDecl .
  vars ODS ODS1 ODS2 : OpDeclSet .
  var IL : ImportList .
  vars EC EC1 EC2 : EqCondition .
@@ -207,14 +207,19 @@ ceq getLB(V ; VS,N)= getLB(VS,N2)
     else getLB(RS,N) fi .
 --- --- ---
  op getLB : OpDeclSet -> Nat .
- eq getLB(ODS) = getLB(ODS,0).
---- --- ---
- op getLB : OpDeclSet Nat -> Nat .
- eq getLB((none).OpDeclSet,N) = N .
- eq getLB(op F : TPL -> TP[AS]. ODS,N)=
-    if   N < getLB(AS)
-    then getLB(ODS,getLB(AS))
-    else getLB(ODS,N) fi .
+---
+ eq getLB((none).OpDeclSet) = 0 .
+---
+ eq getLB(OD) = 0 [owise].
+ceq getLB(op Q : TPL -> TP[AS].)= N
+ if N  := rfind(string(Q),"#",length(string(Q))) /\
+    SR := substr(string(Q),N + 1,length(string(Q))) /\
+    N1 := rat(SR,10).
+---
+ eq getLB(OD1 OD2 ODS) =
+    if   getLB(OD1) > getLB(OD2)
+    then getLB(OD1 ODS)
+    else getLB(OD2 ODS) fi .
 *** addLB *******************************
  op addLB : String Equation -> Equation .
  eq addLB(SR,eq T1 = T2 [AS].) = eq T1 = T2[AS metadata(SR)]. .
@@ -662,4 +667,19 @@ ceq consistent(M) = false
  op clash : Substitution Substitution -> Bool .
 ceq clash(V <- T1 ; SB1, V <- T2 ; SB2) = true if T1 =/= T2 .
  eq clash(SB1, SB2) = false [owise] .
+*** *** ***
+ op isCtr : Module Type Qid -> Bool .
+ceq isCtr(M,TP,Q)= true if (op Q : TPL -> TP[AS ctor].) ODS := getOps(M).
+ eq isCtr(M,TP,Q)= false [owise].
+*** *** ***
+ op isAssoc : Module Type Qid -> Bool .
+ceq isAssoc(M,TP,Q)= true if (op Q : TP TP -> TP[AS assoc].) ODS := getOps(M).
+ eq isAssoc(M,TP,Q)= false [owise].
+*** length ***
+ op len : TermList -> Nat .
+ eq len((empty).TermList) = 0 .
+ eq len((T,TL)) = s len(TL).
+*** *** ***
+ op getID : Module Type Qid ~> Term .
+ceq getID(M,TP,Q) = T if (op Q : TP TP -> TP[AS id(T)].) ODS := getOps(M). 
 endfm
