@@ -53,7 +53,7 @@ begin proof P6 of INV6
   ind(S:Sys)
   tc red ca red ca red
   imp push-all red
-  init("inv4",(S:Sys <- x#1) ; (I:X$Client <- I#1) ; (J:X$Client <- z#2))
+  init("inv4",(S:Sys <- x#1) ; (I:X$Client <- I#2) ; (J:X$Client <- z#2))
 qed
 
 `` -----------------------------------------------------------------------------
@@ -81,8 +81,9 @@ begin proof PG of GOAL
   tc red ca red ca red ca red
   imp push-all red
   @crt(pull("inv6"))
+  eof
   @crt(init("lemma-nat", (M:Nat <- valp(x#1, z#2)) ; (N:Nat <- tmp(x#1, z#2))))
-  init("inv3", I:X$Client <- I#1 ; J:X$Client <- z#2 ; S:Sys <- x#1)
+  init("inv3", I:X$Client <- I#2 ; J:X$Client <- z#2 ; S:Sys <- x#1)
 qed
 
 `` -----------------------------------------------------------------------------
