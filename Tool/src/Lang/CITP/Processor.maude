@@ -58,6 +58,7 @@ mod CITP/PROCESSOR is
   vars RP RP1 RP2 : ResultPair .
   var  RT : ResultTriple? .
   var  Tr : Trace? .
+  vars nr nc : Bound .
 
   *** attributes  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op ongoing-proof : CITP -> AttrName [ctor] .
@@ -363,10 +364,22 @@ mod CITP/PROCESSOR is
     < $[L] : PROC | executing I command, Atts >
     do($[L], Cmd[L]{reduce term T}, DB)
    => < $[L] : PROC | running, Atts >
-    processed(I, $[L], log('Reducing 'term) '\n
+    processed(I, $[L], log('Reducing 'term) '\s QIL '\n
       mk-page('Result: '\s print term getTerm(RP) given (M & none)))
    if M := current-module(proof-run(L, Atts))
+      /\ QIL := print term plain-term(T) given (M & none)
       /\ RP := metaReduce(M, plain-term(T)) .
+
+  crl [CITP:reduce-term] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{reduce [nr, nc] term T}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Reducing 'term) '\s QIL '\s
+      log('with 'bounds) print-bound(L, nr) log('and) print-bound(L, nc) '\n
+      mk-page('Result: '\s print term getTerm(RP) given (M & none)))
+   if M := current-module(proof-run(L, Atts))
+      /\ QIL := print term plain-term(T) given (M & none)
+      /\ RP := boundedRed(M, plain-term(T), nr, nc) .
 
   crl [CITP:search-path] :
     < $[L] : PROC | executing I command, Atts >
