@@ -189,7 +189,7 @@ fmod CITP/FORMULA is
    = (fm F [md-update(AtS, SB, M)] .) md-update(FDL, SB, M) .
 
   *** substitutions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op _<<_ : Formula{CITP} Substitution -> Formula{CITP} .
+  op _<<_ : Formula{CITP} Substitution -> Formula{CITP} [prec 67] .
   eq true << SB = true .
   eq false << SB = false .
   eq (T :[L]: S) << SB = (T << SB) :[L]: S .
