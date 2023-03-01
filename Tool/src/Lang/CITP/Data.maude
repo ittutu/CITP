@@ -542,8 +542,8 @@ fmod CITP/FORMULA is
       /\ SB2 := match?(M, F2, F4)
       /\ clash(SB1, SB2) = false .
   *** for universal quantification
-  eq match?(M, forall{NVS} F1, F2)= match?(M, F1, F2) .
-  eq match?(M, F1, forall{NVS} F2)= match?(M, F1, F2) .
+  eq match?(M, forall{VS} F1, F2)= match?(M, F1, F2) .
+  eq match?(M, F1, forall{VS} F2)= match?(M, F1, F2) .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -659,17 +659,18 @@ fmod CITP/GOAL/SIMP is
   including CITP/GOAL .
 
   var  L : CITP .
-  var  GN : Qid .
+  vars Q GN : Qid .
   vars GA MA : QidList .
-  vars H H1 H2 C C1 C2 : FormDeclList{CITP} .
+  vars H H1 H2 H3 C C1 C2 : FormDeclList{CITP} .
   var  M : Module .
-  vars LHS RHS T : Term .
+  vars LHS RHS T T1 T2 T3 : Term .
   var  GT : GroundTerm .
   var  VS : VariableSet .
-  vars F F' : Formula{CITP} .
+  vars F F' F1 F2 F3 F4 : Formula{CITP} .
+  var  ES : EquationSet .
   var  EC : EqCondition .
   var  RC : Condition .
-  vars AtS AtS' : AttrSet .
+  vars AtS AtS' AtS1 AtS2 : AttrSet .
 
   *** equation simplifications  - - - - - - - - - - - - - - - - - - - - - - - --
   eq (T = T) = nil .
@@ -730,17 +731,50 @@ fmod CITP/GOAL/SIMP is
 
   *** contradictions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   eq goal GN[GA] is
-       H1 fm ('true.Bool =[CITP]= 'false.Bool) [AtS] . H2
-     |-{M[MA]}
-       C
-     endg = no-goal .
+       H1 fm ('true.Bool  =[CITP]= 'false.Bool) [AtS] . H2
+     |-{M[MA]} C endg = no-goal .
   eq goal GN[GA] is
        H1 fm ('false.Bool =[CITP]= 'true.Bool) [AtS] . H2
-     |-{M[MA]}
-       C
-     endg = no-goal .
-  ceq goal GN[GA] is H |-{M[MA]} C endg = no-goal
-   if consistent(M) = false .
+     |-{M[MA]} C endg = no-goal .
+  ceq goal GN[GA] is H |-{M[MA]} C endg = no-goal if consistent(M) = false .
+  *** search contradicts premise
+  ceq goal GN[GA] is
+        H1 fm ~ T =[CITP]> GT [AtS] . H2
+     |-{M[MA]} C endg = no-goal
+   if metaSearch(M, T, GT, nil, '*, 100000, 0) : ResultTriple .
+  *** contradicting premises
+  ceq goal GN[GA] is
+       H1 fm ~ F1 [AtS1] . H2 fm F2 [AtS2] . H3
+     |-{M[MA]} C endg = no-goal
+   if match?(M, F1, F2) : Substitution .
+  *** negation in premise & modus ponens
+  ceq goal GN[GA] is
+       H1 fm ~ F [AtS] . H2
+     |-{M[MA]} C1 fm F1 if F2 [AtS'] . C2 endg
+   = goal GN[GA] is H1 fm ~ F [AtS] . H2 |-{M[MA]} C1 C2 endg
+   if match?(M, F, F2) : Substitution .
+  ---
+  ceq goal GN[GA] is
+       H1 fm ~ F [AtS] . H2
+     |-{M[MA]} C1 fm F1 if F2 /\ F3 [AtS'] . C2 endg
+   = goal GN[GA] is H1 fm ~ F [AtS] . H2 |-{M[MA]} C1 C2 endg
+   if match?(M, F, F2) :: Substitution
+      or match?(M, F, F3) :: Substitution .
+  *** negation in module & modus ponens
+  ceq goal GN[GA] is H |-{M[MA]} C1 fm F if F1 [AtS] . C2 endg
+   = goal GN[GA] is H |-{M[MA]} C1 C2 endg
+   if (eq Q[T1, T2] = 'false.Bool [AtS1] .) ES := getNE(M)
+       /\ match?(M, T1 =[CITP]= T2, F1) :: Substitution .
+  ---
+  ceq goal GN[GA] is H |-{M[MA]} C1 fm F if F1 /\ F2[AtS] . C2 endg
+   = goal GN[GA] is H |-{M[MA]} C1 C2 endg
+   if (eq Q[T1, T2] = 'false.Bool [AtS1] .) ES := getNE(M)
+      /\ match?(M, T1 =[CITP]= T2, F1) :: Substitution
+      or match?(M, T1 =[CITP]= T2, F2) :: Substitution .
+  *** negation in module contradicts hypothesis
+  ceq goal GN[GA] is H1 fm F[AtS] . H2 |-{M[MA]} C endg = no-goal
+   if (eq Q[T1, T2] = 'false.Bool [AtS1] .) ES := getNE(M)
+      /\ match?(M, T1 =[CITP]= T2, F) : Substitution .
 endfm
 
 *** ----------------------------------------------------------------------------
