@@ -71,7 +71,7 @@ fmod CITP/FORMULA is
   protecting CITP/BRIDGE/PREAMBLE .
 
   var  L : CITP .
-  vars T LHS RHS T1 T2 T3 T4 : Term .
+  vars T LHS RHS T0 T1 T2 T3 T4 : Term .
   vars GT GT1 GT2 GT3 GT4 : GroundTerm .
   var  S : Sort .
   var  FI : Qid .
@@ -101,21 +101,21 @@ fmod CITP/FORMULA is
   *** formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   sort Formula{CITP} .
   ops true false : -> Formula{CITP} [ctor] .
-  op _:[_]:_ : Term CITP Sort -> Formula{CITP} [ctor] .
-  op _=[_]=_ : Term CITP Term -> Formula{CITP} [ctor] .
-  op _:[_]=_ : Term CITP Term -> Formula{CITP} [ctor] .
-  op _=[_]>_ : Term CITP Term -> Formula{CITP} [ctor] .
-  op ~_ : Formula{CITP} -> Formula{CITP} [ctor] .
+  op _:[_]:_ : Term CITP Sort -> Formula{CITP} [ctor prec 71] .
+  op _=[_]=_ : Term CITP Term -> Formula{CITP} [ctor prec 71] .
+  op _:[_]=_ : Term CITP Term -> Formula{CITP} [ctor prec 71] .
+  op _=[_]>_ : Term CITP Term -> Formula{CITP} [ctor prec 71] .
+  op ~_ : Formula{CITP} -> Formula{CITP} [ctor prec 72] .
   op _/\_ : Formula{CITP} Formula{CITP} -> Formula{CITP}
-    [ctor prec 31] .
+    [ctor assoc prec 73] .
   op _\/_ : Formula{CITP} Formula{CITP} -> Formula{CITP}
-    [ctor prec 33] .
+    [ctor assoc prec 75] .
   op _if_ : Formula{CITP} Formula{CITP} -> Formula{CITP}
-    [ctor gather (E e) prec 35] .
+    [ctor gather (E e) prec 77] .
   op forall{_}_ : VariableSet Formula{CITP} -> Formula{CITP}
-    [ctor prec 37] .
+    [ctor prec 79] .
   op exists{_}_ : VariableSet Formula{CITP} -> Formula{CITP}
-    [ctor prec 37] .
+    [ctor prec 79] .
   op fmvar : CITP Qid -> Formula{CITP} [ctor] .
 
   *** formula declarations  - - - - - - - - - - - - - - - - - - - - - - - - - --
@@ -189,7 +189,7 @@ fmod CITP/FORMULA is
    = (fm F [md-update(AtS, SB, M)] .) md-update(FDL, SB, M) .
 
   *** substitutions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  op _<<_ : Formula{CITP} Substitution -> Formula{CITP} .
+  op _<<_ : Formula{CITP} Substitution -> Formula{CITP} [prec 67] .
   eq true << SB = true .
   eq false << SB = false .
   eq (T :[L]: S) << SB = (T << SB) :[L]: S .
@@ -266,6 +266,35 @@ fmod CITP/FORMULA is
   eq (F1 /\ F2) is eqCondition
    = (F1 is eqCondition) and-then (F2 is eqCondition) .
   eq F is eqCondition = false [owise] .
+
+  *** checking for subterm matches  - - - - - - - - - - - - - - - - - - - - - --
+  op xMatch? : Module Formula{CITP} Term -> Bool .
+  eq xMatch?(M, true, T0) = false .
+  eq xMatch?(M, false, T0) = false .
+  eq xMatch?(M, T :[L]: S, T0)
+   = metaXmatch(M, T0, T, nil, 0, unbounded, 0) :: MatchPair .
+  eq xMatch?(M, LHS =[L]= RHS, T0)
+   = metaXmatch(M, T0, LHS, nil, 0, unbounded, 0) :: MatchPair
+     or-else metaXmatch(M, T0, RHS, nil, 0, unbounded, 0) :: MatchPair .
+  eq xMatch?(M, LHS :[L]= RHS, T0)
+   = metaXmatch(M, T0, LHS, nil, 0, unbounded, 0) :: MatchPair
+     or-else metaXmatch(M, T0, RHS, nil, 0, unbounded, 0) :: MatchPair .
+  eq xMatch?(M, LHS =[L]> RHS, T0)
+   = metaXmatch(M, T0, LHS, nil, 0, unbounded, 0) :: MatchPair
+     or-else metaXmatch(M, T0, RHS, nil, 0, unbounded, 0) :: MatchPair .
+  eq xMatch?(M, ~ F, T0) = xMatch?(M, F, T0) .
+  eq xMatch?(M, F1 /\ F2, T0) = xMatch?(M, F1, T0) or-else xMatch?(M, F2, T0) .
+  eq xMatch?(M, F1 \/ F2, T0) = xMatch?(M, F1, T0) or-else xMatch?(M, F2, T0) .
+  eq xMatch?(M, F1 if F2, T0) = xMatch?(M, F1, T0) or-else xMatch?(M, F2, T0) .
+  eq xMatch?(M, forall {VS} F, T0) = xMatch?(M, F, T0) .
+  eq xMatch?(M, exists {VS} F, T0) = xMatch?(M, F, T0) .
+
+  *** checking for (simple) circular applications of conditional equations  - --
+  op circular : Module Formula{CITP} -> Bool .
+  eq circular(M, (T :[L]: S) if F) = xMatch?(M, F, T) .
+  eq circular(M, (LHS =[L]= RHS) if F) = xMatch?(M, F, LHS) .
+  eq circular(M, forall {VS} F) = circular(M, F) .
+  eq circular(M, F) = false [owise] .
 
   *** conditions to formulas  - - - - - - - - - - - - - - - - - - - - - - - - --
   op c2f : CITP Condition -> Formula{CITP} .
@@ -542,8 +571,8 @@ fmod CITP/FORMULA is
       /\ SB2 := match?(M, F2, F4)
       /\ clash(SB1, SB2) = false .
   *** for universal quantification
-  eq match?(M, forall{NVS} F1, F2)= match?(M, F1, F2) .
-  eq match?(M, F1, forall{NVS} F2)= match?(M, F1, F2) .
+  eq match?(M, forall{VS} F1, F2)= match?(M, F1, F2) .
+  eq match?(M, F1, forall{VS} F2)= match?(M, F1, F2) .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -659,17 +688,18 @@ fmod CITP/GOAL/SIMP is
   including CITP/GOAL .
 
   var  L : CITP .
-  var  GN : Qid .
+  vars Q GN : Qid .
   vars GA MA : QidList .
-  vars H H1 H2 C C1 C2 : FormDeclList{CITP} .
+  vars H H1 H2 H3 C C1 C2 : FormDeclList{CITP} .
   var  M : Module .
-  vars LHS RHS T : Term .
+  vars LHS RHS T T1 T2 T3 : Term .
   var  GT : GroundTerm .
   var  VS : VariableSet .
-  vars F F' : Formula{CITP} .
+  vars F F' F1 F2 F3 F4 : Formula{CITP} .
+  var  ES : EquationSet .
   var  EC : EqCondition .
   var  RC : Condition .
-  vars AtS AtS' : AttrSet .
+  vars AtS AtS' AtS1 AtS2 : AttrSet .
 
   *** equation simplifications  - - - - - - - - - - - - - - - - - - - - - - - --
   eq (T = T) = nil .
@@ -730,17 +760,50 @@ fmod CITP/GOAL/SIMP is
 
   *** contradictions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   eq goal GN[GA] is
-       H1 fm ('true.Bool =[CITP]= 'false.Bool) [AtS] . H2
-     |-{M[MA]}
-       C
-     endg = no-goal .
+       H1 fm ('true.Bool  =[CITP]= 'false.Bool) [AtS] . H2
+     |-{M[MA]} C endg = no-goal .
   eq goal GN[GA] is
        H1 fm ('false.Bool =[CITP]= 'true.Bool) [AtS] . H2
-     |-{M[MA]}
-       C
-     endg = no-goal .
-  ceq goal GN[GA] is H |-{M[MA]} C endg = no-goal
-   if consistent(M) = false .
+     |-{M[MA]} C endg = no-goal .
+  ceq goal GN[GA] is H |-{M[MA]} C endg = no-goal if consistent(M) = false .
+  *** search contradicts premise
+  ceq goal GN[GA] is
+        H1 fm ~ T =[CITP]> GT [AtS] . H2
+     |-{M[MA]} C endg = no-goal
+   if metaSearch(M, T, GT, nil, '*, 100000, 0) : ResultTriple .
+  *** contradicting premises
+  ceq goal GN[GA] is
+       H1 fm ~ F1 [AtS1] . H2 fm F2 [AtS2] . H3
+     |-{M[MA]} C endg = no-goal
+   if match?(M, F1, F2) : Substitution .
+  *** negation in premise & modus ponens
+  ceq goal GN[GA] is
+       H1 fm ~ F [AtS] . H2
+     |-{M[MA]} C1 fm F1 if F2 [AtS'] . C2 endg
+   = goal GN[GA] is H1 fm ~ F [AtS] . H2 |-{M[MA]} C1 C2 endg
+   if match?(M, F, F2) : Substitution .
+  ---
+  ceq goal GN[GA] is
+       H1 fm ~ F [AtS] . H2
+     |-{M[MA]} C1 fm F1 if F2 /\ F3 [AtS'] . C2 endg
+   = goal GN[GA] is H1 fm ~ F [AtS] . H2 |-{M[MA]} C1 C2 endg
+   if match?(M, F, F2) :: Substitution
+      or match?(M, F, F3) :: Substitution .
+  *** negation in module & modus ponens
+  ceq goal GN[GA] is H |-{M[MA]} C1 fm F if F1 [AtS] . C2 endg
+   = goal GN[GA] is H |-{M[MA]} C1 C2 endg
+   if (eq Q[T1, T2] = 'false.Bool [AtS1] .) ES := getNE(M)
+       /\ match?(M, T1 =[CITP]= T2, F1) :: Substitution .
+  ---
+  ceq goal GN[GA] is H |-{M[MA]} C1 fm F if F1 /\ F2[AtS] . C2 endg
+   = goal GN[GA] is H |-{M[MA]} C1 C2 endg
+   if (eq Q[T1, T2] = 'false.Bool [AtS1] .) ES := getNE(M)
+      /\ match?(M, T1 =[CITP]= T2, F1) :: Substitution
+      or match?(M, T1 =[CITP]= T2, F2) :: Substitution .
+  *** negation in module contradicts hypothesis
+  ceq goal GN[GA] is H1 fm F[AtS] . H2 |-{M[MA]} C endg = no-goal
+   if (eq Q[T1, T2] = 'false.Bool [AtS1] .) ES := getNE(M)
+      /\ match?(M, T1 =[CITP]= T2, F) : Substitution .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -1986,7 +2049,8 @@ fmod CITP/APPLY/PUSH is
 
   ceq apply(Tactic[L]{push-all}, goal GN[GA] is H |-{M[MA]} C endg)
    = goal GN[GA 'push-all] is H' |-{M'[MA']} C endg
-   if goal GN[GA'] is H' |-{M'[MA']} C endg := push(H, 0, goal GN[GA] is no-fd |-{M[MA]} C endg)
+   if goal GN[GA'] is H' |-{M'[MA']} C endg
+         := push(H, 0, goal GN[GA] is no-fd |-{M[MA]} C endg)
       /\ H' =/= H or-else  M' =/= M .
 
   op push : FormDeclList{CITP} Nat Goal{CITP} -> Goal{CITP} .
@@ -1995,6 +2059,7 @@ fmod CITP/APPLY/PUSH is
    = push(FDL, N', goal GN[GA] is H |-{M'[MA qid('`[ QI '`])]} C endg)
    if (fm F [AtS] .) := FD
       /\ F is executable
+      /\ not circular(M, F)
       /\ AtS is nonexec-free
       /\ ES := fm2eq(FD) or-else none
       /\ MS := fm2mb(FD) or-else none
