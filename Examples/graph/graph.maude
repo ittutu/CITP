@@ -1,0 +1,78 @@
+fmod EQUAL is
+ op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
+endfm
+--- ---------------------------------------------
+--- ---------------------------------------------
+fth VERTEX is
+ pr EQUAL .
+ pr INT .
+ op no : -> Nat .
+ sort Vertex .
+ vars X Y : Vertex .
+ eq X =? X = true .
+ceq X = Y if X =? Y = true [nonexec metadata "eq-1"].
+endfth
+--- ---------------------------------------------
+--- ---------------------------------------------
+fmod VSET{X :: VERTEX} is
+ sort Set .
+ subsorts X$Vertex < Set .
+ op empty : -> Set [ctor].
+ op _`,_ : Set Set   -> Set [ctor assoc comm].
+ vars A B : Set .
+ vars V V1 V2 : X$Vertex .
+ eq A,A = A .
+ eq A,empty = A .
+---
+ op _in_ : X$Vertex Set -> Bool .
+ eq V in empty = false .
+ eq V in (V,A) = true .
+ceq V1 in(V2,A)= V1 in A if (V1 =? V2) = false .
+---
+ op card : Set -> Nat .
+ eq card(empty) = 0 .
+ eq card(V,A) = 1 + card(A).
+---
+ op _<_ : Set Set -> Bool .
+ eq empty < A = true .
+ceq (V,A) < B = A < B if V in B = true [metadata "ca:<1"].
+ceq (V,A) < B = false if V in B = false[metadata "ca:<2"].
+---
+ op _<>_ : Set Set -> Bool .
+ceq A <> B = true  if A < B = true /\ B < A = true[metadata "ca:<>1"].
+ceq A <> B = false if A < B = false               [metadata "ca:<>2"].
+ceq A <> B = false if B < A = false               [metadata "ca:<>3"].
+endfm
+--- ---------------------------------------------
+--- ---------------------------------------------
+fmod GRAPH {X :: VERTEX} is
+ pr VSET{X}.
+ sorts Edge Graph .
+ op `[_`,_`] : X$Vertex X$Vertex -> Edge [ctor].
+ op nil : -> Graph [ctor].
+ op _;_ : Edge Graph -> Graph [ctor].
+---
+ vars V V1 V2 : X$Vertex .
+ var G : Graph .
+---
+ op mcc : X$Vertex Graph -> Set .
+ eq mcc(V,nil) = V .
+ceq mcc(V,([V1,V2]; G))= mcc(V1,G),mcc(V2,G) if mcc(V,G) = mcc(V1,G)                             [metadata "ca:mcc1"].
+ceq mcc(V,([V1,V2]; G))= mcc(V1,G),mcc(V2,G) if mcc(V,G) = mcc(V2,G)                             [metadata "ca:mcc2"].
+ceq mcc(V,([V1,V2]; G))= mcc(V,G) if mcc(V,G) <> mcc(V1,G)= false /\ mcc(V,G) <> mcc(V2,G)= false[metadata "ca:mcc3"].
+---
+ op mktree : Graph -> Graph .
+ eq mktree(nil) = nil .
+ceq mktree([V1,V2] ; G)= mktree(G)          if mcc(V1,G) = mcc(V2,G)         [metadata "ca:mktree1"].
+ceq mktree([V1,V2] ; G)= [V1,V2]; mktree(G) if mcc(V1,G) <> mcc(V2,G) = false[metadata "ca:mktree2"].
+---
+ op nomcc : Graph -> Int .
+ eq nomcc(nil) = no .
+ceq nomcc([V1,V2] ; G) = nomcc(G)     if mcc(V1,G) = mcc(V2,G)          [metadata "ca:nomcc1"]. 
+ceq nomcc([V1,V2] ; G) = nomcc(G) - 1 if mcc(V1,G) <> mcc(V2,G) = false [metadata "ca:nomcc2"].
+---
+ op nocycle : Graph -> Bool .
+ eq nocycle(nil) = true .
+ceq nocycle([V1,V2] ; G) = false      if mcc(V1,G) = mcc(V2,G)         [metadata "ca:nocycle1"].
+ceq nocycle([V1,V2] ; G) = nocycle(G) if mcc(V1,G) <> mcc(V2,G) = false[metadata "ca:nocycle2"].
+endfm
