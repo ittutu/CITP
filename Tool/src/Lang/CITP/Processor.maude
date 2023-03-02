@@ -356,7 +356,7 @@ mod CITP/PROCESSOR is
     else < $[L] : PROC | running, Atts >
       processed(I, $[L], log('Rolling 'back) '\n
         mk-page('Cannot 'roll 'back 'any 'further)) fi
-   if GL := last-list(proof-run(L, Atts))
+   if GL := last-list(init(proof-run(L, Atts)))
       /\ M0 := base-module(ongoing-proof(L, Atts)) .
 
   crl [CITP:reduce-term] :
