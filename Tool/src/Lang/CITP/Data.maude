@@ -1376,7 +1376,7 @@ fmod CITP/APPLY/TC is
      endg
   if fm F [AtS] . := strip(FD)
      /\ VS := fv(F)
-     /\ SB := v2s(VS, s getLB(getOps(M)) + 1)
+     /\ SB := v2s(VS, s getLB(getOps(M)))
      /\ M' := addSB(SB, M) .
 endfm
 

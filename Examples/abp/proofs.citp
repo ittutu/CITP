@@ -1,0 +1,62 @@
+`` -----------------------------------------------------------------------------
+
+goal INV is
+fm ~ not B:Bit => B:Bit [metadata "not-bit"].
+fm bit2(rec2(S:Sys)) = B:Bit if ([B:Bit, P:Packet], C1:Channel1) := channel1(S:Sys) [metadata "inv0" ] .
+|-{ABP}
+fm forall {S:Sys}
+   (A2:Bit => bit1(S:Sys)if J1:Channel1,[A1:Bit,P1:Packet],J2:Channel1,[A2:Bit,P2:Packet],J3:Channel1 := channel1(S:Sys)/\ A1:Bit = bit1(S:Sys))/\
+   (B:Bit => bit1(S:Sys) if K1:Channel1,[B:Bit,R:Packet],K2:Channel1 := channel1(S:Sys) /\ bit2(S:Sys) = bit1(S:Sys))/\
+   (bit2(S:Sys) = bit1(S:Sys) if L1:Channel2,D:Bit,L2:Channel2 := channel2(S:Sys) /\ D:Bit = bit1(S:Sys))/\
+   (E2:Bit => bit1(S:Sys) if Q1:Channel2,E1:Bit,Q2:Channel2,E2:Bit,Q3:Channel2 := channel2(S:Sys) /\ E1:Bit = bit1(S:Sys))[metadata "inv"].
+endg
+
+begin proof PI of INV
+  ind(S:Sys) conj red push-all red
+  ca red cs tc
+  imp red conj red push-all red
+  init("not-bit", B:Bit <- bit1(x#1))
+  pull("inv[S<-send2`(x#1`)][rhs][rhs][rhs][E1<-E1#2][E2<-E2#3][Q1<-Q1#4][Q2#1<-Q2#1#5][premise][rhs][lhs]")
+  push-all red
+qed
+
+`` ---------------------------------------------------------------------------
+
+goal INV5 is
+ fm ~ not B:Bit => B:Bit [metadata "not-bit"].
+ fm bit2(rec2(S:Sys)) = B:Bit if ([B:Bit, P:Packet], C1:Channel1) := channel1(S:Sys) [metadata "inv0"] .
+ fm B:Bit => bit1(S:Sys) if (K1:Channel1,[B:Bit, R:Packet], K2:Channel1) := channel1(S:Sys) /\ bit2(S:Sys) = bit1(S:Sys) [nonexec metadata "inv2"] .
+ fm bit2(S:Sys) = bit1(S:Sys) if (L1:Channel2, D:Bit, L2:Channel2) := channel2(S:Sys) /\ D:Bit = bit1(S:Sys) [metadata "inv3"] .
+|-{ABP}
+ fm forall {S:Sys} P:Packet => pac(next(S:Sys)) 
+    if (C1:Channel1,[B:Bit, P:Packet], C2:Channel1) := channel1(S:Sys) /\ B:Bit = bit1(S:Sys) [metadata "inv5"] .
+endg
+
+begin proof PI5 of INV5
+ ind(S:Sys) push-all red
+ ca red cs red tc red
+ imp conj red push-all red
+ init("inv2",(B:Bit <- not bit1(x#1)) ; (S:Sys <- x#1) ; (K1:Channel1 <- C1#4) ; (K2:Channel1 <- C2#5) ; (R:Packet <- P#6))
+qed 
+
+`` ---------------------------------------------------------------------------
+
+goal GOAL is
+ fm B:Bit = bit1(S:Sys) if (K1:Channel1,[B:Bit, R:Packet], K2:Channel1) := channel1(S:Sys) /\ bit2(S:Sys) = bit1(S:Sys) [nonexec metadata "inv2"] .
+ fm pac(next(S:Sys)) = P:Packet if (Q1:Channel1,[B:Bit, P:Packet], Q2:Channel1) := channel1(S:Sys) /\ B:Bit = bit1(S:Sys) [metadata "inv5"] .
+ fm bit2(S:Sys) = bit1(S:Sys) if (L1:Channel2, D:Bit, L2:Channel2 := channel2(S:Sys)) /\ D:Bit = bit1(S:Sys) [metadata "inv3"] .
+ fm bit2(rec2(S:Sys)) = B:Bit if ([B:Bit, P:Packet], C1:Channel1) := channel1(S:Sys) [metadata("inv0")] .
+|-{ABP}
+ fm forall {S:Sys}
+    (mk(next(S:Sys)) = list(S:Sys) if bit2(S:Sys) = bit1(S:Sys)) /\
+    (mk(next(S:Sys)) = pac(next(S:Sys)), list(S:Sys) if not bit2(S:Sys) = bit1(S:Sys)) [metadata "inv6"] .
+endg
+
+begin proof PG of GOAL
+ ind(S:Sys) conj red push-all red
+ ca red tc red
+ imp conj red push-all red
+ init("inv2", (S:Sys <- x#1) ; (B:Bit <- B#2) ; (K1:Channel1 <-(empty) .Channel1) ; (K2:Channel1 <- C1#3) ; (R:Packet <- P#4))
+qed
+
+`` -----------------------------------------------------------------------------
