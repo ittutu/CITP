@@ -235,6 +235,7 @@ fmod CITP/FORMULA is
       /\ F is eqCondition .
   ceq (LHS =[L]= RHS) is executable = true
    if vars(RHS) subset vars(LHS) .
+  eq (T1 :[L]= T2) is executable = (T2 =[L]= T1) is executable .
   ceq ((LHS =[L]= RHS) if F) is executable = true
    if vars(RHS) subset cond-vars(F, vars(LHS))
       /\ F is eqCondition .
@@ -551,8 +552,8 @@ fmod CITP/FORMULA is
       /\ sameKind(M, TP1, TP2)
       /\ sortLeq(M, ST2, ST1)
       /\ SB := metaMatch(M, T1, T2, nil, 0) .
-  eq match?(M, T1 =[L]= T2, GT1 :[L]= GT2)
-   = match?(M, T1 =[L]= T2, GT1 =[L]= GT2) .
+  eq match?(M, T1 =[L]= T2, T3 :[L]= T4)
+   = match?(M, T1 =[L]= T2, T3 =[L]= T4) .
   *** for negations
   eq match?(M, ~ F1, ~ F2)= match?(M, F1, F2) .
   *** for conjunctions
@@ -1361,20 +1362,23 @@ fmod CITP/APPLY/TC is
   vars GA MA : QidList .
   vars M M' : Module .
   var  H : FormDeclList{CITP} .
+  var  FD : FormDecl{CITP} .
   var  F : Formula{CITP} .
-  var  NVS : NeVariableSet .
+  var  VS : VariableSet .
   var  SB : Substitution .
   var  AtS : AttrSet .
 
   *** apply the theorem-of-constants  - - - - - - - - - - - - - - - - - - - - --
-  ceq apply(Tactic[L]{tc}, goal GN[GA] is H |-{M[MA]} fm forall {NVS} F [AtS] . endg)
-   = goal GN[GA 'tc] is
+ ceq apply(Tactic[L]{tc}, goal GN[GA] is H |-{M[MA]} FD endg) =
+     goal GN[GA 'tc] is
        H
      |-{M'[MA qid('`[ intersperse(';, list-terms(terms(SB), M')) '`])]}
        fm F << SB [md-update(AtS, SB, M')] .
      endg
-   if SB := v2s(NVS, s getLB(getOps(M)))
-      /\ M' := addSB(SB, M) .
+  if fm F [AtS] . := strip(FD)
+     /\ VS := fv(F)
+     /\ SB := v2s(VS, s getLB(getOps(M)))
+     /\ M' := addSB(SB, M) .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -1563,17 +1567,374 @@ endfm
 fmod CITP/APPLY/CS is
   including CITP/APPLY .
 
-  var  L : CITP .
+  var  CT : Constant .
+  var  Q : Qid .
+  vars SB SB1 SB2 : Substitution .
+  vars FDL FDL1 FDL2 : FormDeclList{CITP} .
+  var  NFDL : NeFormDeclList{CITP} .
+  var  M : Module .
+  vars TP TP1 TP2 TP3 TP4 TP5 : Type .
+  vars V V1 V2 V3 W1 W2 : Variable .
+  var  VS : VariableSet .
+  vars T T1 T2 T3 T4 T5 : Term .
+  vars GT GT1 GT2 : GroundTerm .
+  var  GTL : GroundTermList .
+  var  TL : TermList .
+  var  NTL : NeTermList .
+  var  NGTL : NeGroundTermList .
+  var  AS : AttrSet .
+  vars F F1 F2 F3 F4 F5 : Formula{CITP} .
   var  G : Goal{CITP} .
+  vars NGL NGL1 NGL2 : NeGoalList{CITP} .
+  ---
+  var  L : CITP .
   var  GN : Qid .
   vars GA MA : QidList .
-  var  M : Module .
   var  H : FormDeclList{CITP} .
   var  C : NeFormDeclList{CITP} .
 
   *** apply the cs tactic  - - - - - - - - - - - - - - - - - - - - - -
   eq apply(Tactic[L]{cs}, goal GN[GA] is H |-{M[MA]} C endg)
-   = no-goal .
+   = cs(goal GN[GA] is H |-{M[MA]} C endg) .
+  --- --- ---
+  op isTuple : Qid -> Bool .
+  eq isTuple(Q) = false [owise].
+  eq isTuple('`(_`,_`)) = true .
+  eq isTuple('`[_`,_`]) = true .
+  eq isTuple('`{_`,_`}) = true .
+  eq isTuple('`(_`,_`,_`)) = true .
+  eq isTuple('`{_`,_`,_`}) = true .
+  eq isTuple('`[_`,_`,_`]) = true .
+  eq isTuple('`(_`,_`,_`,_`)) = true .
+  eq isTuple('`{_`,_`,_`,_`}) = true .
+  eq isTuple('`[_`,_`,_`,_`]) = true .
+  --- --- ---
+  op makeFM : TermList GroundTermList -> Formula{CITP} .
+  eq makeFM((empty).TermList,GTL)= true .
+  eq makeFM(TL,(empty).GroundTermList) = true .
+  eq makeFM((T,TL),(GT,GTL)) = (T :[CITP]= GT) /\ makeFM(TL,GTL).
+  --- --- ---
+  op split-tuple : Module Formula{CITP} -> Formula{CITP} .
+  eq split-tuple(M,F) = F [owise].
+  ---
+  ceq split-tuple(M,Q[NTL] :[CITP]= Q[NGTL]) = makeFM(NTL,NGTL)
+   if len(NTL) = len(NGTL) /\ isTuple(Q) .
+  eq split-tuple(M,~ F) = ~ split-tuple(M,F).
+  eq split-tuple(M,F1 /\ F2) = split-tuple(M,F1) /\ split-tuple(M,F2).
+  eq split-tuple(M,F1 \/ F2) = split-tuple(M,F1) \/ split-tuple(M,F2).
+  eq split-tuple(M,F1 if F2) = split-tuple(M,F1) if split-tuple(M,F2).
+  eq split-tuple(M,forall {VS} F) = forall {VS} split-tuple(M,F).
+  eq split-tuple(M,exists {VS} F) = exists {VS} split-tuple(M,F).
+  --- --- ---
+  op split-tuple : Module FormDeclList{CITP} -> FormDeclList{CITP} .
+  eq split-tuple(M,no-fd) = no-fd .
+  eq split-tuple(M,fm F[AS]. FDL)
+   = fm split-tuple(M,F) [AS]. split-tuple(M,FDL).
+  --- --- ---
+  op split-tuple : GoalList{CITP} -> GoalList{CITP} .
+  eq split-tuple(no-goal) = no-goal .
+  eq split-tuple(goal GN[GA] is FDL |-{M[MA]} no-fd endg)= no-goal .
+  eq split-tuple(goal GN[GA] is FDL |-{M[MA]} NFDL endg)
+   = goal GN[GA] is FDL |-{M[MA]} split-tuple(M,NFDL) endg .
+  eq split-tuple(NGL1 NGL2) = split-tuple(NGL1) split-tuple(NGL2).
+  --- --- ---
+  op cs : Goal{CITP} -> GoalList{CITP}.
+  eq cs(G) = G [owise].
+  ---
+  --- --------------------------------------------------------------------------
+  --- 1) V1,T,V2 := GTL ---
+  --- --------------------------------------------------------------------------
+  *** a ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]} fm F if F1 /\ Q[V1,T,V2] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]} fm F << V2 <- Q[V2,NGTL] if F1 << V2 <- Q[V2,NGTL]/\ Q[V1,T,V2] :[L]= GT     /\ F2 << V2 <- Q[V2,NGTL][AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]} fm F << V1 <- Q[GT,V1]   if F1 << V1 <- Q[GT,V1]  /\ Q[V1,T,V2] :[L]= Q[NGTL]/\ F2 << V1 <- Q[GT,V1] [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q) /\ leastSort(M,GT)= TP1 .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]} fm F if Q[V1,T,V2] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]} fm F << V2 <- Q[V2,NGTL]if Q[V1,T,V2]:[L]= GT      /\ F2 << V2 <- Q[V2,NGTL][AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]} fm F << V1 <- Q[GT,V1]  if Q[V1,T,V2]:[L]= Q[NGTL]/\ F2 << V1 <- Q[GT,V1]  [AS].  endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1)/\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q) /\ leastSort(M,GT)= TP1 .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]} fm F if F1 /\ Q[V1,T,V2] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]} fm F << V2 <- Q[V2,NGTL]if F1 << V2 <- Q[V2,NGTL]/\ Q[V1,T,V2]:[L]= GT     [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]} fm F << V1 <- Q[GT,V1]  if F1 << V1 <- Q[GT,V1] /\ Q[V1,T,V2] :[L]= Q[NGTL][AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q) /\ leastSort(M,GT)= TP1 .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]} fm F if Q[V1,T,V2] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]} fm F << V2 <- Q[V2,NGTL] if Q[V1,T,V2] :[L]= GT      [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]} fm F <<(V1 <- Q[GT,V1])  if Q[V1,T,V2] :[L]= Q[NGTL][AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1)/\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q) /\ leastSort(M,GT)= TP1 .
+  *** b ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T,V2] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- CT ; V2 <- Q[NGTL]if F1 << V1 <- CT ; V2 <- Q[NGTL]/\ T :[L]= GT /\ F2 << V1 <- CT ; V2 <- Q[NGTL][AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1] if F1 << V1 <- Q[GT,V1] /\ Q[V1,T,V2] :[L]= Q[NGTL] /\ F2 << V1 <- Q[GT,V1] [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if  Q[V1,T,V2] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- CT ; V2 <- Q[NGTL])if T :[L]= GT /\ F2 <<(V1 <- CT ; V2 <- Q[NGTL])[AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- Q[GT,V1])  if Q[V1,T,V2] :[L]= Q[NGTL]/\ F2 <<(V1 <- Q[GT,V1])[AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T,V2] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- CT ; V2 <- Q[NGTL] if F1 << V1 <- CT ; V2 <- Q[NGTL] /\ T :[L]= GT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1] if F1 << V1 <- Q[GT,V1] /\ Q[V1,T,V2] :[L]= Q[NGTL][AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q) /\ leastSort(M,GT)= TP .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T,V2] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- CT ; V2 <- Q[NGTL] if T :[L]= GT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1] if Q[V1,T,V2] :[L]= Q[NGTL][AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  *** c ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}   fm F if F1 /\ Q[V1,T,V2]:[L]= Q[GT] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]} fm F if F1 /\ Q[V1,T,V2]:[L]=   GT  /\ F2 [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ leastSort(M,GT)= TP1 .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if  Q[V1,T,V2]:[L]= Q[GT] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if  Q[V1,T,V2]:[L]=   GT  /\ F2 [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ leastSort(M,GT)= TP1 .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if  F1 /\ Q[V1,T,V2]:[L]= Q[GT] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if  F1 /\ Q[V1,T,V2]:[L]=   GT  [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ leastSort(M,GT)= TP1 .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T,V2]:[L]= Q[GT] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T,V2]:[L]=   GT  [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ leastSort(M,GT)= TP1 .
+  --- d ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T,V2] :[L]= Q[GT] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- CT ; V2 <- CT) if F1 << V1 <- CT ; V2 <- CT /\ T :[L]= GT /\ F2 << V1 <- CT ; V2 <- CT [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1) /\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T,V2] :[L]= Q[GT] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- CT ; V2 <- CT) if T :[L]= GT /\ F2 <<(V1 <- CT ; V2 <- CT)[AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1)/\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T,V2] :[L]= Q[GT] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- CT ; V2 <- CT) if F1 << V1 <- CT ; V2 <- CT /\ T :[L]= GT [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1)/\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T,V2] :[L]= Q[GT] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- CT ; V2 <- CT) if T :[L]= GT [AS]. endg)
+   if TP := leastSort(M,T)/\ TP1 := getType(V1)/\ TP2 := getType(V2)/\
+      TP1 = TP2 /\ TP =/= TP1 /\ sortLeq(M,TP,TP1)/\
+      isCtr(M,TP1,Q)/\ isAssoc(M,TP1,Q)/\ CT := getID(M,TP1,Q)/\ leastSort(M,GT)= TP .
+  --- --------------------------------------------------------------------------
+  --- 2) V1,T1,V2,T2,V3 := GTL ---
+  --- --------------------------------------------------------------------------
+  *** a ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V3 <- Q[V3,NGTL]if F1 << V3 <- Q[V3,NGTL]/\ Q[V1,T1,V2,T2,V3] :[L]= GT /\ F2 << V3 <- Q[V3,NGTL][AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1]  if F1 << V1 <- Q[GT,V1]  /\ Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] /\ F2 << V1 <- Q[GT,V1][AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V2 <- Q[W1,W2]  if F1 << V2 <- Q[W1,W2]  /\ Q[V1,T1,W1] :[L]= GT /\ Q[W2,T2,V3] :[L]= Q[NGTL] /\ F2 << V2 <- Q[W1,W2][AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1) /\
+      W1 := qid(string(getName(V2)) + "#1:" + string(getType(V2))) /\
+      W2 := qid(string(getName(V2)) + "#2:" + string(getType(V2))) /\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V3 <- Q[V3,NGTL] if Q[V1,T1,V2,T2,V3] :[L]= GT      /\ F2 << V3 <- Q[V3,NGTL] [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1]   if Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] /\ F2 << V1 <- Q[GT,V1] [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V2 <- Q[W1,W2]   if Q[V1,T1,W1] :[L]= GT /\ Q[W2,T2,V3] :[L]= Q[NGTL] /\ F2 << V2 <- Q[W1,W2][AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1) /\
+      W1 := qid(string(getName(V2)) + "#1:" + string(getType(V2))) /\
+      W2 := qid(string(getName(V2)) + "#2:" + string(getType(V2))) /\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V3 <- Q[V3,NGTL])if F1 << V3 <- Q[V3,NGTL]/\ Q[V1,T1,V2,T2,V3] :[L]= GT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- Q[GT,V1])  if F1 << V1 <- Q[GT,V1]  /\ Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F <<(V2 <- Q[W1,W2])  if F1 << V2 <- Q[W1,W2]  /\ Q[W2,T2,V3] :[L]= Q[NGTL] /\ Q[V1,T1,W1] :[L]= GT[AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1) /\
+      W1 := qid(string(getName(V2)) + "#1:" + string(getType(V2))) /\
+      W2 := qid(string(getName(V2)) + "#2:" + string(getType(V2)))/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V3 <- Q[V3,NGTL] if Q[V1,T1,V2,T2,V3] :[L]= GT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1]   if Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V2 <- Q[W1,W2]   if Q[W2,T2,V3] :[L]= Q[NGTL]/\ Q[V1,T1,W1] :[L]= GT[AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1) /\
+      W1 := qid(string(getName(V2)) + "#1:" + string(getType(V2))) /\
+      W2 := qid(string(getName(V2)) + "#2:" + string(getType(V2)))/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  *** b ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]} fm F << V1 <- CT        if F1 << V1 <- CT /\ Q[V2,T2,V3] :[L]= Q[NGTL] /\ T1 :[L]= GT /\ F2 << V1 <- CT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]} fm F << V1 <- Q[GT,V1] if F1 << V1 <- Q[GT,V1] /\ Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] /\ F2 << V1 <- Q[GT,V1][AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1) /\
+      CT := getID(M,getType(V1),Q)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q).
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- CT) if Q[V2,T2,V3] :[L]= Q[NGTL] /\ T1 :[L]= GT /\ F2 <<(V1 <- CT)[AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- Q[GT,V1]) if Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] /\ F2 <<(V1 <- Q[GT,V1])[AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1) /\
+      CT := getID(M,getType(V1),Q) /\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- CT        if F1 << V1 <- CT /\ Q[V2,T2,V3] :[L]= Q[NGTL] /\ T1 :[L]= GT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F <<(V1 <- Q[GT,V1]) if F1 << V1 <- Q[GT,V1] /\ Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] [AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1) /\
+      CT := getID(M,getType(V1),Q)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT,NGTL] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- CT       if Q[V2,T2,V3] :[L]= Q[NGTL] /\ T1 :[L]= GT [AS]. endg)
+     cs(goal GN[GA] is FDL |-{M[MA]}fm F << V1 <- Q[GT,V1] if Q[V1,T1,V2,T2,V3] :[L]= Q[NGTL] [AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1) /\
+      CT := getID(M,getType(V1),Q)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  *** c ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= GT /\ F2 [AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT] /\ F2 [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= GT /\ F2 [AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= GT [AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q) .
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT] [AS]. endg)
+   = split-tuple(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= GT    [AS]. endg)
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = getType(V1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q).
+  *** d ***
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT] /\ F2 [AS]. endg)
+   = no-goal
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q).
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT] /\ F2 [AS]. endg)
+   = no-goal
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q).
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if F1 /\ Q[V1,T1,V2,T2,V3] :[L]= Q[GT] [AS]. endg)
+   = no-goal
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q).
+  ---
+  ceq cs(goal GN[GA] is FDL |-{M[MA]}fm F if Q[V1,T1,V2,T2,V3] :[L]= Q[GT] [AS]. endg)
+   = no-goal
+   if getType(V1) = getType(V2) /\
+      getType(V2) = leastSort(M,V3) /\
+      leastSort(M,T1) = leastSort(M,T2) /\
+      sortLeq(M,leastSort(M,T1),getType(V1)) /\
+      leastSort(M,T1) =/= getType(V1) /\
+      leastSort(M,GT) = leastSort(M,T1)/\
+      isCtr(M,getType(V1),Q)/\ isAssoc(M,getType(V1),Q).
 endfm
 
 *** ----------------------------------------------------------------------------
