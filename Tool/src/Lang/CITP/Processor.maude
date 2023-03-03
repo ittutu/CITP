@@ -144,6 +144,8 @@ mod CITP/PROCESSOR is
         or-else
         parse L tactic list (QIL)
           in AnalysisState[L]{last-list(proof-run(L, Atts))}
+        or-else
+        parse L multiline comment (QIL)
       else
         parse L command (QIL)
           in AnalysisState[L]{DB /
@@ -151,6 +153,8 @@ mod CITP/PROCESSOR is
         or-else
         parse L goal (QIL)
           in AnalysisState[L]{modules(DB[L]) & goals(DB[L])}
+        or-else
+        parse L multiline comment (QIL)
       fi) .
 
   crl [CITP:process] :
@@ -181,6 +185,13 @@ mod CITP/PROCESSOR is
       /\ GL := apply(TtL, LGL)
       /\ M0 := base-module(ongoing-proof(L, Atts)) .
 
+  crl [CITP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L])
+   if T :: 'Comment .
+    
   *** executing CITP commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
   rl [CITP:import-module] :
     < $[L] : PROC | executing I command, Atts >

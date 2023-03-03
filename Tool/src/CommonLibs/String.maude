@@ -96,6 +96,11 @@ fmod STRING/OPS is
      else S fi
    if FR := find(S, P, 0) .
 
+  op take-until-Maude-single-line-comment : String -> String .
+  eq take-until-Maude-single-line-comment(S)
+   = if replace(S, " ", "") begins with "***(" then S
+     else take-until("***", take-until("---", trim-lnl(S))) fi .
+
   *** locate (get the longest prefix of a String that matches a QidList)  - - --
   op locate : QidList String -> String .
   eq locate(nil, S) = "" .

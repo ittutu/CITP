@@ -249,6 +249,16 @@ fmod CITP/LANGUAGE is
        'Term
          ::= bubble "term" [balanced-parentheses]
      endgr .
+
+  *** multiline comments  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmnt-grammar : CITP -> Grammar .
+  eq cmnt-grammar(CITP)
+   = grammar 'CITP/cmnt-syntax is
+       'Comment
+         ::= "***_" : 'Text [none]
+       'Text
+         ::= bubble "text" [balanced-parentheses]
+     endgr .
 endfm
 
 *** ----------------------------------------------------------------------------
@@ -1071,6 +1081,10 @@ fmod CITP/PARSING is
   eq parse L proof-cmd (QIL) in SAS
    = scan input (QIL : 'ProofCommand) given cmd-grammar(L)
      then analyse L command in SAS .
+
+  op parse_multiline`comment_ : CITP QidList ~> ParsingOutcome .
+  eq parse L multiline comment (QIL)
+   = scan input (QIL : 'Comment) given cmnt-grammar(L) .
 
   *** analyse goal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op analyse_goal : CITP -> AnalysisAction{CITP} .
