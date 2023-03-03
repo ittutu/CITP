@@ -235,6 +235,7 @@ fmod CITP/FORMULA is
       /\ F is eqCondition .
   ceq (LHS =[L]= RHS) is executable = true
    if vars(RHS) subset vars(LHS) .
+  eq (T1 :[L]= T2) is executable = (T2 =[L]= T1) is executable .
   ceq ((LHS =[L]= RHS) if F) is executable = true
    if vars(RHS) subset cond-vars(F, vars(LHS))
       /\ F is eqCondition .
@@ -551,8 +552,8 @@ fmod CITP/FORMULA is
       /\ sameKind(M, TP1, TP2)
       /\ sortLeq(M, ST2, ST1)
       /\ SB := metaMatch(M, T1, T2, nil, 0) .
-  eq match?(M, T1 =[L]= T2, GT1 :[L]= GT2)
-   = match?(M, T1 =[L]= T2, GT1 =[L]= GT2) .
+  eq match?(M, T1 =[L]= T2, T3 :[L]= T4)
+   = match?(M, T1 =[L]= T2, T3 =[L]= T4) .
   *** for negations
   eq match?(M, ~ F1, ~ F2)= match?(M, F1, F2) .
   *** for conjunctions
@@ -1360,20 +1361,23 @@ fmod CITP/APPLY/TC is
   vars GA MA : QidList .
   vars M M' : Module .
   var  H : FormDeclList{CITP} .
+  var  FD : FormDecl{CITP} .
   var  F : Formula{CITP} .
-  var  NVS : NeVariableSet .
+  var  VS : VariableSet .
   var  SB : Substitution .
   var  AtS : AttrSet .
 
   *** apply the theorem-of-constants  - - - - - - - - - - - - - - - - - - - - --
-  ceq apply(Tactic[L]{tc}, goal GN[GA] is H |-{M[MA]} fm forall {NVS} F [AtS] . endg)
-   = goal GN[GA 'tc] is
+ ceq apply(Tactic[L]{tc}, goal GN[GA] is H |-{M[MA]} FD endg) =
+     goal GN[GA 'tc] is
        H
      |-{M'[MA qid('`[ intersperse(';, list-terms(terms(SB), M')) '`])]}
        fm F << SB [md-update(AtS, SB, M')] .
      endg
-   if SB := v2s(NVS, s getLB(getOps(M)))
-      /\ M' := addSB(SB, M) .
+  if fm F [AtS] . := strip(FD)
+     /\ VS := fv(F)
+     /\ SB := v2s(VS, s getLB(getOps(M)) + 1)
+     /\ M' := addSB(SB, M) .
 endfm
 
 *** ----------------------------------------------------------------------------
