@@ -1,6 +1,22 @@
 `` -----------------------------------------------------------------------------
+``
+`` For the ABP we are interested in verifying the following safety
+`` property: all messages from Sender are successfully delivered to
+`` Receiver, in the correct order, despite the fact that the two
+`` communication channels may lose or duplicate messages.
+`` 
+`` This is achieved in three main steps, each introduced by a goal.
+`` For each goal, for the sake of automation, we use transition rules
+`` in place of equalities in the conclusion of clauses.
 
-goal INV is
+`` -----------------------------------------------------------------------------
+`` Step I. The following four invariants are proved by simultaneous induction:
+`` 1) If the data channel contains Senders's bit, then all bits previously sent on the data channel are equal to Senders's bit.
+`` 2) If Sender's bit is equal to Receiver's bit, then all bits of the data channel are equal to Senders's bit. 
+`` 3) If the acknowledgement channel contains Sender's bit, then Receiver's bit is equal to Sender's bit.
+`` 4) If the acknowledgement channel contains Sender's bit, then all bits previously sent on the acknowledgement channel are equal to Sender's bit. 
+
+goal INV.1234 is
 fm ~ not B:Bit => B:Bit [metadata "not-bit"].
 fm bit2(rec2(S:Sys)) = B:Bit if ([B:Bit, P:Packet], C1:Channel1) := channel1(S:Sys) [metadata "inv0" ] .
 |-{ABP}
@@ -11,7 +27,7 @@ fm forall {S:Sys}
    (E2:Bit => bit1(S:Sys) if Q1:Channel2,E1:Bit,Q2:Channel2,E2:Bit,Q3:Channel2 := channel2(S:Sys) /\ E1:Bit = bit1(S:Sys))[metadata "inv"].
 endg
 
-begin proof PI of INV
+begin proof PI.1234 of INV.1234
   ind(S:Sys) conj red push-all red
   ca red cs tc
   imp red conj red push-all red
@@ -21,8 +37,10 @@ begin proof PI of INV
 qed
 
 `` ---------------------------------------------------------------------------
+`` Step II. We prove another invariant, inv5, using inv1, inv2, inv3 and inv4 as lemmas:
+`` 5) If acknowledgement channel contains [B, P] such that B is Sender's bit, then P is Sender's current packet. 
 
-goal INV5 is
+goal INV.5 is
  fm ~ not B:Bit => B:Bit [metadata "not-bit"].
  fm bit2(rec2(S:Sys)) = B:Bit if ([B:Bit, P:Packet], C1:Channel1) := channel1(S:Sys) [metadata "inv0"] .
  fm B:Bit => bit1(S:Sys) if (K1:Channel1,[B:Bit, R:Packet], K2:Channel1) := channel1(S:Sys) /\ bit2(S:Sys) = bit1(S:Sys) [nonexec metadata "inv2"] .
@@ -32,7 +50,7 @@ goal INV5 is
     if (C1:Channel1,[B:Bit, P:Packet], C2:Channel1) := channel1(S:Sys) /\ B:Bit = bit1(S:Sys) [metadata "inv5"] .
 endg
 
-begin proof PI5 of INV5
+begin proof PI.5 of INV.5
  ind(S:Sys) push-all red
  ca red cs red tc red
  imp conj red push-all red
@@ -40,8 +58,11 @@ begin proof PI5 of INV5
 qed 
 
 `` ---------------------------------------------------------------------------
+`` III. The safety property of interest is formalized as the conjunction of two goals. 
+`` 6) If Sender's bit is equal to Receiver's bit, then all packets sent have been delivered.
+`` 7) If Sender's bit is different from Receiver's bit, then the last packet sent has not been delivered.
 
-goal GOAL is
+goal INV.67 is
  fm B:Bit = bit1(S:Sys) if (K1:Channel1,[B:Bit, R:Packet], K2:Channel1) := channel1(S:Sys) /\ bit2(S:Sys) = bit1(S:Sys) [nonexec metadata "inv2"] .
  fm pac(next(S:Sys)) = P:Packet if (Q1:Channel1,[B:Bit, P:Packet], Q2:Channel1) := channel1(S:Sys) /\ B:Bit = bit1(S:Sys) [metadata "inv5"] .
  fm bit2(S:Sys) = bit1(S:Sys) if (L1:Channel2, D:Bit, L2:Channel2 := channel2(S:Sys)) /\ D:Bit = bit1(S:Sys) [metadata "inv3"] .
@@ -52,7 +73,7 @@ goal GOAL is
     (mk(next(S:Sys)) = pac(next(S:Sys)), list(S:Sys) if not bit2(S:Sys) = bit1(S:Sys)) [metadata "inv6"] .
 endg
 
-begin proof PG of GOAL
+begin proof PI.67 of INV.67
  ind(S:Sys) conj red push-all red
  ca red tc red
  imp conj red push-all red
