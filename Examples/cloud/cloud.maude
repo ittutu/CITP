@@ -5,10 +5,13 @@ Each of the PCs can fetch the latest value from the cloud, compare it with their
 and update the Cloud or their own value depending on which is larger. See cloud-in-images.pdf
 )***
 
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod EQUAL is
  op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
 endfm
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod LABELC is
  inc EQUAL .
  sort LabelC .
@@ -19,7 +22,8 @@ fmod LABELC is
  eq A =? A = true .
  eq free =? busy = false .
 endfm
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod LABELP is
  inc EQUAL .
  sort Label .
@@ -34,7 +38,8 @@ fmod LABELP is
  eq idle =? updated = false .
  eq gotval =? updated = false .
 endfm
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fth CLIENT is 
  inc EQUAL .
  sort Client .
@@ -42,15 +47,17 @@ fth CLIENT is
  eq I =? I = true .
 ceq I = J if I =? J [nonexec]. 
 endfth
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod SYSTEM{X :: CLIENT} is
  sort Sys .
 *** constructors ***
  op init : -> Sys [ctor].
  ops modval getval update gotoidle : Sys X$Client -> Sys [ctor].
 endfm
-
+--- ---------------------------------------------
 *** CLOUD{X} has loose semantics ***
+--- ---------------------------------------------
 fmod CLOUD{X :: CLIENT} is 
  pr SYSTEM{X}.
  pr LABELC .
