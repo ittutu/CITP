@@ -64,7 +64,7 @@ begin proof P6 of INV6
 qed
 
 *** -----------------------------------------------------------------------------
-*** If the status of a PC is updated, then its value is equal to that of the Cloud ***
+*** GOAL: If the status of a PC is updated, then its value is equal to that of the Cloud ***
 *** -----------------------------------------------------------------------------
 
 goal GOAL is
