@@ -2,7 +2,7 @@
 Consider a scenario where arbitrarily many PCs are connected to a Cloud in order to exchange messages.
 For simplicity, we model these messages by natural numbers.
 Each of the PCs can fetch the latest value from the cloud, compare it with their own value,
-and update the Cloud or their own value depending on which is larger. See cloud-in-images.pdf
+and update the Cloud or their own value depending on which is larger. See cloud in images.pdf
 )***
 
 --- ---------------------------------------------
