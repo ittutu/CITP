@@ -1,3 +1,12 @@
+***(
+This example shows one possible way of dealing with generic lists (with potentially void elements) in CITP, including operations for
+ (a) appending lists, denoted L1 @ L2,
+ (b) computing their lengths, denoted len(L), or
+ (c) reversing lists, denoted rev}(L).
+We prove that the append operation is associative and that, moreover, both the length and the reverse operations distribute over append.
+)***
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod EQUAL is
  op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
 endfm
@@ -11,7 +20,8 @@ fth ELT is
  eq E =? E = true .
  ceq E = E' if E =? E' [nonexec].   
 endfth
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod PNAT is 
  sorts PNat PNzNat .
  subsorts PNzNat < PNat .
@@ -20,10 +30,11 @@ fmod PNAT is
  op _+_ : PNat PNat -> PNat [assoc comm].
  vars M N P : PNat .
 ---
- eq 0 + N = N             [metadata "1"].
- eq s M + N = s(M + N)    [metadata "2"].
+ eq 0 + N = N             [metadata "add-1"].
+ eq s M + N = s(M + N)    [metadata "add-2"].
 endfm
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod LISTS{X :: ELT} is
   pr PNAT .
   sorts List .
@@ -49,3 +60,5 @@ ceq len(E L) = len(L)   if E = vo           [metadata "ca:l2"].
 ceq rev(E L) = rev(L) @ (E nil) if (E =? vo) = false[metadata "ca:r1"].
 ceq rev(E L) = rev(L)           if E = vo           [metadata "ca:r2"].
 endfm
+--- ---------------------------------------------
+--- ---------------------------------------------
