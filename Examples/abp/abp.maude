@@ -135,7 +135,8 @@ fmod SYSTEM is
  op drop1 : Sys -> Sys [ctor] . --- dropping one element of channel1
  op drop2 : Sys -> Sys [ctor] . --- dropping one element of channel2
 endfm
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fth ABP is
  pr SYSTEM .
  pr CHANNEL1 .
