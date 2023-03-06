@@ -1,3 +1,25 @@
+
+***(
+The protocol consists of two processes, Sender and Receiver, each having a data buffer and a one-bit state.
+Sender and Receiver use two channels to communicate with each other, as they do not share any common memory:
+(a) a data channel from Sender to Receiver for sending bit-packet pairs, and
+(b) an acknowledgement channel from Receiver to Sender for sending single bits for confirmation.
+
+The protocol works as follows:
+ - Initially, both channels are empty and Sender's bit is different from Receiver's bit.
+ - Sender repeatedly writes bit-packet pairs [bit, pac] to the data channel,
+   where bit is the Sender's bit and pac is the Sender's data to transmit.
+   If the Sender receives bit from Receiver over the acknowledgement channel,
+   then that is a confirmation that the packet sent has been delivered.
+   In that case, Sender flips its bit and select the next packet to send.
+
+ - Receiver writes its bit to the acknowledgement channel repeatedly.
+ When Receiver reads a pair [bit, pac] such that bit is different from its bit,
+ then it stores pac and flips its bit.
+)***
+
+--- ---------------------------------------------
+--- ---------------------------------------------
 fmod EQUAL is
  op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
 endfm
@@ -142,30 +164,30 @@ fth ABP is
   eq list(init)  = nil .
 --- rec1 -----------------------------------------------------------------
  eq channel1(rec1(S)) = channel1(S) .
-ceq channel2(rec1(S)) = channel2(S) if channel2(S) = empty[metadata "ca:c2a"].
-ceq channel2(rec1(S)) = C2          if B,C2 := channel2(S)[metadata "ca:c2b"].
-ceq bit1(rec1(S)) = bit1(S)     if channel2(S) = empty                   [metadata "ca:b1a"].
-ceq bit1(rec1(S)) = bit1(S)     if B,C2 := channel2(S) /\ B = not bit1(S)[metadata "ca:b1b"].
-ceq bit1(rec1(S)) = not bit1(S) if B,C2 := channel2(S) /\ B = bit1(S)    [metadata "ca:b1c"].
+ceq channel2(rec1(S)) = channel2(S) if channel2(S) = empty[metadata "ca:c2-rec1-a"].
+ceq channel2(rec1(S)) = C2          if B,C2 := channel2(S)[metadata "ca:c2-rec1-b"].
+ceq bit1(rec1(S)) = bit1(S)     if channel2(S) = empty                   [metadata "ca:bit1-rec1-a"].
+ceq bit1(rec1(S)) = bit1(S)     if B,C2 := channel2(S) /\ B = not bit1(S)[metadata "ca:bit1-rec1-b"].
+ceq bit1(rec1(S)) = not bit1(S) if B,C2 := channel2(S) /\ B = bit1(S)    [metadata "ca:bit1-rec1-c"].
  eq bit2(rec1(S))  = bit2(S) .
-ceq next(rec1(S)) = next(S)   if channel2(S) = empty                   [metadata "ca:na"].
-ceq next(rec1(S)) = next(S)   if B,C2 := channel2(S) /\ B = not bit1(S)[metadata "ca:nb"].
-ceq next(rec1(S)) = s next(S) if B,C2 := channel2(S) /\ B = bit1(S)    [metadata "ca:nc"].
+ceq next(rec1(S)) = next(S)   if channel2(S) = empty                   [metadata "ca:next-rec1-a"].
+ceq next(rec1(S)) = next(S)   if B,C2 := channel2(S) /\ B = not bit1(S)[metadata "ca:next-rec1-b"].
+ceq next(rec1(S)) = s next(S) if B,C2 := channel2(S) /\ B = bit1(S)    [metadata "ca:next-rec1-c"].
  eq list(rec1(S)) = list(S) .
 --- rec2 -----------------------------------------------------------------
-ceq channel1(rec2(S)) = channel1(S) if channel1(S) = empty     [metadata "ca:c1a"].
-ceq channel1(rec2(S)) = C1          if [B,P],C1 := channel1(S) [metadata "ca:c1b"].
+ceq channel1(rec2(S)) = channel1(S) if channel1(S) = empty     [metadata "ca:c1-rec2-a"].
+ceq channel1(rec2(S)) = C1          if [B,P],C1 := channel1(S) [metadata "ca:c1-rec2-b"].
  eq  channel2(rec2(S)) = channel2(S) .
  eq  bit1(rec2(S))  = bit1(S) .
-ceq bit2(rec2(S))  = bit2(S)     if channel1(S) = empty                       [metadata "ca:b2a"].
-ceq bit2(rec2(S))  = bit2(S)     if [B,P],C1 := channel1(S) /\ B = bit2(S)    [metadata "ca:b2b"].
-ceq bit2(rec2(S))  = not bit2(S) if [B,P],C1 := channel1(S) /\ B = not bit2(S)[metadata "ca:b2c"].
+ceq bit2(rec2(S))  = bit2(S)     if channel1(S) = empty                       [metadata "ca:bit2-rec2-a"].
+ceq bit2(rec2(S))  = bit2(S)     if [B,P],C1 := channel1(S) /\ B = bit2(S)    [metadata "ca:bit2-rec2-b"].
+ceq bit2(rec2(S))  = not bit2(S) if [B,P],C1 := channel1(S) /\ B = not bit2(S)[metadata "ca:bit2-rec2-c"].
 
 ---
  eq next(rec2(S))  = next(S) .
-ceq list(rec2(S)) = list(S)   if channel1(S) = empty                       [metadata "ca:la"].
-ceq list(rec2(S)) = list(S)   if [B,P],C1 := channel1(S) /\ B = bit2(S)    [metadata "ca:lb"].
-ceq list(rec2(S)) = P,list(S) if [B,P],C1 := channel1(S) /\ B = not bit2(S)[metadata "ca:lc"].
+ceq list(rec2(S)) = list(S)   if channel1(S) = empty                       [metadata "ca:next-rec2-a"].
+ceq list(rec2(S)) = list(S)   if [B,P],C1 := channel1(S) /\ B = bit2(S)    [metadata "ca:next-rec2-b"].
+ceq list(rec2(S)) = P,list(S) if [B,P],C1 := channel1(S) /\ B = not bit2(S)[metadata "ca:next-rec2-c"].
 --- send1 -----------------------------------------------------------------
   eq channel1(send1(S)) = channel1(S),[bit1(S),pac(next(S))] .
   eq channel2(send1(S)) = channel2(S) .
@@ -187,8 +209,8 @@ ceq list(rec2(S)) = P,list(S) if [B,P],C1 := channel1(S) /\ B = not bit2(S)[meta
  ops x2 y2 : Sys -> Channel2 .
 --- --- --- --- --- --- ---
 --- drop1 -----------------------------------------------------------------
-ceq channel1(drop1(S)) = x1(S),y1(S) if x1(S),[B,P],y1(S) := channel1(S)     [metadata "ca:d1a"].
-ceq channel1(drop1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false[metadata "ca:d1b"]. 
+ceq channel1(drop1(S)) = x1(S),y1(S) if x1(S),[B,P],y1(S) := channel1(S)     [metadata "ca:c1-drop1-a"].
+ceq channel1(drop1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false[metadata "ca:c1-drop1-b"]. 
  eq channel2(drop1(S)) = channel2(S) .
  eq bit1(drop1(S))  = bit1(S) .
  eq bit2(drop1(S))  = bit2(S) .
@@ -196,8 +218,8 @@ ceq channel1(drop1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false[me
  eq list(drop1(S))  = list(S) .
 --- drop2 -----------------------------------------------------------------
  eq channel1(drop2(S)) = channel1(S) .
-ceq channel2(drop2(S)) = x2(S),y2(S) if x2(S),B,y2(S):= channel2(S)        [metadata "ca:d2a"].
-ceq channel2(drop2(S)) = channel2(S) if x2(S)[] y2(S):= channel2(S) = false[metadata "ca:d2b"]. 
+ceq channel2(drop2(S)) = x2(S),y2(S) if x2(S),B,y2(S):= channel2(S)        [metadata "ca:c2-drop2-a"].
+ceq channel2(drop2(S)) = channel2(S) if x2(S)[] y2(S):= channel2(S) = false[metadata "ca:c2-drop2-b"]. 
  eq bit1(drop2(S))  = bit1(S) .
  eq bit2(drop2(S))  = bit2(S) .
  eq next(drop2(S))  = next(S) .
