@@ -1,8 +1,6 @@
 ***(
-This example shows one possible way of dealing with generic lists (with potentially void elements) in CITP, including operations for
- (a) appending lists, denoted L1 @ L2,
- (b) computing their lengths, denoted len(L), or
- (c) reversing lists, denoted rev}(L).
+This example shows one possible way of dealing with generic lists (with potentially void elements) in CITP,
+including operations for appending lists, computing their lengths, or reversing lists.
 We prove that the append operation is associative and that, moreover, both the length and the reverse operations distribute over append.
 )***
 --- ---------------------------------------------
@@ -10,7 +8,8 @@ We prove that the append operation is associative and that, moreover, both the l
 fmod EQUAL is
  op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
 endfm
-
+--- ---------------------------------------------
+--- ---------------------------------------------
 fth ELT is
  inc EQUAL .
  sorts Elt .
@@ -30,8 +29,8 @@ fmod PNAT is
  op _+_ : PNat PNat -> PNat [assoc comm].
  vars M N P : PNat .
 ---
- eq 0 + N = N             [metadata "add-1"].
- eq s M + N = s(M + N)    [metadata "add-2"].
+ eq 0 + N = N             [metadata "1"].
+ eq s M + N = s(M + N)    [metadata "2"].
 endfm
 --- ---------------------------------------------
 --- ---------------------------------------------
