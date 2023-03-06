@@ -97,14 +97,16 @@ fmod CLOUD{X :: CLIENT} is
 ---
  eq valc(getval(S,I)) = valc(S) .
 ---
- ceq statusp(getval(S,I),J)= gotval      if J = I /\ statusp(S,I)= idle /\ statusc(S)= free[metadata "ca:statusp-getval-1"].
+ ceq statusp(getval(S,I),J)= gotval      if J = I /\ statusp(S,I)= idle /\ statusc(S)= free
+                                                                        [metadata "ca:statusp-getval-1"].
  ceq statusp(getval(S,I),J)= statusp(S,J)if J =? I = false              [metadata "ca:statusp-getval-2"].
  ceq statusp(getval(S,I),J)= statusp(S,J)if statusp(S,I) =? idle = false[metadata "ca:statusp-getval-3"].
  ceq statusp(getval(S,I),J)= statusp(S,J)if statusc(S) =? free = false  [metadata "ca:statusp-getval-4"].
 ---
  eq valp(getval(S,I),J) = valp(S,J) .
 ---
- ceq tmp(getval(S,I),J)= valc(S) if J = I /\ statusp(S,I)= idle /\ statusc(S)= free[metadata "ca:tmp-getval-1"].
+ ceq tmp(getval(S,I),J)= valc(S) if J = I /\ statusp(S,I)= idle /\ statusc(S)= free
+     			 	      	     		   	[metadata "ca:tmp-getval-1"].
  ceq tmp(getval(S,I),J)= tmp(S,J)if J =? I = false              [metadata "ca:tmp-getval-2"].
  ceq tmp(getval(S,I),J)= tmp(S,J)if statusp(S,I) =? idle = false[metadata "ca:tmp-getval-3"].
  ceq tmp(getval(S,I),J)= tmp(S,J)if statusc(S) =? free = false  [metadata "ca:tmp-getval-4"].
@@ -112,43 +114,50 @@ fmod CLOUD{X :: CLIENT} is
 *** update ***
  eq statusc(update(S,I)) = statusc(S) .
 ---
- ceq valc(update(S,I)) = valp(S,I)if statusc(S)= busy /\ statusp(S,I)= gotval /\ tmp(S,I)<= valp(S,I)[metadata "ca:valc-update-1"].
+ ceq valc(update(S,I)) = valp(S,I)if statusc(S)= busy /\ statusp(S,I)= gotval /\ tmp(S,I)<= valp(S,I)
+     		       	 	     		      	 	    [metadata "ca:valc-update-1"].
  ceq valc(update(S,I)) = valc(S)  if statusc(S) =? busy = false     [metadata "ca:valc-update-2"].
  ceq valc(update(S,I)) = valc(S)  if statusp(S,I) =? gotval = false [metadata "ca:valc-update-3"].
  ceq valc(update(S,I)) = valc(S)  if valp(S,I) < tmp(S,I)           [metadata "ca:valc-update-4"].
 ---
- ceq statusp(update(S,I),J)= updated if J = I /\ statusp(S,I)= gotval /\ statusc(S)= busy[metadata "ca:statusp-update-1"].
+ ceq statusp(update(S,I),J)= updated if J = I /\ statusp(S,I)= gotval /\ statusc(S)= busy
+     			     	     	      	 	       	      	   [metadata "ca:statusp-update-1"].
  ceq statusp(update(S,I),J)= statusp(S,J) if J =? I = false                [metadata "ca:statusp-update-2"].
  ceq statusp(update(S,I),J)= statusp(S,J) if statusp(S,I) =? gotval = false[metadata "ca:statusp-update-3"]. 
  ceq statusp(update(S,I),J)= statusp(S,J) if statusc(S) =? busy = false    [metadata "ca:statusp-update-4"].
 ---
- ceq valp(update(S,I),J) = tmp(S,J) if J = I /\ statusp(S,I)= gotval /\ statusc(S)= busy /\ valp(S,I)< tmp(S,I)[metadata "ca:valp-update-1"].
+ ceq valp(update(S,I),J) = tmp(S,J) if J = I /\ statusp(S,I)= gotval /\ statusc(S)= busy /\ valp(S,I)< tmp(S,I)
+     			   	       	     		      	    [metadata "ca:valp-update-1"].
  ceq valp(update(S,I),J) = valp(S,J)if J =? I = false               [metadata "ca:valp-update-2"].
  ceq valp(update(S,I),J) = valp(S,J)if statusp(S,I)=? gotval = false[metadata "ca:valp-update-3"].
  ceq valp(update(S,I),J) = valp(S,J)if statusc(S) =? busy = false   [metadata "ca:valp-update-4"].
  ceq valp(update(S,I),J) = valp(S,J)if tmp(S,I) <= valp(S,I)        [metadata "ca:valp-update-5"].
 --- 
- ceq tmp(update(S,I),J) = valp(S,J)if J = I /\ statusp(S,I)= gotval /\ statusc(S)= busy /\ tmp(S,I)<= valp(S,I) [metadata "ca:tmp-update-1"].
+ ceq tmp(update(S,I),J) = valp(S,J)if J = I /\ statusp(S,I)= gotval /\ statusc(S)= busy /\ tmp(S,I)<= valp(S,I)
+                                                                    [metadata "ca:tmp-update-1"].
  ceq tmp(update(S,I),J) = tmp(S,J) if J =? I = false                [metadata "ca:tmp-update-2"].
  ceq tmp(update(S,I),J) = tmp(S,J) if statusp(S,I)=? gotval = false [metadata "ca:tmp-update-3"].
- ceq tmp(update(S,I),J) = tmp(S,J) if statusc(S)=? busy = false     [metadata "ca:tmp-update-4"] .
+ ceq tmp(update(S,I),J) = tmp(S,J) if statusc(S)=? busy = false     [metadata "ca:tmp-update-4"].
  ceq tmp(update(S,I),J) = tmp(S,J) if valp(S,I)< tmp(S,I)           [metadata "ca:tmp-update-5"].
 
 *** gotoidle ***
- ceq statusc(gotoidle(S,I)) = free      if statusc(S)= busy /\ statusp(S,I)= updated[metadata "ca:statusc-gotoidle-1"].
+ ceq statusc(gotoidle(S,I)) = free      if statusc(S)= busy /\ statusp(S,I)= updated
+     			      		   	       	       		   [metadata "ca:statusc-gotoidle-1"].
  ceq statusc(gotoidle(S,I)) = statusc(S)if statusc(S) =? busy = false      [metadata "ca:statusc-gotoidle-2"].
  ceq statusc(gotoidle(S,I)) = statusc(S)if statusp(S,I) =? updated = false [metadata "ca:statusc-gotoidle-3"].
 ---
  eq valc(gotoidle(S,I)) = valc(S).
 ---
- ceq statusp(gotoidle(S,I),J) = idle if J = I /\ statusp(S,I) = updated /\ statusc(S)= busy[metadata "ca:statusp-gotoidle-1"].
+ ceq statusp(gotoidle(S,I),J) = idle if J = I /\ statusp(S,I) = updated /\ statusc(S)= busy
+     			      	     	      	 	      		      [metadata "ca:statusp-gotoidle-1"].
  ceq statusp(gotoidle(S,I),J) = statusp(S,J) if J =? I = false                [metadata "ca:statusp-gotoidle-2"].
  ceq statusp(gotoidle(S,I),J) = statusp(S,J) if statusp(S,I)=? updated = false[metadata "ca:statusp-gotoidle-3"].
  ceq statusp(gotoidle(S,I),J) = statusp(S,J) if statusc(S)=? busy = false     [metadata "ca:statusp-gotoidle-4"].
 ---
  eq valp(gotoidle(S,I),J) = valp(S,J).
 ---
- ceq tmp(gotoidle(S,I),J) = 0         if J = I /\ statusp(S,I) = updated /\ statusc(S)= busy[metadata "ca:tmp-gotoidle-1"].
+ ceq tmp(gotoidle(S,I),J) = 0         if J = I /\ statusp(S,I) = updated /\ statusc(S)= busy
+                                                                       [metadata "ca:tmp-gotoidle-1"].
  ceq tmp(gotoidle(S,I),J) = tmp(S,J)  if J =? I = false                [metadata "ca:tmp-gotoidle-2"].
  ceq tmp(gotoidle(S,I),J) = tmp(S,J)  if statusp(S,I)=? updated = false[metadata "ca:tmp-gotoidle-3"].
  ceq tmp(gotoidle(S,I),J) = tmp(S,J)  if statusc(S)=? busy = false     [metadata "ca:tmp-gotoidle-4"].
