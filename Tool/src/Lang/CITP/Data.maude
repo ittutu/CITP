@@ -2259,28 +2259,25 @@ fmod CITP/APPLY/INIT is
       /\ GL' == no-goal or-else H' =/= H .
 
   *** initialize membership axioms  - - - - - - - - - - - - - - - - - - - - - --
-  op init : MembAxSet Substitution Goal{CITP} -> Goal{CITP} .
+  op init : MembAxSet Substitution GoalList{CITP} -> GoalList{CITP} .
   ceq init(MS, SB, goal GN[GA] is H |-{M[MA]} C endg)
    = apply(Tactic[CITP]{simp}, goal GN[GA] is H |-{addMB(MS', M)[MA]} C endg)
    if MS' := red(M, addLB(s getLB(getMbs(M)), rmLB(MS)) << SB) \ getMbs(M) .
-  eq init(MS, SB, goal GN[GA] is H |-{M[MA]} C endg)
-   = goal GN[GA] is H |-{M[MA]} C endg [owise] .
+  eq init(MS, SB, GL) = GL [owise] .
 
   *** initialize equations  - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op init : EquationSet Substitution Goal{CITP} -> Goal{CITP} .
+  op init : EquationSet Substitution GoalList{CITP} -> GoalList{CITP} .
   ceq init(ES, SB, goal GN[GA] is H |-{M[MA]} C endg)
    = apply(Tactic[CITP]{simp}, goal GN[GA] is H |-{addEQ(ES', M)[MA]} C endg)
    if ES' := red(M, addLB(s getLB(getEqs(M)), rmLB(ES)) << SB) \ getEqs(M) .
-  eq init(ES, SB, goal GN[GA] is H |-{M[MA]} C endg)
-   = goal GN[GA] is H |-{M[MA]} C endg [owise] .
+  eq init(ES, SB, GL) = GL [owise] .
 
   *** initialize rules  - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  op init : RuleSet Substitution Goal{CITP} -> Goal{CITP} .
+  op init : RuleSet Substitution GoalList{CITP} -> GoalList{CITP} .
   ceq init(RS, SB, goal GN[GA] is H |-{M[MA]} C endg)
    = apply(Tactic[CITP]{simp}, goal GN[GA] is H |-{addRL(RS', M)[MA]} C endg)
    if RS' := red(M, addLB(s getLB(getRls(M)), rmLB(RS)) << SB) \ getRls(M) .
-  eq init(RS, SB, goal GN[GA] is H |-{M[MA]} C endg)
-   = goal GN[GA] is H |-{M[MA]} C endg [owise] .
+  eq init(RS, SB, GL) = GL [owise] .
 
   *** initialize formulas  - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op init : FormDeclList{CITP} SubstList GoalList{CITP} -> GoalList{CITP} .
