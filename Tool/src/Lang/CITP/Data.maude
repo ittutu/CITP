@@ -877,6 +877,7 @@ fmod CITP/TACTIC is
   op Tactic[_]{trans} : CITP -> FunTactic{CITP} [ctor] .
   op Tactic[_]{ind_} : CITP NeQidList -> FunTactic{CITP} [ctor] .
   op Tactic[_]{ind-schema_} : CITP NeQidList -> FunTactic{CITP} [ctor] .
+  op Tactic[_]{quasi-ind_} : CITP NeQidList -> FunTactic{CITP} [ctor] .
   op Tactic[_]{init_,_} : CITP String Substitution -> FunTactic{CITP} [ctor] .
   op Tactic[_]{init_,_} : CITP Nat Substitution -> FunTactic{CITP} [ctor] .
   op Tactic[_]{init_} : CITP String -> FunTactic{CITP} [ctor] .
@@ -2112,6 +2113,11 @@ fmod CITP/APPLY/IND is
         H |-{M[MA]} fm forall {VS} F [AtS] .
       endg)
    if V in fv(F) /\ getCTR(M, getType(V)) =/= none .
+
+  eq apply(Tactic[L]{quasi-ind V NVL}, G)
+   = apply(Tactic[L]{quasi-ind NVL}, apply(Tactic[L]{quasi-ind V}, G)) .
+  eq apply(Tactic[L]{quasi-ind V}, G)
+   = apply(Tactic[L]{ind-schema V}, G) .
 
   *** ind-case  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op ind-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .

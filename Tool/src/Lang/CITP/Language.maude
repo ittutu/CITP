@@ -180,6 +180,7 @@ fmod CITP/LANGUAGE is
           |  lit "trans" [format ('! 'o)]
           |  "ind" : 'VarList [format ('! 'o)]
           |  "ind-schema" : 'VarList [format ('! 'o)]
+          |  "quasi-ind" : 'VarList [format ('! 'o)]
           |  "init" : 'Metadata 'Substitution [format ('! 'o)]
           |  "init" : 'Number 'Substitution [format ('! 'o)]
           |  "init" : 'Metadata [format ('! 'o)]
@@ -422,6 +423,8 @@ fmod CITP/READ is
    = Tactic[L]{ind read-varlist(L, VL)} .
   eq read-tactics(L, {'ind-schema[VL] : 'Tactic})
    = Tactic[L]{ind-schema read-varlist(L, VL)} .
+  eq read-tactics(L, {'quasi-ind[VL] : 'Tactic})
+   = Tactic[L]{quasi-ind read-varlist(L, VL)} .
   eq read-tactics(L, {'init[mdn, Subst] : 'Tactic})
    = if mdn :: <string>
      then Tactic[L]{init read-string(mdn), read-substitution(L, Subst)}
@@ -907,6 +910,8 @@ fmod CITP/SHOW is
    = 'ind[show-varlist(L, NVL)] .
   eq show-tactics(L, NGL, Tactic[L]{ind-schema NVL})
    = 'ind-schema[show-varlist(L, NVL)] .
+  eq show-tactics(L, NGL, Tactic[L]{quasi-ind NVL})
+   = 'quasi-ind[show-varlist(L, NVL)] .
   eq show-tactics(L, NGL, Tactic[L]{init md, Subst})
    = 'init[show-string(md), show-substitution(L, current-module(NGL), Subst)] .
   eq show-tactics(L, NGL, Tactic[L]{init n, Subst})
@@ -1451,6 +1456,11 @@ fmod CITP/PARSING is
 
   eq analyse L tactic {'ind-schema[VL] : 'Tactic}
    = try { 'ind-schema [
+        analyse L varlist (VL)
+      ] : 'Tactic } .
+
+  eq analyse L tactic {'quasi-ind[VL] : 'Tactic}
+   = try { 'quasi-ind [
         analyse L varlist (VL)
       ] : 'Tactic } .
 
