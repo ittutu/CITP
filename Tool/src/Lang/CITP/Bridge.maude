@@ -22,7 +22,7 @@ fmod CITP/BRIDGE/PREAMBLE is
   protecting ATTRIBUTE/OPS .
   protecting PRINTING/COMPAT .
 
-  vars QI MN : Qid .
+  vars Q QI MN : Qid .
   var  QIL : QidList .
   var  NQIL : NeQidList .
   vars H H' : Header .
@@ -35,13 +35,14 @@ fmod CITP/BRIDGE/PREAMBLE is
   vars MS MS1 MS2 : MembAxSet .
   var  MS? : [MembAxSet] .
   var  EC : EqCondition .
+  var  E : Equation .
   vars ES ES1 ES2 : EquationSet .
   var  ES? : [EquationSet] .
   var  C : Condition .
   vars RS RS1 RS2 : RuleSet .
   var  RS? : [RuleSet] .
   var  M : Module .
-  vars T LHS RHS : Term .
+  vars T T1 T2 LHS RHS : Term .
   var  V : Variable .
   var  TL : TermList .
   var  SB : Substitution .
@@ -247,6 +248,18 @@ fmod CITP/BRIDGE/PREAMBLE is
    = (mod H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endm) .
   eq (th H is IL sorts SS . SDS ODS MS ES1 RS endth) \ ES2
    = (th H is IL sorts SS . SDS ODS MS (ES1 \ ES2) RS endth) .
+
+  *** getEqs  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op getEqs : Module OpDeclSet -> EquationSet .
+  eq getEqs(M, ODS) = getEqs(getEqs(M), ODS) .
+
+  op getEqs : EquationSet OpDeclSet -> EquationSet .
+  eq getEqs(none, ODS) = none .
+  eq getEqs(eq Q[T1,T2] = 'true.Bool [AtS1] . ES,
+            op Q : TP TP -> 'Bool [AtS2] . ODS)
+   = (eq Q[T1,T2] = 'true.Bool [AtS1] .)
+     getEqs(ES, op Q : TP TP -> 'Bool [AtS2] . ODS) .
+  eq getEqs(E ES, ODS) = getEqs(ES, ODS) [owise] .
 endfm
 
 ********************************************************************************

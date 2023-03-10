@@ -1975,7 +1975,7 @@ fmod CITP/APPLY/TRANS is
    = goal GN[GA 'trans] is H' |-{M'[MA]} C endg
    if ODS := getOPT(L, M)
       /\ H' := addFD(M, H, comp(M, getFMT(H, ODS), getFMT(H, ODS)))
-      /\ M' := addEQ(comp(L, M, getEqs(M), getEqs(M)), M)
+      /\ M' := addEQ(comp(L, M, getEqs(M, ODS), getEqs(M, ODS)), M)
       /\ H =/= H' or-else M =/= M' .
 
   *** getOPT  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
