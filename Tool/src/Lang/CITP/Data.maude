@@ -1895,9 +1895,9 @@ ceq cs-step(goal GN[GA] is H |-{M[MA]} fm F [AS]. endg) =
 --- --- ---
 ceq cs(goal GN[GA] is H |-{M[MA]} fm F [AS]. endg) =
     if   GL =/= (goal GN[GA] is H |-{M[MA]} fm F [AS]. endg)
-    then split-tuple(cs(GL))
+    then cs(GL)
     else goal GN[GA] is H |-{M[MA]} fm F [AS]. endg fi
- if GL := cs-step(goal GN[GA] is H |-{M[MA]} fm F [AS]. endg).
+ if GL := split-tuple(cs-step(goal GN[GA] is H |-{M[MA]} fm F [AS]. endg)).
 endfm
 
 *** ----------------------------------------------------------------------------
