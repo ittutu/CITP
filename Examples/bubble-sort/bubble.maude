@@ -1,0 +1,104 @@
+--- ---------------------------------------------
+*** bubble sort ***
+--- ---------------------------------------------
+fth POSET is
+ inc BOOL .
+ sort Elt .
+ vars E E1 E2 : Elt .
+--- --- ---
+ op _<_ : Elt Elt -> Bool .
+ eq E < E = false [metadata "irreflexivity"].
+--- --- ---
+ op _<=_ : Elt Elt -> Bool .
+ eq E <= E = true [metadata "reflexivity"].
+ceq E1 <= E2 = true if E1 < E2 = true [metadata "inclusion"].
+--- transitivity ---
+ceq E1 < E2  = true if E1 <  E = true /\ E < E2 = true  [nonexec metadata "trans1"].
+ceq E1 <= E2 = true if E1 <= E = true /\ E <= E2 = true [nonexec metadata "trans2"].
+ceq E1 <  E2 = true if E1 <= E = true /\ E <  E2 = true [nonexec metadata "trans3"].
+ceq E1 <  E2 = true if E1 <  E = true /\ E <= E2 = true [nonexec metadata "trans4"].
+endfth
+--- ---------------------------------------------
+--- ---------------------------------------------
+fmod QUEUE{X :: POSET} is
+--- 7 lemmas on natural numbers ---
+ pr NAT .
+ vars N N1 N2 : Nat . 
+ eq N + N1 <  N + N2 = N1 < N2 [metadata "nat-1"].
+ eq N + N1 <= N + N2 = N1 <= N2[metadata "nat-2"]. 
+ eq N < s N = true [metadata "nat-3"].
+ eq N <= N = true [metadata "nat-4"].
+ eq s N1 <= s N2 = N1 <= N2 [metadata "nat-5"].
+ceq N1 <= s N2 = true if N1 <= N2 = true [metadata "nat-6"].
+ceq N <= N1 + s N2 = true if N <= N1 + N2 = true [metadata "nat-7"].
+ceq N < N1 + s N2 = true if N <= N1 + N2 = true [metadata "nat-8"].
+--- queues --- 
+ sort Queue .
+ subsorts X$Elt < Queue .
+--- constructors 
+ op empty : -> Queue [ctor] .
+ op __ : X$Elt Queue -> Queue [ctor gather(e E) prec 25 id: empty] .
+--- --- ---
+ vars Q Q1 Q2 : Queue .
+ vars E E1 E2 : X$Elt .
+--- nunmber of steps ---
+ op nop : Queue -> Nat .
+ eq nop(empty) = 0 .
+ eq nop(E) = 0 .
+ceq nop(E1 E2 Q) =   nop(E2 Q) if E1 <= E2 = true[metadata "ca:nop-1"].
+ceq nop(E1 E2 Q) = s nop(E2 Q) if E2 <  E1 = true[metadata "ca:nop-2"].
+--- 
+ op smaller : X$Elt Queue -> Nat .
+ eq smaller(E1,empty) = 0 .
+ceq smaller(E1,E Q) = s smaller(E1,Q) if E < E1  = true[metadata "ca:ord-a"].
+ceq smaller(E1,E Q) =   smaller(E1,Q) if E1 <= E = true[metadata "ca:ord-b"].
+---
+ op order : Queue -> Nat .
+ eq order(empty) = 0 .
+ eq order(E Q) = smaller(E,Q) + order(Q). 
+endfm
+--- ---------------------------------------------
+--- ---------------------------------------------
+fmod BUBBLE-SORT{X :: POSET} is
+ pr QUEUE{X}.
+--- --- ---
+ vars E E1 E2 : X$Elt .
+ vars Q Q1 Q2 : Queue .
+--- --- ---
+ op step : Queue -> Queue .
+ eq step(empty) = empty .
+ eq step(E1) = E1 .
+ceq step(E1 E2 Q) = E1 step(E2 Q) if E1 <= E2 = true[metadata "ca:step-1"].
+ceq step(E1 E2 Q) = E2 step(E1 Q) if E2 < E1  = true[metadata "ca:step-2"].
+--- --- ---
+ op bubble : Queue -> Queue .
+ceq bubble(Q) = Q              if nop(Q) = 0        [metadata "bubble-1"].
+ceq bubble(Q) = bubble(step(Q))if 0 < nop(Q) = true [metadata "bubble-2"].
+endfm
+--- ---------------------------------------------
+--- ---------------------------------------------
+
+view POSET2NAT from POSET to NAT is
+ sort Elt to Nat .
+ op _<_ to _<_ .
+ op <= to _<=_ .
+endv
+
+fmod BUBBLE-NAT is
+ pr BUBBLE-SORT{POSET2NAT} .
+endfm
+
+red bubble(12 1 5 6 3).
+
+
+
+
+
+
+
+
+
+
+
+
+

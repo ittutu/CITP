@@ -736,7 +736,13 @@ fmod CITP/GOAL/SIMP is
   eq exists {VS} false = false .
   eq forall {none} F = F .
   eq exists {none} F = F .
-
+  *** protecting BOOL ***
+  eq ('true.Bool  =[L]= 'false.Bool)= false .
+  eq ('false.Bool =[L]= 'true.Bool) = false .
+  eq F if F = true .
+  eq F if F1 /\ F = true .
+  eq F if F1 /\ F /\ F2 = true .
+  eq F if F /\ F2 = true .
   *** goal simplifications  - - - - - - - - - - - - - - - - - - - - - - - - - --
   eq goal GN[GA] is H |-{M[MA]} no-fd endg = no-goal .
   eq goal GN[GA] is H |-{M[MA]} C1 fm true [AtS] . C2 endg
@@ -760,12 +766,7 @@ fmod CITP/GOAL/SIMP is
    if match?(M, F, F') : Substitution .
 
   *** contradictions  - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
-  eq goal GN[GA] is
-       H1 fm ('true.Bool  =[CITP]= 'false.Bool) [AtS] . H2
-     |-{M[MA]} C endg = no-goal .
-  eq goal GN[GA] is
-       H1 fm ('false.Bool =[CITP]= 'true.Bool) [AtS] . H2
-     |-{M[MA]} C endg = no-goal .
+  eq goal GN[GA] is H1 fm false [AtS] . H2 |-{M[MA]} C endg = no-goal .
   ceq goal GN[GA] is H |-{M[MA]} C endg = no-goal if consistent(M) = false .
   *** search contradicts premise
   ceq goal GN[GA] is
@@ -1047,7 +1048,7 @@ endfm
 ********************************************************************************
 
 fmod CITP/CMD is
-  protecting CITP/LID .
+  protecting CITP/FORMULA .
   protecting ATERM .
 
   sort Cmd{CITP} .
@@ -1072,6 +1073,7 @@ fmod CITP/CMD is
   op Cmd[_]{reduce`term_} : CITP ATerm -> Cmd{CITP} [ctor] .
   op Cmd[_]{reduce`[_`,_`]term_} : CITP Bound Bound ATerm -> Cmd{CITP} [ctor] .
   op Cmd[_]{search`path`from_to_} : CITP ATerm ATerm -> Cmd{CITP} [ctor] .
+  op Cmd[_]{solve_} : CITP Formula{CITP} -> Cmd{CITP} [ctor] .
 endfm
 
 ********************************************************************************

@@ -43,6 +43,7 @@ mod CITP/PROCESSOR is
   var  G : Goal{CITP} .
   vars GL LGL : GoalList{CITP} .
   var  SGL : Seq{GoalList{CITP}} .
+  var  F : Formula{CITP} .
   var  P : Proof{CITP} .
   var  PL : ProofList{CITP} .
   var  PD : ProofDict{CITP} .
@@ -57,6 +58,7 @@ mod CITP/PROCESSOR is
   var  Atts : AttributeSet .
   vars RP RP1 RP2 : ResultPair .
   var  RT : ResultTriple? .
+  var  SBL : SubstList .
   var  Tr : Trace? .
   vars nr nc : Bound .
 
@@ -145,6 +147,8 @@ mod CITP/PROCESSOR is
         or-else
         parse L tactic list (QIL)
           in AnalysisState[L]{last-list(proof-run(L, Atts))}
+        or-else
+        parse L multiline comment (QIL)
       else
         parse L command (QIL)
           in AnalysisState[L]{DB /
@@ -152,6 +156,8 @@ mod CITP/PROCESSOR is
         or-else
         parse L goal (QIL)
           in AnalysisState[L]{modules(DB[L]) & goals(DB[L])}
+        or-else
+        parse L multiline comment (QIL)
       fi) .
 
   crl [CITP:process] :
@@ -181,6 +187,13 @@ mod CITP/PROCESSOR is
       /\ LGL := last-list(proof-run(L, Atts))
       /\ GL := apply(TtL, LGL)
       /\ M0 := base-module(ongoing-proof(L, Atts)) .
+
+  crl [CITP:process] :
+    < $[L] : PROC | running, Atts >
+    process($[L], I, T, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L])
+   if T :: 'Comment .
 
   *** executing CITP commands  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
   rl [CITP:import-module] :
@@ -402,6 +415,15 @@ mod CITP/PROCESSOR is
                           nil, '*, unbounded, 0)
       /\ Tr := metaSearchPath(M, plain-term(T1), plain-term(T2),
                               nil, '*, unbounded, 0) .
+
+  crl [CITP:solve-query] :
+    < $[L] : PROC | executing I command, Atts >
+    do($[L], Cmd[L]{solve F}, DB)
+   => < $[L] : PROC | running, Atts >
+    processed(I, $[L], log('Solving) '\s print(F, M) '\n
+      mk-page(print(L, SBL, M)))
+   if M := current-module(proof-run(L, Atts))
+      /\ SBL := solve(unif-problem(F), variant-module(M)) .
 endm
 
 ********************************************************************************

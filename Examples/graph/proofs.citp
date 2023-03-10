@@ -1,42 +1,52 @@
+*** ----------------------------------------------------------------------------
+
 goal TH1 is
 |-{GRAPH}
-fm forall {G:Graph, V:X$Vertex} mcc(V:X$Vertex, mktree(G:Graph)) = mcc(V:X$Vertex, G:Graph) [metadata "th1"] .
+  fm forall {G:Graph, V:X$Vertex}
+     mcc(V:X$Vertex, mktree(G:Graph)) = mcc(V:X$Vertex, G:Graph)
+     [metadata "th1"] .
 endg
 
 begin proof P1 of TH1
- ind-schema(G:Graph) red
- ind(Z#1:Edge)
- tc imp tc
- ca ca-rev push-all red
-qed 
+  ind-schema(G:Graph) red
+  ind(Z#1:Edge)
+  tc imp tc
+  ca ca-rev push-all red
+qed
 
-`` -------------------------------------------------------------
+*** ----------------------------------------------------------------------------
 
-goal TH2 is            
- fm mcc(V:X$Vertex,mktree(G:Graph)) = mcc(V:X$Vertex,G:Graph) [metadata "th1"] .
+goal TH2 is
+  fm forall {G:Graph, V:X$Vertex}
+     mcc(V:X$Vertex, mktree(G:Graph)) = mcc(V:X$Vertex, G:Graph)
+     [metadata "th1"] .
 |-{GRAPH}
- fm forall {G:Graph,V:X$Vertex} nomcc(mktree(G:Graph)) = nomcc(G:Graph) [metadata "th2"] .
+  fm forall {G:Graph,V:X$Vertex} nomcc(mktree(G:Graph)) = nomcc(G:Graph)
+     [metadata "th2"] .
 endg
 
 begin proof P2 of TH2
- ind-schema(G:Graph) red
- ind(Z#1:Edge)
- tc  imp
- ca push-all red
+  ind-schema(G:Graph) red
+  ind(Z#1:Edge)
+  tc imp
+  ca push-all red
 qed
- 
-`` -------------------------------------------------------------
 
-goal TH3 is          
- fm mcc(V:X$Vertex,mktree(G:Graph)) = mcc(V:X$Vertex,G:Graph) [metadata "th1"] .
- fm nomcc(mktree(G:Graph)) = nomcc(G:Graph) [metadata "th2"] .
+*** ----------------------------------------------------------------------------
+
+goal TH3 is
+  fm mcc(V:X$Vertex,mktree(G:Graph)) = mcc(V:X$Vertex,G:Graph)
+     [metadata "th1"] .
+  fm nomcc(mktree(G:Graph)) = nomcc(G:Graph) [metadata "th2"] .
 |-{GRAPH}
- fm forall {G:Graph} nocycle(mktree(G:Graph)) = true [metadata "th3"] .
+  fm forall {G:Graph} nocycle(mktree(G:Graph)) = true [metadata "th3"] .
 endg
 
 begin proof P3 of TH3
- ind-schema(G:Graph) red
- ind(Z#1:Edge) 
- tc imp
- ca push-all red
+  ind-schema(G:Graph) red
+  ind(Z#1:Edge)
+  tc imp
+  ca push-all red
 qed
+
+*** ----------------------------------------------------------------------------

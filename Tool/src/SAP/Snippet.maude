@@ -61,7 +61,8 @@ endfm
 view Snippet/IO/Qid-with-TP-index
 from SNIPPET/IO to QID/OPS + TP-INDEX + LEXICAL is
   sort Tokens to QidList .
-  op preprocess(S:String) to term take-until("``", trim-lnl(S:String)) .
+  op preprocess(S:String) to term
+    take-until-Maude-single-line-comment(S:String) .
   op read to tokenize .
 
   sort IdxTokens to QidList .

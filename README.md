@@ -12,7 +12,7 @@ install the Maude system following the instructions available
 [here](http://maude.cs.illinois.edu/w/index.php?title=Maude_download_and_installation).
 
 Once Maude has been installed, you can download the latest (February 2023) distribution
-of CITP from [here](https://github.com/ittutu/CITP/blob/master/Tool/dist/citp-23.02.tar.gz).
+of CITP from [here](https://github.com/ittutu/CITP/raw/master/Tool/dist/citp-23.02.tar.gz).
 
 ### System-wide installation
 

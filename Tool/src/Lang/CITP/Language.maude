@@ -238,7 +238,8 @@ fmod CITP/LANGUAGE is
           |  lit "rollback"
           |  "reduce term_" : 'Term
           |  "reduce [_,_] term_" : 'Bound 'Bound 'Term
-          |  "search path from_to_" : 'Term 'Term [none]
+          |  "search path from_to_" : 'Term 'Term
+          |  "solve_" : 'Query [none]
        'SpecLang
          ::= bubble "specLang" [balanced-parentheses exclude("module")]
        'ModuleName
@@ -251,6 +252,18 @@ fmod CITP/LANGUAGE is
          ::= bubble "term" [balanced-parentheses]
        'Bound
          ::= <number> | lit "unbounded"
+       'Query
+         ::= bubble "query" [balanced-parentheses]
+     endgr .
+
+  *** multiline comments  - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op cmnt-grammar : CITP -> Grammar .
+  eq cmnt-grammar(CITP)
+   = grammar 'CITP/cmnt-syntax is
+       'Comment
+         ::= "***_" : 'Text [none]
+       'Text
+         ::= bubble "text" [balanced-parentheses]
      endgr .
 endfm
 
@@ -489,6 +502,8 @@ fmod CITP/READ is
    = Cmd[L]{reduce [read-bound(L, nr), read-bound(L, nc)] term T} .
   eq read-cmd(L, {'search`path`from_to_[T1, T2] : 'ProofCommand})
    = Cmd[L]{search path from T1 to T2} .
+  eq read-cmd(L, {'solve_[F] : 'ProofCommand})
+   = Cmd[L]{solve read-formula(L, F)} .
 
   op read-lang-name : CITP ATerm -> QidList .
   eq read-lang-name(L, LN) = read-qids(LN) .
@@ -1087,6 +1102,10 @@ fmod CITP/PARSING is
    = scan input (QIL : 'ProofCommand) given cmd-grammar(L)
      then analyse L command in SAS .
 
+  op parse_multiline`comment_ : CITP QidList ~> ParsingOutcome .
+  eq parse L multiline comment (QIL)
+   = scan input (QIL : 'Comment) given cmnt-grammar(L) .
+
   *** analyse goal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op analyse_goal : CITP -> AnalysisAction{CITP} .
 
@@ -1187,6 +1206,10 @@ fmod CITP/PARSING is
    = return {'false.Formula : 'Formula} .
 
   eq analyse L formula {'formula[F] : 'Form}
+   = decode input (read-qids(F) : 'Formula) given fm-grammar(L)
+     then analyse L formula .
+
+  eq analyse L formula {'query[F] : 'Query}
    = decode input (read-qids(F) : 'Formula) given fm-grammar(L)
      then analyse L formula .
 
@@ -1558,6 +1581,9 @@ fmod CITP/PARSING is
         analyse L term ($T2)
       ] : 'ProofCommand} .
 
+  eq analyse L command {'solve_[$F] : 'ProofCommand}
+   = try {'solve_[analyse L formula ($F)] : 'ProofCommand} .
+
   *** check bound  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op check_bound : CITP -> AnalysisAction{CITP} .
   eq check L bound (N) in SAS
@@ -1596,11 +1622,14 @@ fmod CITP/PRINTING is
   var  G : Goal{CITP} .
   var  GL : GoalList{CITP} .
   var  NGL : NeGoalList{CITP} .
+  var  F : Formula{CITP} .
   var  P : Proof{CITP} .
   var  NPL : NeProofList{CITP} .
   var  TtL : TacticList{CITP} .
   vars M M0 : Module .
   var  N : Nat .
+  var  SB : Substitution .
+  var  SBL : SubstList .
 
   *** print goal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op print : GoalList{CITP} -> QidList .
@@ -1640,6 +1669,22 @@ fmod CITP/PRINTING is
    = qid(size(G NGL)) 'remaining 'goals 'to 'prove.
      'Here's 'the 'first 'one: '\n '\n
      (print term show-goal(CITP, G, M0) given print-grammar(CITP)) .
+
+  *** print formula  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : Formula{CITP} Module -> QidList .
+  eq print(F, M) = print term show-formula(CITP, M, F) given fm-grammar(CITP) .
+
+  *** print substitution list  - - - - - - - - - - - - - - - - - - - - - - - - -
+  op print : CITP SubstList Module -> QidList .
+  eq print(L, nil, M) = 'No 'solution .
+  eq print(L, SBL, M) = intercalate('\n '\n, print2(L, SBL, M, 1)) [owise] .
+
+  op print2 : CITP SubstList Module Nat -> QidList2 .
+  eq print2(L, nil, M, N) = nil .
+  eq print2(L, SB SBL, M, N)
+   = :['Solution qid(qid(N) ':) '\s
+       (print term show-substitution(L, M, SB) given tactic-grammar(L))]
+     print2(L, SBL, M, s N) .
 
   *** print proof  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   op print : ProofList{CITP} -> QidList .

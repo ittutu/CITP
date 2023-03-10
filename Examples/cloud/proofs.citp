@@ -1,25 +1,26 @@
-`` -----------------------------------------------------------------------------
+*** -----------------------------------------------------------------------------
 
 goal INV is
 |-{CLOUD}
 fm forall {S:Sys, I:X$Client, J:X$Client}
+*** INV1: If the status of a PC is updated, then the status of the Cloud cannot be free ***
      (true = false
       if statusp(S:Sys, I:X$Client) = updated
-         /\ statusc(S:Sys) = free)
-     /\
+         /\ statusc(S:Sys) = free) /\
+*** INV2: If the status of a PC is gotval then the status of Cloud cannot be free *** 
      (true = false
       if statusp(S:Sys, I:X$Client) = gotval
-         /\ statusc(S:Sys) = free)
-     /\
+         /\ statusc(S:Sys) = free) /\
+*** INV3: There cannot be two PCs with the statuses updated and gotval ***
      (true = false
       if statusp(S:Sys, I:X$Client) = updated
-         /\ statusp(S:Sys, J:X$Client) = gotval)
-     /\
+         /\ statusp(S:Sys, J:X$Client) = gotval) /\
+*** INV4: There cannot be two different PCs with the status gotval *** 
      (true = false
       if (I:X$Client =? J:X$Client) = false
          /\ statusp(S:Sys, J:X$Client) = gotval
-         /\ statusp(S:Sys, I:X$Client)= gotval)
-     /\
+         /\ statusp(S:Sys, I:X$Client)= gotval) /\
+*** INV5: There cannot be two different PCs with the status updated ***	 
      (true = false
       if (I:X$Client =? J:X$Client) = false
          /\ statusp(S:Sys, J:X$Client) = updated
@@ -34,7 +35,9 @@ begin proof PI of INV
   init-all
 qed
 
-`` -----------------------------------------------------------------------------
+*** -----------------------------------------------------------------------------
+*** INV6: If a PC has the status gotval, then its temporal value is equal to the value of the Cloud ***
+*** -----------------------------------------------------------------------------
 
 goal INV6 is
   fm true = false
@@ -54,13 +57,15 @@ begin proof P6 of INV6
   tc red ca red ca red
   imp push-all red
   init-all
-  ``
-  `` alternatively, we could make the initialization of "inv4" explicit
-  ``
-  `` init("inv4",(S:Sys <- x#1) ; (I:X$Client <- I#2) ; (J:X$Client <- z#2))
+  ***
+  *** alternatively, we could make the initialization of "inv4" explicit
+  ***
+  *** init("inv4",(S:Sys <- x#1) ; (I:X$Client <- I#2) ; (J:X$Client <- z#2))
 qed
 
-`` -----------------------------------------------------------------------------
+*** -----------------------------------------------------------------------------
+*** GOAL: If the status of a PC is updated, then its value is equal to that of the Cloud ***
+*** -----------------------------------------------------------------------------
 
 goal GOAL is
   fm true = false
@@ -85,13 +90,12 @@ begin proof PG of GOAL
   tc red ca red ca red ca red
   imp push-all red
   pull("inv6") init-all
-  ``
-  `` alternatively, we could make the initializations of
-  `` "lemma-nat" and "inv4" explicit
-  ``
-  `` @crt(pull("inv6"))
-  `` @crt(init("lemma-nat", (M:Nat <- valp(x#1, z#2)) ; (N:Nat <- tmp(x#1, z#2))))
-  `` init("inv3", I:X$Client <- I#2 ; J:X$Client <- z#2 ; S:Sys <- x#1)
+  *** alternatively, we could make the initializations of
+  *** "lemma-nat" and "inv4" explicit
+  ***
+  *** @crt(pull("inv6"))
+  *** @crt(init("lemma-nat", (M:Nat <- valp(x#1, z#2)) ; (N:Nat <- tmp(x#1, z#2))))
+  *** init("inv3", I:X$Client <- I#2 ; J:X$Client <- z#2 ; S:Sys <- x#1)
 qed
 
-`` -----------------------------------------------------------------------------
+*** -----------------------------------------------------------------------------
