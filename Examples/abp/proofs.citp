@@ -52,7 +52,7 @@ begin proof PI.1234 of INV.1234
   ca red cs tc
   imp red conj red push-all red
   init("not-bit", B:Bit <- bit1(x#1))
-  pull("inv[S<-send2`(x#1`)][rhs][rhs][rhs][E1<-E1#2][E2<-E2#3][Q1<-Q1#4][Q2#1<-Q2#1#5][premise][rhs][lhs]")
+  pull("inv[S<-send2`(x#1`)][rhs][rhs][rhs][E1<-E1#2][E2<-E2#3][Q1<-Q1#4][Q2<-Q2#5][premise][rhs][lhs]")
   push-all red
 qed
 
