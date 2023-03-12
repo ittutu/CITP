@@ -2077,8 +2077,13 @@ fmod CITP/APPLY/IND is
 
   eq apply(Tactic[L]{quasi-ind V NVL}, G)
    = apply(Tactic[L]{quasi-ind NVL}, apply(Tactic[L]{quasi-ind V}, G)) .
-  eq apply(Tactic[L]{quasi-ind V}, G)
-   = apply(Tactic[L]{ind-schema V}, G) .
+  ceq apply(Tactic[L]{quasi-ind V},
+      goal GN[GA] is H |-{M[MA]} fm forall {V ; VS} F [AtS] . endg)
+   = quasi-ind-case(V, getCTR(M, getType(V)),
+      goal GN[GA qid('quasi-ind '`( getName(V))] is
+        H |-{M[MA]} fm forall {VS} F [AtS] .
+      endg)
+   if V in fv(F) /\ getCTR(M, getType(V)) =/= none .
 
   *** ind-case  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op ind-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .
@@ -2103,7 +2108,7 @@ fmod CITP/APPLY/IND is
       /\ M'   := addOP(C2ODS(NGTL), M)
       /\ MD   := "[" + string(getName(V)) + "<-" + string(list-terms(GT, M')) + "]"
       /\ FD'  := md-update(FD << (V <- GT), MD) .
-
+--- --- ---
   op ind-schema-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .
   eq ind-schema-case(V, none, G) = no-goal .
   ceq ind-schema-case(V, op Q : nil -> TP [AtS] . ODS, G)
@@ -2128,7 +2133,31 @@ fmod CITP/APPLY/IND is
       /\ F'  := forall {VS} ((F << (V <- T)) if makeIH(V, TL, F))
       /\ MD  := "[" + string(getName(V)) + "<-" + string(list-terms(T, M)) + "]"
       /\ FD' := (fm F' [md-update(FAS, MD)] .) .
-
+--- --- ---
+  op quasi-ind-case : Variable OpDeclSet Goal{CITP} ~> GoalList{CITP} .
+  eq quasi-ind-case(V, none, G) = no-goal .
+ ceq quasi-ind-case(V, op Q : nil -> TP [AtS] . ODS, G)
+  = goal GN[GA qid(QI '-> Q '`))] is H |-{M[MA]} FD' endg
+     quasi-ind-case(V, ODS, G)
+  if goal GN[GA QI] is H |-{M[MA]} FD endg := G
+     /\ MD  := "[" + string(getName(V)) + "<-" + string(Q) + "]"
+     /\ FD' := md-update(FD << (V <- const(Q,TP)), MD) .
+ ceq quasi-ind-case(V, op Q : NTPL -> TP [OAS] . ODS, G)
+   = goal GN[GA qid(QI '-> Q '`))] is
+       H
+     |-{M[MA]}
+       FD'
+     endg
+     quasi-ind-case(V, ODS, G)
+  if goal GN[GA QI] is H |-{M[MA]} FD endg := G
+     /\ (fm F [FAS] .) := FD
+     /\ NTL := TP2VL(  M, s getLB(F), getType(V), NTPL)
+     /\ TL  := TP2VL-V(M, s getLB(F), getType(V), NTPL)
+     /\ T   := Q[NTL]
+     /\ VS  := vars(NTL)
+     /\ F'  := forall {VS} (F << (V <- T))
+     /\ MD  := "[" + string(getName(V)) + "<-" + string(list-terms(T, M)) + "]"
+     /\ FD' := (fm F' [md-update(FAS, MD)] .).
   *** makeIH  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op makeIH : Variable GroundTermList Module FormDecl{CITP}
     -> FormDeclList{CITP} .

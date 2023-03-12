@@ -2,78 +2,48 @@
 *** one round/step of bubble sorting leaves the list unchanged
 *** if the number of unordered pairs of consecutive elements is zero
 *** ----------------------------------------------------------
-goal STEP1 is
- fm ~ s N:Nat = 0 [metadata "nat-h1"].
- |-{BUBBLE-SORT}
- fm forall{E:X$Elt, Q:Queue} step(E:X$Elt Q:Queue) = E:X$Elt Q:Queue if nop(E:X$Elt Q:Queue) = 0 [metadata "step1"].
-endg
-
-begin proof PR-STEP1 of STEP1
- ind(Q:Queue) push-all red
- tc red ca red
- imp push-all red 
-qed
-
-*** ----------------------------------------------------------
 
 goal STEP is
- fm forall{E:X$Elt, Q:Queue} step(E:X$Elt Q:Queue) = E:X$Elt Q:Queue if nop(E:X$Elt Q:Queue) = 0 [metadata "step1"].
+ fm ~ s N:Nat = 0 [metadata "nat-h1"].
  |-{BUBBLE-SORT}
  fm forall{Q:Queue} step(Q:Queue) = Q:Queue if nop(Q:Queue) = 0 [metadata "lemma2"].
 endg
 
 begin proof PR-STEP of STEP
- ind(Q:Queue) red
+ quasi-ind(Q:Queue) red
+ ind(X#2:Queue) push-all red
+ tc red ca red
+ imp push-all red
 qed
 
 *** ----------------------------------------------------------
 *** smaller is invariant w.r.t. step
 *** ----------------------------------------------------------
 
-goal SMALL1 is
- |-{BUBBLE-SORT}
- fm forall{Q:Queue} smaller(E1:X$Elt,step(E:X$Elt Q:Queue)) = smaller(E1:X$Elt,E:X$Elt Q:Queue) [metadata "small1"].
-endg
-
-begin proof PR-SMALL1 of SMALL1
- ind(Q:Queue) red push-all red
- tc red ca red ca red ca red
-qed
-
-
 goal SMALL is
- fm smaller(E1:X$Elt,step(E:X$Elt Q:Queue)) = smaller(E1:X$Elt,E:X$Elt Q:Queue) [metadata "small1"].
  |-{BUBBLE-SORT}
  fm forall{Q:Queue} smaller(E1:X$Elt,step(Q:Queue)) = smaller(E1:X$Elt,Q:Queue) [metadata "small"].
 endg
 
 begin proof PR-SMALL of SMALL
- ind(Q:Queue) red
+ quasi-ind(Q:Queue) red
+ ind(X#2:Queue) push-all red
+ tc red ca red ca red ca red
 qed
-
 *** ----------------------------------------------------------
 *** order decreases after one application of step
 *** ----------------------------------------------------------
 
-goal ORDER1 is
- fm smaller(E:X$Elt,step(Q:Queue)) = smaller(E:X$Elt,Q:Queue)  [metadata "small"].
- |-{BUBBLE-SORT}
- fm forall{Q:Queue} order(step(E:X$Elt Q:Queue)) <= order(E:X$Elt Q:Queue) = true [metadata "order1"].
-endg
-
-begin proof PL6 of LEMMA6
- ind(Q:Queue) red push-all red
- tc red ca red
-qed
-
 goal ORDER is
- fm order(step(E:X$Elt Q:Queue)) <= order(E:X$Elt Q:Queue) = true [metadata "order1"].
+ fm smaller(E:X$Elt,step(Q:Queue)) = smaller(E:X$Elt,Q:Queue)  [metadata "small"].
  |-{BUBBLE-SORT}
  fm forall{Q:Queue} order(step(Q:Queue)) <= order(Q:Queue) = true [metadata "order"].
 endg
 
 begin proof PR-ORDER of ORDER
- ind(Q:Queue) red
+ quasi-ind(Q:Queue) red
+ ind(X#2:Queue) red push-all red
+ tc red ca red
 qed
 
 *** ----------------------------------------------------------
@@ -81,26 +51,17 @@ qed
 *** if the number of unordered pairs of consecutive elements is greater than zero
 *** ----------------------------------------------------------
 
-goal SORDER1 is
+goal SORDER is
  fm smaller(E:X$Elt,step(Q:Queue)) = smaller(E:X$Elt,Q:Queue)  [metadata "smaller"].
  fm order(step(Q:Queue)) <= order(Q:Queue) = true [metadata "order"].
- |-{BUBBLE-SORT}
- fm forall{Q:Queue} order(step(E:X$Elt Q:Queue)) < order(E:X$Elt Q:Queue) = true if 0 < nop(E:X$Elt Q:Queue) = true [metadata "sorder1"]. 
-endg
-
-begin proof PR-SORDER1 of SORDER1
- ind(Q:Queue)  red push-all red
- tc red ca red
- imp push-all red
- init("order",Q:Queue <- E#2 x#2) red
-qed
-
-goal SORDER is
- fm order(step(E:X$Elt Q:Queue)) < order(E:X$Elt Q:Queue) = true if 0 < nop(E:X$Elt Q:Queue) = true [metadata "sorder1"]. 
  |-{BUBBLE-SORT}
  fm forall{Q:Queue} order(step(Q:Queue)) < order(Q:Queue) = true if 0 < nop(Q:Queue) = true [metadata "sorder"]. 
 endg
 
 begin proof PR-SORDER of SORDER
- ind(Q:Queue) red
+ quasi-ind(Q:Queue) red
+ ind(X#2:Queue)  red push-all red
+ tc red ca red
+ imp push-all red
+ init("order", Q:Queue <- X#1#3 x#2) red
 qed

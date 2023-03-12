@@ -83,7 +83,7 @@ begin proof PI.5 of INV.5
   ind(S:Sys) push-all red
   ca red cs red tc red
   imp conj red push-all red
-  init("inv2",(B:Bit <- not bit1(x#1)) ; (S:Sys <- x#1) ; (K1:Channel1 <- C1#4) ; (K2:Channel1 <- C2#5) ; (R:Packet <- P#6))
+  init("inv2",(B:Bit <- not bit1(x#1)) ; (S:Sys <- x#1) ; (K1:Channel1 <- C1#5) ; (K2:Channel1 <- C2#6) ; (R:Packet <- P#7))
 qed 
 
 *** ----------------------------------------------------------------------------
