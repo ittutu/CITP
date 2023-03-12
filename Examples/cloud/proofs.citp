@@ -8,7 +8,7 @@
 
 *** ----------------------------------------------------------------------------
 *** Step I. The following five invariants are proved by simultaneous induction:
-*** 1) If the status of a PC is updated, then the status of the Cloud cannot be free.
+*** 1) If the status of a PC is updated, then the status of Cloud cannot be free.
 *** 2) If the status of a PC is gotval then the status of Cloud cannot be free.
 *** 3) There cannot be two PCs with the statuses updated and gotval.
 *** 4) There cannot be two different PCs with the status gotval.
