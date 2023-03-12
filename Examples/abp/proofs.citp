@@ -1,8 +1,8 @@
 *** ----------------------------------------------------------------------------
 ***
-*** For the ABP we are interested in verifying the following safety
-*** property: all messages from Sender are successfully delivered to
-*** Receiver, in the correct order, despite the fact that the two
+*** For the Alternating Bit Protocol (ABP) we are interested in verifying the 
+*** following safety property: all messages from Sender are successfully 
+*** delivered to Receiver, in the correct order, despite the fact that the two
 *** communication channels may lose or duplicate messages.
 ***
 *** This is achieved in three main steps, each introduced by a goal.

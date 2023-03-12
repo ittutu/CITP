@@ -1,5 +1,5 @@
 *** ----------------------------------------------------------
-*** one round/step of bubble sorting leaves the list unchanged
+*** STEP: one round/step of bubble sorting leaves the list unchanged
 *** if the number of unordered pairs of consecutive elements is zero
 *** ----------------------------------------------------------
 
@@ -17,7 +17,7 @@ begin proof PR-STEP of STEP
 qed
 
 *** ----------------------------------------------------------
-*** smaller is invariant w.r.t. step
+*** SMALL: smaller is invariant w.r.t. step
 *** ----------------------------------------------------------
 
 goal SMALL is
@@ -31,7 +31,7 @@ begin proof PR-SMALL of SMALL
  tc red ca red ca red ca red
 qed
 *** ----------------------------------------------------------
-*** order decreases after one application of step
+*** ORDER: order decreases after one application of step
 *** ----------------------------------------------------------
 
 goal ORDER is
@@ -47,7 +47,7 @@ begin proof PR-ORDER of ORDER
 qed
 
 *** ----------------------------------------------------------
-*** order strictly decreases after one application of step
+*** SORDER: order strictly decreases after one application of step
 *** if the number of unordered pairs of consecutive elements is greater than zero
 *** ----------------------------------------------------------
 
