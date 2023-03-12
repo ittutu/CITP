@@ -1,5 +1,5 @@
 *** ----------------------------------------------------------------------------
-*** TOP: If a process/agent is in the critical section, then it is at the top of waiting queue.
+*** TOP: If a process/agent is in the critical section, then it is at the top of the waiting queue.
 *** ----------------------------------------------------------------------------
 goal TOP is
 |-{QLOCK}
