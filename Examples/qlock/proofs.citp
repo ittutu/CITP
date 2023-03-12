@@ -8,7 +8,7 @@ goal TOP is
      [metadata "top"] .
 endg
 
-begin proof PR-TOP of TOP
+begin proof PI.TOP of TOP
   ind(S:Sys) tc ca imp red push-all red
   init-all push-all red
 qed
@@ -26,34 +26,34 @@ goal MEX is
      [metadata("mex")] .
 endg
 
-begin proof PR-MEX of MEX
+begin proof PI.MEX of MEX
   tc imp conj push-all
   init-all push-all red
 qed
 
 *** ----------------------------------------------------------------------------
-*** INV1 : reset(S:Sys) is reachable from S:Sys.
+*** INV.1 : reset(S:Sys) is reachable from S:Sys.
 *** ----------------------------------------------------------------------------
 
-goal INV1 is
+goal INV.1 is
 |-{RESET}
   fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv1")] .
 endg
 
-begin proof PI1 of INV1
+begin proof PI.1 of INV.1
   tc ca red
 qed
 
 *** ----------------------------------------------------------------------------
-*** INV2: One application of reset removes the first element of the waiting queue.
+*** INV.2: One application of reset removes the first element of the waiting queue.
 *** ----------------------------------------------------------------------------
 
-goal INV2 is
+goal INV.2 is
 |-{RESET}
   fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv2")] .
 endg
 
-begin proof PI2 of INV2
+begin proof PI.2 of INV.2
   tc ca red
 qed
 
