@@ -1,22 +1,21 @@
 
-***(
-The protocol consists of two processes, Sender and Receiver, each having a data buffer and a one-bit state.
-Sender and Receiver use two channels to communicate with each other, as they do not share any common memory:
-(a) a data channel from Sender to Receiver for sending bit-packet pairs, and
-(b) an acknowledgement channel from Receiver to Sender for sending single bits for confirmation.
 
-The protocol works as follows:
- - Initially, both channels are empty and Sender's bit is different from Receiver's bit.
- - Sender repeatedly writes bit-packet pairs [bit, pac] to the data channel,
-   where bit is the Sender's bit and pac is the Sender's data to transmit.
-   If the Sender receives bit from Receiver over the acknowledgement channel,
-   then that is a confirmation that the packet sent has been delivered.
-   In that case, Sender flips its bit and select the next packet to send.
+*** The protocol consists of two processes, Sender and Receiver, each having a data buffer and a one-bit state.
+*** Sender and Receiver use two channels to communicate with each other, as they do not share any common memory:
+*** a) a data channel from Sender to Receiver for sending bit-packet pairs, and
+*** b) an acknowledgement channel from Receiver to Sender for sending single bits for confirmation.
 
- - Receiver writes its bit to the acknowledgement channel repeatedly.
- When Receiver reads a pair [bit, pac] such that bit is different from its bit,
- then it stores pac and flips its bit.
-)***
+*** The protocol works as follows:
+*** - Initially, both channels are empty and Sender's bit is different from Receiver's bit.
+*** - Sender repeatedly writes bit-packet pairs [bit, pac] to the data channel,
+***   where bit is the Sender's bit and pac is the Sender's data to transmit.
+***   If the Sender receives bit from Receiver over the acknowledgement channel,
+***   then that is a confirmation that the packet sent has been delivered.
+***   In that case, Sender flips its bit and select the next packet to send.
+
+*** - Receiver writes its bit to the acknowledgement channel repeatedly.
+*** When Receiver reads a pair [bit, pac] such that bit is different from its bit,
+*** then it stores pac and flips its bit.
 
 --- ---------------------------------------------
 --- ---------------------------------------------
