@@ -46,7 +46,7 @@ qed
 
 *** -----------------------------------------------------------------------------
 *** Step II. We prove another invariant using the invariant 4 as lemma:
-*** 6) If a PC has the status gotval, then its temporal value is equal to the value of the Cloud ***
+*** 6) If a PC has the status gotval, then its temporal value is equal to the value of the Cloud.
 
 
 goal INV.6 is
@@ -72,7 +72,6 @@ qed
 *** -----------------------------------------------------------------------------
 *** III. The desired property is proved using invariants 3 and 6 as lemmas:
 *** 7) If the status of a PC is updated, then its value is equal to that of the Cloud.
-*** -----------------------------------------------------------------------------
 
 goal INV.7 is
   fm true = false
