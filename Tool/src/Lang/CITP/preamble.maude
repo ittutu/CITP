@@ -211,7 +211,7 @@ ceq getLB(V ; VS,N)= getLB(VS,N2)
  eq getLB((none).OpDeclSet) = 0 .
 ---
  eq getLB(OD) = 0 [owise].
-ceq getLB(op Q : TPL -> TP[AS].)= N
+ceq getLB(op Q : TPL -> TP[AS].)= N1
  if N  := rfind(string(Q),"#",length(string(Q))) /\
     SR := substr(string(Q),N + 1,length(string(Q))) /\
     N1 := rat(SR,10).
@@ -681,5 +681,12 @@ ceq isAssoc(M,TP,Q)= true if (op Q : TP TP -> TP[AS assoc].) ODS := getOps(M).
  eq len((T,TL)) = s len(TL).
 *** *** ***
  op getID : Module Type Qid ~> Term .
-ceq getID(M,TP,Q) = T if (op Q : TP TP -> TP[AS id(T)].) ODS := getOps(M). 
+ceq getID(M,TP,Q) = T if (op Q : TP TP -> TP[AS id(T)].) ODS := getOps(M).
+*** composition of substitutions ***
+ op _*_ : Substitution Substitution -> Substitution [prec 67].
+ eq (none).Substitution * SB = (none).Substitution .
+ eq V1 <- T1 ; SB1 * SB2 = V1 <- T1 << SB2 ; (SB1 * SB2).
+--- --- ---
+ op _**_ : Substitution Substitution -> Substitution [prec 69].
+ eq SB1 ** SB2 = (SB1 * SB2) ; (SB2 - vars-left(SB1)) . 
 endfm

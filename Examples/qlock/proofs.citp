@@ -1,64 +1,75 @@
 *** ----------------------------------------------------------------------------
-
-goal INV1 is
+*** TOP: If a process/agent is in the critical section, then it is at the top of the waiting queue.
+*** ----------------------------------------------------------------------------
+goal TOP is
 |-{QLOCK}
   fm forall {S:Sys, I:X$Pid}
      top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
-     [metadata "qinv1"] .
+     [metadata "top"] .
 endg
 
-begin proof PI1 of INV1
+begin proof PI.TOP of TOP
   ind(S:Sys) tc ca imp red push-all red
   init-all push-all red
 qed
 
 *** ----------------------------------------------------------------------------
-
-goal INV2 is
+*** MEX: Only one agent can be in the critical section at a given moment.
+*** ----------------------------------------------------------------------------
+goal MEX is
   fm forall {S:Sys, I:X$Pid}
      top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
-     [metadata("qinv1")] .
+     [metadata("top")] .
 |-{QLOCK}
   fm forall {S:Sys, I:X$Pid, J:X$Pid}
      I:X$Pid = J:X$Pid if pc(S:Sys, I:X$Pid)= cs /\ pc(S:Sys, J:X$Pid) = cs
      [metadata("mex")] .
 endg
 
-begin proof PI2 of INV2
+begin proof PI.MEX of MEX
   tc imp conj push-all
   init-all push-all red
 qed
 
 *** ----------------------------------------------------------------------------
+*** INV.1 : reset(S:Sys) is reachable from S:Sys.
+*** ----------------------------------------------------------------------------
 
-goal INV3 is
+goal INV.1 is
 |-{RESET}
-  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv3")] .
+  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv1")] .
 endg
 
-begin proof PI3 of INV3
+begin proof PI.1 of INV.1
   tc ca red
 qed
 
 *** ----------------------------------------------------------------------------
+*** INV.2: One application of reset removes the first element of the waiting queue.
+*** ----------------------------------------------------------------------------
 
-goal INV4 is
+goal INV.2 is
 |-{RESET}
-  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv4")] .
+  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv2")] .
 endg
 
-begin proof PI4 of INV4
+begin proof PI.2 of INV.2
   tc ca red
 qed
 
+*** ----------------------------------------------------------------------------
+*** LIVE: Given any state S:Sys and any natural number N:Nat
+*** there exists a reachable state R:Sys from S:Sys such that
+*** queue(R:Sys) is obtained from queue(S:Sys) by removing the first N elements.
 *** ----------------------------------------------------------------------------
 
 goal LIVE is
-  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv3")] .
-  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv4")] .
+  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv1")] .
+  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv2")] .
 |-{RESET}
   fm forall {N:Nat, S:Sys}
-     exists {R:Sys} R:Sys => S:Sys /\ queue(R:Sys) = get(queue(S:Sys), N:Nat) .
+     exists {R:Sys} R:Sys => S:Sys /\ queue(R:Sys) = get(queue(S:Sys), N:Nat)
+     [metadata "live"].
 endg
 
 begin proof PL of LIVE

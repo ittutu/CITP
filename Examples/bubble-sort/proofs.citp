@@ -30,7 +30,6 @@ begin proof PR-SMALL of SMALL
  ind(X#2:Queue) push-all red
  tc red ca red ca red ca red
 qed
-
 *** ----------------------------------------------------------
 *** ORDER: order decreases after one application of step
 *** ----------------------------------------------------------

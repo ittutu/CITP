@@ -1,8 +1,8 @@
 *** ----------------------------------------------------------------------------
 ***
-*** For the ABP we are interested in verifying the following safety
-*** property: all messages from Sender are successfully delivered to
-*** Receiver, in the correct order, despite the fact that the two
+*** For the Alternating Bit Protocol (ABP) we are interested in verifying the 
+*** following safety property: all messages from Sender are successfully 
+*** delivered to Receiver, in the correct order, despite the fact that the two
 *** communication channels may lose or duplicate messages.
 ***
 *** This is achieved in three main steps, each introduced by a goal.
@@ -52,16 +52,15 @@ begin proof PI.1234 of INV.1234
   ca red cs tc
   imp red conj red push-all red
   init("not-bit", B:Bit <- bit1(x#1))
-  pull("inv[S<-send2`(x#1`)][rhs][rhs][rhs][E1<-E1#2][E2<-E2#3][Q1<-Q1#4][Q2#1<-Q2#1#5][premise][rhs][lhs]")
+  pull("inv[S<-send2`(x#1`)][rhs][rhs][rhs][E1<-E1#2][E2<-E2#3][Q1<-Q1#4][Q2<-Q2#5][premise][rhs][lhs]")
   push-all red
 qed
 
 *** ----------------------------------------------------------------------------
 ***
-*** Step II. We prove another invariant using the invarians 2 and 3 as lemmas:
+*** Step II. We prove another invariant using the invariants 2 and 3 as lemmas:
 *** 5) If acknowledgement channel contains [B, P] such that B is Sender's bit,
 ***    then P is Sender's current packet.
-***
 
 goal INV.5 is
   fm ~ not B:Bit => B:Bit [metadata "not-bit"].
@@ -83,7 +82,7 @@ begin proof PI.5 of INV.5
   ind(S:Sys) push-all red
   ca red cs red tc red
   imp conj red push-all red
-  init("inv2",(B:Bit <- not bit1(x#1)) ; (S:Sys <- x#1) ; (K1:Channel1 <- C1#4) ; (K2:Channel1 <- C2#5) ; (R:Packet <- P#6))
+  init("inv2",(B:Bit <- not bit1(x#1)) ; (S:Sys <- x#1) ; (K1:Channel1 <- C1#5) ; (K2:Channel1 <- C2#6) ; (R:Packet <- P#7))
 qed 
 
 *** ----------------------------------------------------------------------------

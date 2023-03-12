@@ -1,26 +1,35 @@
 *** -----------------------------------------------------------------------------
+*** For CLOUD, we are interested in proving the following invariant property:
+*** any PC in the updated state has a value equal to the value stored in Cloud.
 
-goal INV is
+*** This is achieved in three main steps, each introduced by a goal.
+*** -----------------------------------------------------------------------------
+
+
+*** ----------------------------------------------------------------------------
+*** Step I. The following five invariants are proved by simultaneous induction:
+*** 1) If the status of a PC is updated, then the status of Cloud cannot be free.
+*** 2) If the status of a PC is gotval then the status of Cloud cannot be free.
+*** 3) There cannot be two PCs with the statuses updated and gotval.
+*** 4) There cannot be two different PCs with the status gotval.
+*** 5) There cannot be two different PCs with the status updated.
+
+goal INV.12345 is
 |-{CLOUD}
 fm forall {S:Sys, I:X$Client, J:X$Client}
-*** INV1: If the status of a PC is updated, then the status of the Cloud cannot be free ***
      (true = false
       if statusp(S:Sys, I:X$Client) = updated
          /\ statusc(S:Sys) = free) /\
-*** INV2: If the status of a PC is gotval then the status of Cloud cannot be free *** 
      (true = false
       if statusp(S:Sys, I:X$Client) = gotval
          /\ statusc(S:Sys) = free) /\
-*** INV3: There cannot be two PCs with the statuses updated and gotval ***
      (true = false
       if statusp(S:Sys, I:X$Client) = updated
          /\ statusp(S:Sys, J:X$Client) = gotval) /\
-*** INV4: There cannot be two different PCs with the status gotval *** 
      (true = false
       if (I:X$Client =? J:X$Client) = false
          /\ statusp(S:Sys, J:X$Client) = gotval
-         /\ statusp(S:Sys, I:X$Client)= gotval) /\
-*** INV5: There cannot be two different PCs with the status updated ***	 
+         /\ statusp(S:Sys, I:X$Client)= gotval) /\	 
      (true = false
       if (I:X$Client =? J:X$Client) = false
          /\ statusp(S:Sys, J:X$Client) = updated
@@ -28,7 +37,7 @@ fm forall {S:Sys, I:X$Client, J:X$Client}
    [metadata "inv"] .
 endg
 
-begin proof PI of INV
+begin proof PI.12345 of INV.12345
   ind(S:Sys) conj red
   tc ca red ca red
   imp conj push-all red
@@ -36,10 +45,11 @@ begin proof PI of INV
 qed
 
 *** -----------------------------------------------------------------------------
-*** INV6: If a PC has the status gotval, then its temporal value is equal to the value of the Cloud ***
-*** -----------------------------------------------------------------------------
+*** Step II. We prove another invariant using the invariant 4 as lemma:
+*** 6) If a PC has the status gotval, then its temporal value is equal to the value of the Cloud.
 
-goal INV6 is
+
+goal INV.6 is
   fm true = false
      if (I:X$Client =? J:X$Client) = false
          /\ statusp(S:Sys, J:X$Client) = gotval
@@ -52,22 +62,18 @@ goal INV6 is
      [metadata "inv6"].
 endg
 
-begin proof P6 of INV6
+begin proof PI.6 of INV.6
   ind(S:Sys)
   tc red ca red ca red
   imp push-all red
   init-all
-  ***
-  *** alternatively, we could make the initialization of "inv4" explicit
-  ***
-  *** init("inv4",(S:Sys <- x#1) ; (I:X$Client <- I#2) ; (J:X$Client <- z#2))
 qed
 
 *** -----------------------------------------------------------------------------
-*** GOAL: If the status of a PC is updated, then its value is equal to that of the Cloud ***
-*** -----------------------------------------------------------------------------
+*** III. The desired property is proved using invariants 3 and 6 as lemmas:
+*** 7) If the status of a PC is updated, then its value is equal to that of the Cloud.
 
-goal GOAL is
+goal INV.7 is
   fm true = false
      if N:Nat <= M:Nat = true /\ M:Nat < N:Nat = true
      [nonexec metadata "lemma-nat"] .
@@ -85,17 +91,11 @@ goal GOAL is
      [metadata "inv7"] .
 endg
 
-begin proof PG of GOAL
+begin proof PI.7 of INV.7
   ind(S:Sys) red
   tc red ca red ca red ca red
   imp push-all red
   pull("inv6") init-all
-  *** alternatively, we could make the initializations of
-  *** "lemma-nat" and "inv4" explicit
-  ***
-  *** @crt(pull("inv6"))
-  *** @crt(init("lemma-nat", (M:Nat <- valp(x#1, z#2)) ; (N:Nat <- tmp(x#1, z#2))))
-  *** init("inv3", I:X$Client <- I#2 ; J:X$Client <- z#2 ; S:Sys <- x#1)
 qed
 
 *** -----------------------------------------------------------------------------

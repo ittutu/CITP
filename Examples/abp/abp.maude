@@ -1,23 +1,21 @@
 
-***(
-The protocol consists of two processes, Sender and Receiver, each having a data buffer and a one-bit state.
-Sender and Receiver use two channels to communicate with each other, as they do not share any common memory:
-(a) a data channel from Sender to Receiver for sending bit-packet pairs, and
-(b) an acknowledgement channel from Receiver to Sender for sending single bits for confirmation.
+*** The protocol consists of two processes, Sender and Receiver, each having a data buffer and a one-bit state.
+*** Sender and Receiver use two channels to communicate with each other, as they do not share any common memory:
+*** a) a data channel from Sender to Receiver for sending bit-packet pairs, and
+*** b) an acknowledgement channel from Receiver to Sender for sending single bits for confirmation.
 
-The protocol works as follows:
- - Initially, both channels are empty and Sender's bit is different from Receiver's bit.
- - Sender repeatedly writes bit-packet pairs [bit, pac] to the data channel,
-   where bit is the Sender's bit and pac is the Sender's data to transmit.
-   If the Sender receives bit from Receiver over the acknowledgement channel,
-   then that is a confirmation that the packet sent has been delivered.
-   In that case, Sender flips its bit and select the next packet to send.
+*** The protocol works as follows:
+***  - Initially, both channels are empty and Sender's bit is different from Receiver's bit.
 
- - Receiver writes its bit to the acknowledgement channel repeatedly.
- When Receiver reads a pair [bit, pac] such that bit is different from its bit,
- then it stores pac and flips its bit.
-)***
+***  - Sender repeatedly writes bit-packet pairs [bit, pac] to the data channel,
+***    where bit is the Sender's bit and pac is the Sender's data to transmit.
+***    If the Sender receives bit from Receiver over the acknowledgement channel,
+***    then that is a confirmation that the packet sent has been delivered.
+***    In that case, Sender flips its bit and select the next packet to send.
 
+***  - Receiver writes its bit to the acknowledgement channel repeatedly.
+***    When Receiver reads a pair [bit, pac] such that bit is different from its bit,
+***    then it stores pac and flips its bit.
 --- ---------------------------------------------
 --- ---------------------------------------------
 fmod EQUAL is
@@ -134,6 +132,8 @@ fmod SYSTEM is
  op send2 : Sys -> Sys [ctor] . --- Receiver's sending bits
  op drop1 : Sys -> Sys [ctor] . --- dropping one element of channel1
  op drop2 : Sys -> Sys [ctor] . --- dropping one element of channel2
+ op dup1  : Sys -> Sys [ctor] . --- duplicate one element of channel1
+ op dup2  : Sys -> Sys [ctor] . --- duplicate one element of channel2
 endfm
 --- ---------------------------------------------
 *** ABP has loose semantics ***
@@ -209,7 +209,6 @@ ceq list(rec2(S)) = P,list(S) if [B,P],C1 := channel1(S) /\ B = not bit2(S)[meta
 --- --- --- --- --- --- ---
  ops x1 y1 : Sys -> Channel1 .
  ops x2 y2 : Sys -> Channel2 .
---- --- --- --- --- --- ---
 --- drop1 -----------------------------------------------------------------
 ceq channel1(drop1(S)) = x1(S),y1(S) if x1(S),[B,P],y1(S) := channel1(S)     [metadata "ca:c1-drop1-a"].
 ceq channel1(drop1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false[metadata "ca:c1-drop1-b"]. 
@@ -226,5 +225,21 @@ ceq channel2(drop2(S)) = channel2(S) if x2(S)[] y2(S):= channel2(S) = false[meta
  eq bit2(drop2(S))  = bit2(S) .
  eq next(drop2(S))  = next(S) .
  eq list(drop2(S))  = list(S) .
+--- duplicate1 -----------------------------------------------------------------
+ceq channel1(dup1(S)) = x1(S),[B,P],[B,P],y1(S) if x1(S),[B,P],y1(S) := channel1(S)[metadata "ca:c1-dup1-a"].
+ceq channel1(dup1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false      [metadata "ca:c1-dup1-b"]. 
+ eq channel2(dup1(S)) = channel2(S) .
+ eq bit1(dup1(S))  = bit1(S) .
+ eq bit2(dup1(S))  = bit2(S) .
+ eq next(dup1(S))  = next(S) .
+ eq list(dup1(S))  = list(S) .
+--- dup2 -----------------------------------------------------------------
+ eq channel1(dup2(S)) = channel1(S) .
+ceq channel2(dup2(S)) = x2(S),B,B,y2(S) if x2(S),B,y2(S):= channel2(S)    [metadata "ca:c2-dup2-a"].
+ceq channel2(dup2(S)) = channel2(S) if x2(S)[] y2(S):= channel2(S) = false[metadata "ca:c2-dup2-b"]. 
+ eq bit1(dup2(S))  = bit1(S) .
+ eq bit2(dup2(S))  = bit2(S) .
+ eq next(dup2(S))  = next(S) .
+ eq list(dup2(S))  = list(S) .
 --- --- ---
 endfth
