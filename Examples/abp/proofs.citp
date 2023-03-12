@@ -58,10 +58,9 @@ qed
 
 *** ----------------------------------------------------------------------------
 ***
-*** Step II. We prove another invariant using the invarians 2 and 3 as lemmas:
+*** Step II. We prove another invariant using the invariants 2 and 3 as lemmas:
 *** 5) If acknowledgement channel contains [B, P] such that B is Sender's bit,
 ***    then P is Sender's current packet.
-***
 
 goal INV.5 is
   fm ~ not B:Bit => B:Bit [metadata "not-bit"].
