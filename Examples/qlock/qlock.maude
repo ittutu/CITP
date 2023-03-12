@@ -1,3 +1,10 @@
+*** ----------------------------------------------------------------------------
+*** Assume that many agents (or processes) are competting for a common resource,
+*** but that at any given moment of time only one agent can use the resource.
+*** That is, the agents exclude or prevent each other from accessing the resource.
+*** A protocol that can gurantee this kind of mutual-exclusion property is called a mutual exclusion protocol.
+*** ----------------------------------------------------------------------------
+
 fmod EQUAL is
  op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
 endfm
@@ -87,4 +94,21 @@ ceq queue(exit(S,I)) = queue(S)      if pc(S,I) =? cs = false .
  rl try(S,I) => S [metadata "try"].
  rl exit(S,I)=> S [metadata "exit"].
 --- --- ---
+endm
+
+mod RESET{X :: PRID} is
+ inc QLOCK{X} .
+ var S : Sys .
+ var I : X$Pid .
+ var Q : Sequence .
+ var N : Nat .
+--- --- ---
+ op reset : Sys -> Sys [iter] .
+ceq reset(S) = S if queue(S) = empty [metadata "ca:1"].
+ceq reset(S) = exit(try(S,I),I) if I,Q := queue(S) /\ pc(S,I) = wt [metadata "ca:2"].
+ceq reset(S) = exit(S,I)        if I,Q := queue(S) /\ pc(S,I) = cs [metadata "ca:3"].
+--- --- ---
+ op reset : Sys Nat -> Sys .
+ eq reset(S,0) = S .
+ eq reset(S,s N)= reset(reset(S),N).
 endm
