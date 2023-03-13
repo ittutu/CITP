@@ -1,6 +1,6 @@
-# CITP (Constructor-based Interactive Theorem Prover)
+# Constructor-based Interactive Theorem Prover (CITP)
 
-Constructor-based Interactive Theorem Prover (CITP) is a tool for proving properties of software systems specified using a form of order-sorted algebra with transition rules. 
+CITP is a tool for proving properties of software systems specified using a form of order-sorted algebra with transition rules. 
 In other words, the models are oriented graphs or transition systems endowed with an order-sorted algebraic structure. 
 Moreover, some of the operations used, namely those that are regarded as constructors – and which are used to ‘build’ states – need to be monotonic, meaning that they preserve the transitions.
 
