@@ -1,7 +1,8 @@
 *** ----------------------------------------------------------------------------
 *** The aim is to prove that every connected graph has a spanning tree.
 *** In the attempt of proving that every connected graph has a spanning tree,
-*** we realized that it is much easier to prove that every graph has a spanning forest.
+*** we realized that it is much easier to prove a more general property: every graph has a spanning forest.
+
 *** A spanning forest of a graph is a subgraph that consists of a set of spanning trees,
 *** one for each maximally connected component of the initial graph.
 *** ----------------------------------------------------------------------------
