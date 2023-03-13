@@ -1,4 +1,4 @@
-`` ----------------------------------------------------------
+*** ----------------------------------------------------------
 *** STEP: one round/step of bubble sorting leaves the list unchanged
 *** if the number of unordered pairs of consecutive elements is zero
 *** ----------------------------------------------------------
