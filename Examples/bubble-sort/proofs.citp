@@ -9,7 +9,7 @@ goal STEP is
  fm forall{Q:Queue} step(Q:Queue) = Q:Queue if nop(Q:Queue) = 0 [metadata "lemma2"].
 endg
 
-begin proof PR-STEP of STEP
+begin proof PR.STEP of STEP
  quasi-ind(Q:Queue) red
  ind(X#2:Queue) push-all red
  tc red ca red
@@ -25,7 +25,7 @@ goal SMALL is
  fm forall{Q:Queue} smaller(E1:X$Elt,step(Q:Queue)) = smaller(E1:X$Elt,Q:Queue) [metadata "small"].
 endg
 
-begin proof PR-SMALL of SMALL
+begin proof PR.SMALL of SMALL
  quasi-ind(Q:Queue) red
  ind(X#2:Queue) push-all red
  tc red ca red ca red ca red
@@ -40,7 +40,7 @@ goal ORDER is
  fm forall{Q:Queue} order(step(Q:Queue)) <= order(Q:Queue) = true [metadata "order"].
 endg
 
-begin proof PR-ORDER of ORDER
+begin proof PR.ORDER of ORDER
  quasi-ind(Q:Queue) red
  ind(X#2:Queue) red push-all red
  tc red ca red
@@ -58,7 +58,7 @@ goal SORDER is
  fm forall{Q:Queue} order(step(Q:Queue)) < order(Q:Queue) = true if 0 < nop(Q:Queue) = true [metadata "sorder"]. 
 endg
 
-begin proof PR-SORDER of SORDER
+begin proof PR.SORDER of SORDER
  quasi-ind(Q:Queue) red
  ind(X#2:Queue)  red push-all red
  tc red ca red
