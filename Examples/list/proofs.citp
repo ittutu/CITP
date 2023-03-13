@@ -6,7 +6,7 @@ goal ASSOC is
      L1:List @(L2:List @ L3:List)=(L1:List @ L2:List)@ L3:List .
 endg
 
-begin proof PA of ASSOC
+begin proof PR.ASSOC of ASSOC
   ind(L1:List) tc ca push-all red
 qed
 
@@ -18,7 +18,7 @@ goal DIST is
      len(L1:List @ L2:List)= len(L1:List)+ len(L2:List) .
 endg
 
-begin proof PD of DIST
+begin proof PR.DIST of DIST
   ind(L1:List) tc ca push-all red
 qed
 
@@ -32,7 +32,7 @@ goal REV is
      rev(L1:List @ L2:List)= rev(L2:List)@ rev(L1:List) .
 endg
 
-begin proof PR of REV
+begin proof PR.REV of REV
   ind(L1:List) tc ca push-all red
 qed
 
