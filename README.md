@@ -1,12 +1,11 @@
-# CITP (The Constructor-based Interactive Theorem Prover)
+# CITP (Constructor-based Interactive Theorem Prover)
 
-The Constructor-based Interactive Theorem Prover (CITP) is a
-tool for proving properties of software systems specified using
-constructor-based logics.
+Constructor-based Interactive Theorem Prover (CITP) is a
+tool for proving properties of software systems specified using a version of order-sorted algebra with transition rules.
 
 ## Obtaining CITP
 
-The CITP uses [Maude 3.2.*](http://maude.cs.illinois.edu/w/index.php?title=The_Maude_System)
+CITP uses [Maude 3.2.*](http://maude.cs.illinois.edu/w/index.php?title=The_Maude_System)
 as a rewriting engine. Hence, the first step is to download and
 install the Maude system following the instructions available
 [here](http://maude.cs.illinois.edu/w/index.php?title=Maude_download_and_installation).
