@@ -79,8 +79,8 @@ ceq queue(want(S,I)) = queue(S),I if pc(S,I) = rm .
 ceq queue(want(S,I)) = queue(S)   if pc(S,I) =? rm = false .
 --- try ---
 ceq pc(try(S,I),J) = cs      if pc(S,I) = wt /\ I,Q := queue(S) /\ J = I [metadata "ca:t1"].
-ceq pc(try(S,I),J) = pc(S,J) if (J =? I) = false                      [metadata "ca:t2"].
-ceq pc(try(S,I),J) = pc(S,J) if pc(S,I) =? wt = false                 [metadata "ca:t3"].
+ceq pc(try(S,I),J) = pc(S,J) if (J =? I) = false                         [metadata "ca:t2"].
+ceq pc(try(S,I),J) = pc(S,J) if pc(S,I) =? wt = false                    [metadata "ca:t3"].
 ceq pc(try(S,I),J) = pc(S,J) if top(queue(S)) =? I = false               [metadata "ca:t4"].
  eq queue(try(S,I)) = queue(S) . 
 --- exit ---
@@ -104,9 +104,9 @@ mod RESET{X :: PRID} is
  var N : Nat .
 --- --- ---
  op reset : Sys -> Sys [iter] .
-ceq reset(S) = S if queue(S) = empty [metadata "ca:1"].
-ceq reset(S) = exit(try(S,I),I) if I,Q := queue(S) /\ pc(S,I) = wt [metadata "ca:2"].
-ceq reset(S) = exit(S,I)        if I,Q := queue(S) /\ pc(S,I) = cs [metadata "ca:3"].
+ceq reset(S) = S if queue(S) = empty [metadata "ca:r1"].
+ceq reset(S) = exit(try(S,I),I) if I,Q := queue(S) /\ pc(S,I) = wt [metadata "ca:r2"].
+ceq reset(S) = exit(S,I)        if I,Q := queue(S) /\ pc(S,I) = cs [metadata "ca:r3"].
 --- --- ---
  op reset : Sys Nat -> Sys .
  eq reset(S,0) = S .
