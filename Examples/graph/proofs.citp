@@ -18,7 +18,7 @@ goal THEOREM1 is
      [metadata "theorem1"] .
 endg
 
-begin proof PR-TH1 of THEOREM1
+begin proof PR.TH1 of THEOREM1
   ind-schema(G:Graph) red
   ind(Z#1:Edge)
   tc imp tc
@@ -38,7 +38,7 @@ goal THEOREM2 is
      [metadata "theorem2"] .
 endg
 
-begin proof PR-TH2 of THEOREM2
+begin proof PR.TH2 of THEOREM2
   ind-schema(G:Graph) red
   ind(Z#1:Edge)
   tc imp
@@ -57,7 +57,7 @@ goal THEOREM3 is
   fm forall {G:Graph} nocycle(mktree(G:Graph)) = true [metadata "theorem3"] .
 endg
 
-begin proof PR-TH3 of THEOREM3
+begin proof PR.TH3 of THEOREM3
   ind-schema(G:Graph) red
   ind(Z#1:Edge)
   tc imp
