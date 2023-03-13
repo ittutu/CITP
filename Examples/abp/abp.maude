@@ -227,13 +227,13 @@ ceq channel2(drop2(S)) = channel2(S) if x2(S)[] y2(S):= channel2(S) = false[meta
  eq list(drop2(S))  = list(S) .
 --- duplicate1 -----------------------------------------------------------------
 ceq channel1(dup1(S)) = x1(S),[B,P],[B,P],y1(S) if x1(S),[B,P],y1(S) := channel1(S)[metadata "ca:c1-dup1-a"].
-ceq channel1(dup1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false      [metadata "ca:c1-dup1-b"]. 
+ceq channel1(dup1(S)) = channel1(S) if x1(S) [] y1(S) := channel1(S) = false       [metadata "ca:c1-dup1-b"]. 
  eq channel2(dup1(S)) = channel2(S) .
  eq bit1(dup1(S))  = bit1(S) .
  eq bit2(dup1(S))  = bit2(S) .
  eq next(dup1(S))  = next(S) .
  eq list(dup1(S))  = list(S) .
---- dup2 -----------------------------------------------------------------
+--- duplicate2 -----------------------------------------------------------------
  eq channel1(dup2(S)) = channel1(S) .
 ceq channel2(dup2(S)) = x2(S),B,B,y2(S) if x2(S),B,y2(S):= channel2(S)    [metadata "ca:c2-dup2-a"].
 ceq channel2(dup2(S)) = channel2(S) if x2(S)[] y2(S):= channel2(S) = false[metadata "ca:c2-dup2-b"]. 
