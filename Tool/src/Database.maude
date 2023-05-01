@@ -72,7 +72,7 @@ fmod SPEX/DATA { L :: LANGUAGE, D :: DATA } is
   *** read  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
   op _[_] : SpeX/DB L$Lid ~> D$Data [prec 23] .
   ceq DB[L] = D if record(D) := DB[lang(L)] .
-  ceq DB[L] = nil if nil := DB[lang(L)] .
+  ceq DB[L] = nil if DB[lang(L)] = nil .
 endfm
 
 ********************************************************************************

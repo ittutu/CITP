@@ -7,10 +7,10 @@ if ! command -v @maude@ > /dev/null 2>&1 ; then \
 fi
 # Check the version of Maude ...................................................
 case $(@maude@ --version 2> /dev/null) in
-    3.2.*)
+    3.[23].*)
         ;;
     *)
-        echo "error: Maude 3.2 is required in order to run SpeX." 1>&2
+        echo "error: Maude 3.2 or newer is required in order to run SpeX." 1>&2
         exit 3
         ;;
 esac

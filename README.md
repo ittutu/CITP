@@ -6,13 +6,13 @@ Moreover, some of the operations used, namely those that are regarded as constru
 
 ## Obtaining CITP
 
-CITP uses [Maude 3.2.*](http://maude.cs.illinois.edu/w/index.php?title=The_Maude_System)
+CITP uses [Maude 3](http://maude.cs.illinois.edu/w/index.php?title=The_Maude_System)
 as a rewriting engine. Hence, the first step is to download and
 install the Maude system following the instructions available
 [here](http://maude.cs.illinois.edu/w/index.php?title=Maude_download_and_installation).
 
-Once Maude has been installed, you can download the latest (February 2023) distribution
-of CITP from [here](https://github.com/ittutu/CITP/raw/master/Tool/dist/citp-23.02.tar.gz).
+Once Maude has been installed, you can download the latest (May 2023) distribution
+of CITP from [here](https://github.com/ittutu/CITP/raw/master/Tool/dist/citp-23.05.tar.gz).
 
 ### System-wide installation
 

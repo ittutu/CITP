@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([CITP], [23.02])
+AC_INIT([CITP], [23.05])
 
 AC_CHECK_PROGS([M3], [maude])
 if test -z "${M3}" ; then
@@ -8,11 +8,11 @@ fi
 
 M3_version=`${M3} --version 2> /dev/null`
 case ${M3_version} in
-    3.2.*)
+    3.[[23]].*)
         AC_MSG_NOTICE([Found maude version ${M3_version}])
         ;;
     *)
-        AC_MSG_ERROR([Maude 3.2 is required in order to run CITP.])
+        AC_MSG_ERROR([Maude 3.2 or newer is required in order to run CITP.])
         ;;
 esac
 
