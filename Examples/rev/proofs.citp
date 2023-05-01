@@ -1,0 +1,14 @@
+*** ----------------------------------------------------------------------------
+*** IDEM-REV: The list-reversal operator is idempotent.
+*** ----------------------------------------------------------------------------
+
+goal IDEM-REV is
+|-{LIST-REV}
+  fm forall {L:List} rev(rev(L:List)) = L:List .
+endg
+
+begin proof PIR of IDEM-REV
+  ind(L:List) push-all red
+qed
+
+*** ----------------------------------------------------------------------------

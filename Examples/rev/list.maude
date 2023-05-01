@@ -1,0 +1,23 @@
+fmod LIST-REV { X :: TRIV } is
+  var  E : X$Elt .
+  vars L K : List .
+
+  sorts NeList List .
+  subsort X$Elt < NeList < List .
+
+  op nil : -> List [ctor] .
+  op __ : List List -> List [ctor assoc prec 25] .
+  op __ : NeList List -> NeList [ctor ditto] .
+  op __ : List NeList -> NeList [ctor ditto] .
+  eq nil L = L .
+  eq L nil = L .
+
+  op rev : List -> List .
+  eq rev(nil) = nil .
+  eq rev(E) = E .
+  eq rev(L K) = rev(K) rev(L) .
+endfm
+
+fmod NAT-LIST-REV is
+  protecting LIST-REV { Nat } .
+endfm
