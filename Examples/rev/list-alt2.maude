@@ -12,10 +12,10 @@ fmod LIST-REV { X :: TRIV } is
   op __ : List NeList -> NeList [ctor ditto] .
 
   op rev : List -> List .
-  eq rev(nil) = nil .
-  eq rev(E) = E .
-  eq rev(P S) = rev(S) rev(P) .
-
+  op rev : NeList -> NeList .
+  ceq rev(L) = nil if L = nil [metadata "ca:1"] .
+  ceq rev(L) = E if E := L [metadata "ca:2"] .
+  ceq rev(L) = rev(S) rev(P) if P S := L [metadata "ca:3"] .
 endfm
 
 fmod NAT-LIST-REV is
