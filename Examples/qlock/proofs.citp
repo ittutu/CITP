@@ -1,10 +1,11 @@
 *** ----------------------------------------------------------------------------
-*** TOP: If a process/agent is in the critical section, then it is at the top of the waiting queue.
+*** TOP: If a process/agent is in the critical section, then it is at the top
+*** of the waiting queue.
 *** ----------------------------------------------------------------------------
 goal TOP is
 |-{QLOCK}
   fm forall {S:Sys, I:X$Pid}
-     top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
+     head(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
      [metadata "top"] .
 endg
 
@@ -18,12 +19,12 @@ qed
 *** ----------------------------------------------------------------------------
 goal MEX is
   fm forall {S:Sys, I:X$Pid}
-     top(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
-     [metadata("top")] .
+     head(queue(S:Sys)) = I:X$Pid if pc(S:Sys, I:X$Pid) = cs
+     [metadata "top"] .
 |-{QLOCK}
   fm forall {S:Sys, I:X$Pid, J:X$Pid}
      I:X$Pid = J:X$Pid if pc(S:Sys, I:X$Pid)= cs /\ pc(S:Sys, J:X$Pid) = cs
-     [metadata("mex")] .
+     [metadata "mex"] .
 endg
 
 begin proof PI.MEX of MEX
@@ -37,7 +38,7 @@ qed
 
 goal INV.1 is
 |-{RESET}
-  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv1")] .
+  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata "inv1"] .
 endg
 
 begin proof PI.1 of INV.1
@@ -45,12 +46,13 @@ begin proof PI.1 of INV.1
 qed
 
 *** ----------------------------------------------------------------------------
-*** INV.2: One application of reset removes the first element of the waiting queue.
+*** INV.2: One application of reset removes the first element of the waiting
+*** queue.
 *** ----------------------------------------------------------------------------
 
 goal INV.2 is
 |-{RESET}
-  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv2")] .
+  fm forall {S:Sys} queue(reset(S:Sys)) = tail(queue(S:Sys)) [metadata "inv2"] .
 endg
 
 begin proof PI.2 of INV.2
@@ -64,11 +66,11 @@ qed
 *** ----------------------------------------------------------------------------
 
 goal LIVE is
-  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata("inv1")] .
-  fm forall {S:Sys} queue(reset(S:Sys)) = get(queue(S:Sys)) [metadata("inv2")] .
+  fm forall {S:Sys} reset(S:Sys) => S:Sys [metadata "inv1"] .
+  fm forall {S:Sys} queue(reset(S:Sys)) = tail(queue(S:Sys)) [metadata "inv2"] .
 |-{RESET}
   fm forall {N:Nat, S:Sys}
-     exists {R:Sys} R:Sys => S:Sys /\ queue(R:Sys) = get(queue(S:Sys), N:Nat)
+     exists {R:Sys} R:Sys => S:Sys /\ queue(R:Sys) = drop(N:Nat, queue(S:Sys))
      [metadata "live"].
 endg
 

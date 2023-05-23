@@ -9,12 +9,12 @@ fmod EQUAL is
  op _=?_ :  Universal Universal -> Bool  [comm prec 51 poly (1 2) metadata "equality"].
 endfm
 
-fmod LABELS is
+fmod SECTION is
  inc EQUAL .
- sort Labels .
- ops rm wt cs : -> Labels [ctor].
- var  L : Labels .
- eq L =? L = true .
+ sort Section .
+ ops rm wt cs : -> Section [ctor].
+ var S : Section .
+ eq S =? S = true .
  eq (rm =? wt) = false .
  eq (rm =? cs) = false .
  eq (wt =? cs) = false .
@@ -37,34 +37,34 @@ fmod SEQUENCE{X :: PRID} is
  op _`,_ : Sequence Sequence -> Sequence [ctor id: empty assoc].
  vars Q Q' : Sequence . vars I J : X$Pid .
 --- 
- op top : Sequence ~> X$Pid .
- eq top(I,Q) = I .
-ceq top(Q,I) = top(Q) if top(Q) : X$Pid [owise].
+ op head : Sequence ~> X$Pid .
+ eq head(I,Q) = I .
+ceq head(Q,I) = head(Q) if head(Q) : X$Pid [owise].
 ---
- op get : Sequence -> Sequence [iter] .
- eq get(empty) = empty .
- eq get(I,Q) = Q .
+ op tail : Sequence -> Sequence [iter] .
+ eq tail(empty) = empty .
+ eq tail(I,Q) = Q .
 --- --- ---
- op get : Sequence Nat -> Sequence .
- eq get(Q,0) = Q .
- eq get(Q,s N) = get(get(Q),N). 
+ op drop : Nat Sequence -> Sequence .
+ eq drop(0,Q) = Q .
+ eq drop(s N,Q) = drop(N,tail(Q)). 
 ---
  op _in_ : X$Pid Sequence -> Bool .
  eq I in empty = false . 
 ceq I in Q,J,Q' = true      if I = J .
 ceq I in Q,J,Q' = I in Q,Q' if I =? J = false .
-ceq I in Q = false if I =? top(Q) = false /\ I in get(Q) = false [owise].
+ceq I in Q = false if I =? head(Q) = false /\ I in tail(Q) = false [owise].
 endfm
 
 mod QLOCK{X :: PRID} is
  inc SEQUENCE{X} .
- inc LABELS .
+ inc SECTION .
  sort Sys .
  --- actions
  op init : -> Sys [ctor].
 ops want try exit : Sys X$Pid -> Sys [ctor].
 --- observers
- op pc : Sys X$Pid -> Labels .
+ op pc : Sys X$Pid -> Section .
  op queue : Sys -> Sequence .
 ---
  var S : Sys . vars I J K : X$Pid . var Q : Sequence .
@@ -81,14 +81,14 @@ ceq queue(want(S,I)) = queue(S)   if pc(S,I) =? rm = false .
 ceq pc(try(S,I),J) = cs      if pc(S,I) = wt /\ I,Q := queue(S) /\ J = I [metadata "ca:t1"].
 ceq pc(try(S,I),J) = pc(S,J) if (J =? I) = false                         [metadata "ca:t2"].
 ceq pc(try(S,I),J) = pc(S,J) if pc(S,I) =? wt = false                    [metadata "ca:t3"].
-ceq pc(try(S,I),J) = pc(S,J) if top(queue(S)) =? I = false               [metadata "ca:t4"].
+ceq pc(try(S,I),J) = pc(S,J) if head(queue(S)) =? I = false              [metadata "ca:t4"].
  eq queue(try(S,I)) = queue(S) . 
 --- exit ---
 ceq pc(exit(S,I),J) = rm       if pc(S,I) = cs /\ J = I          [metadata "ca:e1"].
 ceq pc(exit(S,I),J) = pc(S,J)  if pc(S,I) = cs /\ I =? J = false [metadata "ca:e2"].
 ceq pc(exit(S,I),J) = pc(S,J)  if pc(S,I) =? cs = false          [metadata "ca:e3"].
-ceq queue(exit(S,I)) = get(queue(S)) if pc(S,I) = cs .
-ceq queue(exit(S,I)) = queue(S)      if pc(S,I) =? cs = false .
+ceq queue(exit(S,I)) = tail(queue(S)) if pc(S,I) = cs .
+ceq queue(exit(S,I)) = queue(S)       if pc(S,I) =? cs = false .
 --- --- ---
  rl want(S,I)=> S [metadata "want"].
  rl try(S,I) => S [metadata "try"].
