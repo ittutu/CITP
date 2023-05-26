@@ -14,25 +14,11 @@ install the Maude system following the instructions available
 Once Maude has been installed, you can download the latest (May 2023) distribution
 of CITP from [here](https://github.com/ittutu/CITP/raw/master/Tool/dist/citp-23.05.tar.gz).
 
-### System-wide installation
-
-On GNU/Linux or macOS machines, the simplest way to install CITP is by
-running the following scripts from the directory where the latest CITP
-distribution has been downloaded (as a `tar.gz` archive):
-
-```shell
-tar -xzf citp-*.*.tar.gz
-cd citp-*.*
-./configure
-make
-sudo make install
-```
-
 ### Explicit loading into Maude
 
-Alternatively, you could also copy the CITP files to a destination of
-your choosing, and then explicitly load them into Maude whenever you
-decide to run the tool. For example:
+You can copy the CITP files to a destination of your choosing, and
+then explicitly load them into Maude whenever you decide to run the
+tool. This could be done, for example, from a terminal:
 
 ```shell
 tar -xzf citp-*.*.tar.gz
@@ -43,7 +29,7 @@ In this case, you need to set the `MAUDE_LIB` environment variable
 appropriately, making sure it includes paths to libraries that are
 bundled with Maude and to the CITP installation directory.  For
 example, assuming that Maude in installed under `/usr/local/maude`,
-you could execute:
+you could execute in a terminal:
 
 ```shell
 export MAUDE_LIB=/usr/local/maude:/home/user/citp
@@ -52,7 +38,28 @@ export MAUDE_LIB=/usr/local/maude:/home/user/citp
 To make this setting persistent, you could add the above line to your
 `.bashrc` file.
 
+### System-wide installation
+
+On GNU/Linux machines, you can install CITP is by running the
+following scripts from the directory where the latest CITP
+distribution has been downloaded (as a `tar.gz` archive):
+
+```shell
+tar -xzf citp-*.*.tar.gz
+cd citp-*.*
+./configure
+make
+sudo make install
+```
+
 ## Executing CITP
+
+If you decided to load CITP explicitly into Maude, then you could
+launch the tool by typing:
+
+```shell
+maude -no-banner -allow-files [files] run-citp
+```
 
 If you opted for a system-wide installation, then CITP can be launched
 from the command line by typing:
@@ -63,13 +70,6 @@ citp [files]
 
 where `[files]` is a list of Maude files that you would like to have
 loaded into Maude (in order to prove properties of them) before CITP.
-
-If you decided to load CITP explicitly into Maude, then you could
-launch the tool by typing:
-
-```shell
-maude -no-banner -allow-files [files] run-citp
-```
 
 ### Using CITP
 
