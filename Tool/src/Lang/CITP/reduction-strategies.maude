@@ -1,0 +1,212 @@
+***( SpeX/Lang/CITP
+
+  This file is part of CITP.
+
+  License : GNU General Public License v2.0 or later (GPL-2.0-or-later)
+  Author  : Adrian Riesco <ariesco@fdi.ucm.es>
+
+)
+
+********************************************************************************
+
+fmod META-OPS is
+ pr META-LEVEL .
+
+ var  SSDS : SubsortDeclSet .
+ vars TL TL' : TermList .
+ var  SB : Substitution .
+ var  EqS : EquationSet .
+ var  COND : Condition .
+ var  GTL : GTermList .
+ var  MAS : MembAxSet .
+ var  ODS : OpDeclSet .
+ var  IL : ImportList .
+ var  V : Variable .
+ var  SS : SortSet .
+ var  RS : RuleSet .
+ vars T T' : Term .
+ var  C : Context .
+ var  H : Header .
+ var  S : Sort .
+ var  Q : Qid .
+
+ op apply : Term Substitution -> Term .
+ ceq apply(Q[TL], SB) = Q[TL']
+  if TL' := apply*(TL, SB) .
+ eq apply(V, V <- T ; SB) = T .
+ eq apply(T, SB) = T [owise] .
+
+ op apply* : TermList Substitution -> TermList .
+ eq apply*(empty, SB) = empty .
+ eq apply*((T, TL), SB) = apply(T, SB), apply*(TL, SB) .
+
+ op removeEqs : Module -> Module .
+ eq removeEqs(fmod H is IL sorts SS . SSDS ODS MAS EqS endfm) =
+              fmod H is IL sorts SS . SSDS ODS MAS none endfm .
+ eq removeEqs(mod H is IL sorts SS . SSDS ODS MAS EqS RS endm) =
+              mod H is IL sorts SS . SSDS ODS MAS none RS endm .
+
+ op removeMas : Module -> Module .
+ eq removeMas(fmod H is IL sorts SS . SSDS ODS MAS  EqS endfm) =
+              fmod H is IL sorts SS . SSDS ODS none EqS endfm .
+ eq removeMas(mod H is IL sorts SS . SSDS ODS MAS  EqS RS endm) =
+              mod H is IL sorts SS . SSDS ODS none EqS RS endm .
+
+ op placeInContext : Context Term -> Term .
+ eq placeInContext([], T) = T .
+ ceq placeInContext(Q[GTL], T) = Q[TL]
+  if TL := placeInContext*(GTL, T) .
+ eq placeInContext(C, T) = T [owise] .
+
+ op placeInContext* : GTermList Term -> TermList .
+ eq placeInContext*(empty, T) = empty .
+ eq placeInContext*((C, GTL), T) = placeInContext(C, T), placeInContext*(GTL, T) .
+
+ op |_| : Condition -> Nat .
+ eq | (nil).Condition | = 0 .
+ eq | T = T' /\ COND | = s(| COND |) .
+ eq | T := T' /\ COND | = s(| COND |) .
+ eq | T => T' /\ COND | = s(| COND |) .
+ eq | T : S /\ COND | = s(| COND |) .
+endfm
+
+
+fmod ONE-STEP-RED is
+ pr META-OPS .
+
+ vars T T' T'' L R R' R'' : Term .
+ var  EqS : EquationSet .
+ var  SB : Substitution .
+ var  COND : Condition .
+ vars M MNE : Module .
+ var  CTXT : Context .
+ var  AtS : AttrSet .
+ var  V : Variable .
+
+ *** The module should have no equations
+ op oneStep : Module Term EquationSet ~> Term .
+ ceq oneStep(M, T, eq L = R [AtS] . EqS) = R''
+  if {SB, CTXT} := metaXmatch(M, L, T, nil, 0, unbounded, 0) /\
+     R' := apply(R, SB) /\
+     R'' := getTerm(metaNormalize(M, placeInContext(CTXT, R'))) .
+ op oneStep : Module Term EquationSet ~> Term .
+ ceq oneStep(M, T, ceq L = R if COND [AtS] . EqS) = R''
+  if {SB, CTXT} := metaXmatch(M, L, T, COND, 0, unbounded, 0) /\
+     R' := apply(R, SB) /\
+     R'' := getTerm(metaNormalize(M, placeInContext(CTXT, R'))) .
+
+ op reduceOneStep : Module Term EquationSet -> Term .
+ eq reduceOneStep(M, T, EqS) = reduceOneStep(M, removeEqs(M), T, EqS) .
+
+ op reduceOneStep : Module Module Term EquationSet -> Term .
+ ceq reduceOneStep(M, MNE, T, EqS) = reduceOneStep(M, MNE, T'', EqS)
+  if T' := getTerm(metaReduce(M, T)) /\
+     T'' := oneStep(MNE, T', EqS) /\
+     T =/= T'' .
+ eq reduceOneStep(M, MNE, T, EqS) = T [owise] .
+endfm
+
+fmod BOUNDED-RED is
+ pr META-OPS .
+ pr BOUND .
+
+ vars NSB NSB' NSB'' NCB NCB' NCB'' B : Bound .
+ *** Number of steps, number of conditions
+ vars NS NS' NS'' NC NC' NC'' N N' : Nat .
+ vars T T' L L' L'' R R' R'' : Term .
+ vars SB SB' : Substitution .
+ var  COND : EqCondition .
+ var  EqS : EquationSet .
+ var  MAS : MembAxSet .
+ var  CTXT : Context .
+ var  AtS : AttrSet .
+ var  M : Module .
+ var  Ty : Type .
+ var  S : Sort .
+
+ sort ReductionTuple .
+ op noReduction : -> ReductionTuple [ctor] .
+ op [_,_] : Term Bound -> ReductionTuple [ctor] .
+ op [_,_] : Type Bound -> ReductionTuple [ctor] .
+ op [_,_,_] : Term Substitution Bound -> ReductionTuple [ctor] .
+
+ op getTerm : ReductionTuple ~> Term .
+ eq getTerm([T, NSB]) = T .
+ eq getTerm([T, SB, NSB]) = T .
+
+ op boundedRed : Module Term Bound Bound -> ResultPair .
+ ceq boundedRed(M, T, NSB, NCB) = {T', Ty}
+  if T' := getTerm($boundedRed(M, T, NSB, NCB)) /\
+     Ty := getType(metaNormalize(M, T')) .
+
+ op $boundedRed : Module Term Bound Bound -> ReductionTuple .
+ ceq $boundedRed(M, T, NSB, NCB) = $boundedRed(M, T', NSB', NCB)
+  if noZero(NSB) /\
+     [T', NSB'] := oneStep(M, T, getEqs(M), NSB, NCB) .
+ eq $boundedRed(M, T, NSB, NCB) = [T, NSB] [owise print "Number of steps: " NSB " Number of conditions: " NCB " Term: " T] .
+
+ *** Applies one equation, if possible. The bounds might be reduced in the conditions.
+ op oneStep : Module Term EquationSet Bound Bound -> ReductionTuple .
+ ceq oneStep(M, T, eq L = R [AtS] . EqS, NSB, NCB) = [R'', minus(NSB, 1)]
+  if noZero(NSB) /\
+     {SB, CTXT} := metaXmatch(M, L, T, nil, 0, unbounded, 0) /\
+     R' := apply(R, SB) /\
+     R'' := getTerm(metaNormalize(M, R')) .
+ ceq oneStep(M, T, ceq L = R if COND [AtS] . EqS, NSB, NCB) = [R'', NSB']
+  if noZero(NSB) /\
+     noZero(NCB) /\
+     {SB, CTXT} := metaXmatch(M, L, T, nil, 0, unbounded, 0) /\
+     ['true.Bool, SB', NSB'] := reduceCondition(M, COND, SB, minus(NSB, 1), minus(NCB, 1)) /\
+     R' := apply(R, SB') /\
+     R'' := getTerm(metaNormalize(M, R')) .
+ eq oneStep(M, T, EqS, NSB, NCB) = noReduction [owise] .
+
+ op reduceCondition : Module EqCondition Substitution Bound Bound -> ReductionTuple .
+ eq reduceCondition(M, nil, SB, NSB, NCB) = ['true.Bool, SB, NSB] .
+ ceq reduceCondition(M, L = R /\ COND, SB, NSB, NCB) = if L'' == R''
+                                                       then reduceCondition(M, COND, SB, NSB'', NCB)
+                                                       else ['false.Bool, SB, NSB'']
+                                                       fi
+  if L' := apply(L, SB) /\
+     R' := apply(R, SB) /\
+     [L'', NSB'] := $boundedRed(M, L', NSB, NCB) /\
+     [R'', NSB''] := $boundedRed(M, R', NSB', NCB) .
+ ceq reduceCondition(M, L : S /\ COND, SB, NSB, NCB) = reduceCondition(M, COND, SB, NSB'', NCB)
+  if L' := apply(L, SB) /\
+     [L'', NSB'] := $boundedRed(M, L', NSB, NCB) /\
+     *** Ty := leastSort(M, L'') /\
+     [Ty, NSB''] := $boundedMb(M, L', getMbs(M), NSB, NCB) /\
+     sortLeq(M, Ty, S) .
+ ceq reduceCondition(M, L := R /\ COND, SB, NSB, NCB) = reduceCondition(M, COND, SB ; SB', NSB', NCB)
+  if L' := apply(L, SB) /\
+     R' := apply(R, SB) /\
+     [R'', NSB'] := $boundedRed(M, R', NSB, NCB)/\
+     SB' := metaMatch(M, L', R'', nil, 0) .
+ eq reduceCondition(M, COND, SB, NSB, NCB) = ['false.Bool, SB, NSB] [owise] .
+
+ op $boundedMb : Module Term MembAxSet Bound Bound ~> ReductionTuple .
+ ceq $boundedMb(M, T, mb L : S [AtS] . MAS, NSB, NCB) = [S, NSB]
+  if metaMatch(M, L, T, nil, 0) :: Substitution .
+ ceq $boundedMb(M, T, cmb L : S if COND [AtS] . MAS, NSB, NCB) = [S, NSB]
+  if noZero(NCB) /\
+     SB := metaMatch(M, L, T, nil, 0) /\
+     SB := metaMatch(M, L, T, nil, 0) /\
+     ['true.Bool, SB', NSB'] := reduceCondition(M, COND, SB, NSB, minus(NCB, 1)) .
+ eq $boundedMb(M, T, MAS, NSB, NCB) = [leastSort(removeMas(M), T), NSB] [owise] .
+
+
+ op noZero : Bound -> Bool .
+ eq noZero(0) = false .
+ eq noZero(B) = true [owise] .
+
+ op minus : Bound Nat ~> Bound .
+ eq minus(unbounded, N) = unbounded .
+ eq minus(N, 0) = N .
+ eq minus(s(N), s(N')) = minus(N, N') .
+
+ op gte : Bound Nat -> Bool .
+ eq gte(unbounded, N) = true .
+ eq gte(N, N') = N >= N .
+endfm
+
+********************************************************************************

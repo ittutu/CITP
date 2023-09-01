@@ -1089,6 +1089,7 @@ fmod CITP/CMD is
   op Cmd[_]{show`additions} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{rollback} : CITP -> Cmd{CITP} [ctor] .
   op Cmd[_]{reduce`term_} : CITP ATerm -> Cmd{CITP} [ctor] .
+  op Cmd[_]{reduce`[_`,_`]term_} : CITP Bound Bound ATerm -> Cmd{CITP} [ctor] .
   op Cmd[_]{search`path`from_to_} : CITP ATerm ATerm -> Cmd{CITP} [ctor] .
   op Cmd[_]{solve_} : CITP Formula{CITP} -> Cmd{CITP} [ctor] .
 endfm

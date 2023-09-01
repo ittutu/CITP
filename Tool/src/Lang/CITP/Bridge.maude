@@ -10,6 +10,7 @@
 )
 
 sload ./preamble.maude
+sload ./reduction-strategies.maude
 sload ../../CommonLibs/QidList.maude
 sload ../../Lang/Base/Common/Attributes.maude
 sload ../../SAP/Compat.maude
@@ -21,6 +22,7 @@ fmod CITP/BRIDGE/PREAMBLE is
   protecting QID-LIST/OPS .
   protecting ATTRIBUTE/OPS .
   protecting PRINTING/COMPAT .
+  protecting BOUNDED-RED .
 
   vars Q QI MN : Qid .
   var  QIL : QidList .

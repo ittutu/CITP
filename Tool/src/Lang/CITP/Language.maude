@@ -238,6 +238,7 @@ fmod CITP/LANGUAGE is
           |  lit "show additions"
           |  lit "rollback"
           |  "reduce term_" : 'Term
+          |  "reduce [_,_] term_" : 'Bound 'Bound 'Term
           |  "search path from_to_" : 'Term 'Term
           |  "solve_" : 'Query [none]
        'SpecLang
@@ -250,6 +251,8 @@ fmod CITP/LANGUAGE is
          ::= token "proofName"
        'Term
          ::= bubble "term" [balanced-parentheses]
+       'Bound
+         ::= <number> | lit "unbounded"
        'Query
          ::= bubble "query" [balanced-parentheses]
      endgr .
@@ -290,7 +293,7 @@ fmod CITP/READ is
   vars F F1 F2 LHS RHS S VL VL1 VL2 T T1 T2 : ATerm .
   var  FI : Variable .
   var  V : AVariable .
-  vars AL AL1 AL2 Subst Subst1 Subst2 l md mdn n : ATerm .
+  vars AL AL1 AL2 Subst Subst1 Subst2 l md mdn n nr nc : ATerm .
   vars PN STtL STtL1 STtL2 TtL TtL1 TtL2 : ATerm .
 
   *** read goal  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -498,6 +501,8 @@ fmod CITP/READ is
    = Cmd[L]{rollback} .
   eq read-cmd(L, {'reduce`term_[T] : 'ProofCommand})
    = Cmd[L]{reduce term T} .
+  eq read-cmd(L, {'reduce`[_`,_`]term_[nr, nc, T] : 'ProofCommand})
+   = Cmd[L]{reduce [read-bound(L, nr), read-bound(L, nc)] term T} .
   eq read-cmd(L, {'search`path`from_to_[T1, T2] : 'ProofCommand})
    = Cmd[L]{search path from T1 to T2} .
   eq read-cmd(L, {'solve_[F] : 'ProofCommand})
@@ -505,6 +510,10 @@ fmod CITP/READ is
 
   op read-lang-name : CITP ATerm -> QidList .
   eq read-lang-name(L, LN) = read-qids(LN) .
+
+  op read-bound : CITP ATerm -> Bound .
+  eq read-bound(L, {'unbounded.Bound : 'Bound}) = unbounded .
+  eq read-bound(L, n) = read-num(n) [owise] .
 endfm
 
 ********************************************************************************
@@ -531,6 +540,7 @@ fmod CITP/MODULE-PRINTING is
   var  AtS : AttrSet .
   var  TR : Trace .
   vars TS1 TS2 : TraceStep .
+  var  N : Nat .
 
   *** print module declarations  - - - - - - - - - - - - - - - - - - - - - - - -
   op print : CITP Module -> QidList .
@@ -653,6 +663,11 @@ fmod CITP/MODULE-PRINTING is
   eq print(L, M, TS1 TS2 TR)
    = print(L, M, TS1) '\n print(L, M, TS2 TR).
   eq print(L, M, failure) = 'failure .
+
+  *** print bounds  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - --
+  op print-bound : CITP Bound -> QidList .
+  eq print-bound(L, N) = qid(N) .
+  eq print-bound(L, unbounded) = 'unbounded .
 endfm
 
 ********************************************************************************
@@ -1061,7 +1076,7 @@ fmod CITP/PARSING is
   vars STtL STtL1 STtL2 TtL TtL1 TtL2 : ATerm .
   vars $MN MN H C FDL1 FDL2 $F F F1 F2 VL VL1 VL2 $V V : ATerm .
   vars Subst Subst1 Subst2 : ATerm .
-  vars $AL AL AL1 AL2 $l l md mdn n : ATerm .
+  vars $AL AL AL1 AL2 $l l md mdn n nr nc : ATerm .
   vars $LHS LHS $RHS RHS $T $T1 $T2 T T1 T2 $S S : ATerm .
   vars N : ATerm .
   vars CT A : Constant .
@@ -1563,6 +1578,13 @@ fmod CITP/PARSING is
   eq analyse L command {'reduce`term_[$T] : 'ProofCommand}
    = try {'reduce`term_[analyse L term ($T)] : 'ProofCommand} .
 
+  eq analyse L command {'reduce`[_`,_`]term_[nr, nc, $T] : 'ProofCommand}
+  = try { 'reduce`[_`,_`]term_ [
+        check L bound (nr),
+        check L bound (nc),
+        analyse L term ($T)
+      ] : 'ProofCommand } .
+
   eq analyse L command {'search`path`from_to_[$T1, $T2] : 'ProofCommand}
    = try { 'search`path`from_to_ [
         analyse L term ($T1),
@@ -1571,6 +1593,16 @@ fmod CITP/PARSING is
 
   eq analyse L command {'solve_[$F] : 'ProofCommand}
    = try {'solve_[analyse L formula ($F)] : 'ProofCommand} .
+
+  *** check bound  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  op check_bound : CITP -> AnalysisAction{CITP} .
+  eq check L bound (N) in SAS
+   = check (N == {'unbounded.Bound : 'Bound} or-else read-num(N) :: Nat)
+     and-then return (N)
+     or-else fail ('not 'a 'valid 'bound:
+      emph(print term N given cmd-grammar(L)),
+      (at term N given cmd-grammar(L), include context))
+     in SAS .
 
   *** analyse language name  - - - - - - - - - - - - - - - - - - - - - - - - - -
   op analyse_language`name : CITP -> AnalysisAction{CITP} .
